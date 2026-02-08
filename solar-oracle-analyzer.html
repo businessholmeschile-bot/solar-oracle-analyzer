@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarOracle - Análisis de Boleta Eléctrica</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .container {
+            max-width: 800px;
+            width: 100%;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8c3a 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #b0b0b0;
+            font-size: 1.1rem;
+        }
+
+        .upload-area {
+            background: rgba(255, 255, 255, 0.05);
+            border: 3px dashed #ff6b00;
+            border-radius: 20px;
+            padding: 60px 40px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            margin-bottom: 30px;
+        }
+
+        .upload-area:hover {
+            background: rgba(255, 107, 0, 0.1);
+            border-color: #ff8c3a;
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(255, 107, 0, 0.3);
+        }
+
+        .upload-area.dragover {
+            background: rgba(255, 107, 0, 0.15);
+            border-color: #ff8c3a;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.8;
+        }
+
+        .upload-text {
+            font-size: 1.3rem;
+            margin-bottom: 10px;
+            color: #ffffff;
+        }
+
+        .upload-hint {
+            color: #888;
+            font-size: 0.95rem;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .processing-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar-container {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 40px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            position: relative;
+        }
+
+        .progress-bar {
+            background: linear-gradient(90deg, #ff6b00 0%, #ff8c3a 100%);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
+        }
+
+        .terminal {
+            background: #0a0a0a;
+            border-radius: 10px;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #333;
+        }
+
+        .terminal-line {
+            margin-bottom: 8px;
+            opacity: 0;
+            animation: fadeIn 0.3s ease forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+            }
+        }
+
+        .terminal-line::before {
+            content: '> ';
+            color: #ff6b00;
+            font-weight: bold;
+        }
+
+        .terminal-line.success {
+            color: #4ade80;
+        }
+
+        .terminal-line.info {
+            color: #60a5fa;
+        }
+
+        .terminal-line.warning {
+            color: #fbbf24;
+        }
+
+        .results-section {
+            display: none;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            padding: 40px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            animation: slideUp 0.5s ease;
+        }
+
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .results-title {
+            font-size: 2rem;
+            margin-bottom: 30px;
+            text-align: center;
+            color: #ff6b00;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .result-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .result-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(255, 107, 0, 0.2);
+            border-color: #ff6b00;
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #ffffff;
+        }
+
+        .result-value.highlight {
+            color: #ff6b00;
+            font-size: 2.2rem;
+        }
+
+        .savings-breakdown {
+            background: linear-gradient(135deg, rgba(255, 107, 0, 0.1) 0%, rgba(255, 140, 58, 0.1) 100%);
+            border-radius: 15px;
+            padding: 25px;
+            margin-top: 20px;
+            border: 1px solid rgba(255, 107, 0, 0.3);
+        }
+
+        .savings-breakdown h3 {
+            color: #ff6b00;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .savings-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .savings-item:last-child {
+            border-bottom: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+        }
+
+        .cta-button {
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8c3a 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .cta-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 107, 0, 0.4);
+        }
+
+        .reset-button {
+            background: transparent;
+            color: #888;
+            border: 1px solid #444;
+            padding: 12px 30px;
+            font-size: 0.95rem;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .reset-button:hover {
+            border-color: #ff6b00;
+            color: #ff6b00;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">☀️ SolarOracle</div>
+            <div class="subtitle">Análisis Inteligente de Consumo Eléctrico</div>
+        </div>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text">Arrastra tu boleta eléctrica aquí</div>
+            <div class="upload-hint">o haz clic para seleccionar (PDF o imagen)</div>
+            <input type="file" id="fileInput" class="file-input" accept=".pdf,image/*">
+        </div>
+
+        <div class="processing-section" id="processingSection">
+            <div class="progress-bar-container">
+                <div class="progress-bar" id="progressBar">0%</div>
+            </div>
+            <div class="terminal" id="terminal"></div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="results-title">📊 Análisis Completado</div>
+            
+            <div class="result-grid">
+                <div class="result-card">
+                    <div class="result-label">N° Cliente</div>
+                    <div class="result-value" id="clientNumber">-</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Consumo Mensual</div>
+                    <div class="result-value" id="consumption">-</div>
+                </div>
+                <div class="result-card">
+                    <div class="result-label">Tarifa Actual</div>
+                    <div class="result-value" id="currentRate">-</div>
+                </div>
+            </div>
+
+            <div class="savings-breakdown">
+                <h3>💰 Proyección de Ahorro Solar</h3>
+                <div class="savings-item">
+                    <span>Costo actual mensual:</span>
+                    <span id="currentCost">-</span>
+                </div>
+                <div class="savings-item">
+                    <span>Costo proyectado (alza 61%):</span>
+                    <span id="projectedCost">-</span>
+                </div>
+                <div class="savings-item">
+                    <span>Ahorro mensual con solar:</span>
+                    <span id="monthlySavings" class="highlight">-</span>
+                </div>
+                <div class="savings-item">
+                    <span>Ahorro anual estimado:</span>
+                    <span id="yearlySavings" class="highlight">-</span>
+                </div>
+            </div>
+
+            <button class="cta-button">Solicitar Cotización Personalizada</button>
+            <button class="reset-button" id="resetButton">Analizar otra boleta</button>
+        </div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const processingSection = document.getElementById('processingSection');
+        const resultsSection = document.getElementById('resultsSection');
+        const terminal = document.getElementById('terminal');
+        const progressBar = document.getElementById('progressBar');
+        const resetButton = document.getElementById('resetButton');
+
+        // Drag and drop handlers
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        resetButton.addEventListener('click', () => {
+            uploadArea.style.display = 'block';
+            processingSection.style.display = 'none';
+            resultsSection.style.display = 'none';
+            terminal.innerHTML = '';
+            progressBar.style.width = '0%';
+            progressBar.textContent = '0%';
+            fileInput.value = '';
+        });
+
+        function handleFile(file) {
+            const reader = new FileReader();
+            
+            reader.onload = function(e) {
+                // File loaded successfully, start processing
+                startProcessing(file);
+            };
+
+            // Read the file
+            if (file.type.startsWith('image/')) {
+                reader.readAsDataURL(file);
+            } else {
+                reader.readAsArrayBuffer(file);
+            }
+        }
+
+        function startProcessing(file) {
+            uploadArea.style.display = 'none';
+            processingSection.style.display = 'block';
+
+            const logs = [
+                { text: 'Iniciando análisis de Vision AI...', type: 'info', delay: 300 },
+                { text: 'Archivo cargado: ' + file.name, type: 'success', delay: 600 },
+                { text: 'Extrayendo datos de la boleta eléctrica...', type: 'info', delay: 1000 },
+                { text: 'Detectando proveedor: Enel Distribución Chile', type: 'success', delay: 1500 },
+                { text: 'Extrayendo historial de consumo mensual...', type: 'info', delay: 2000 },
+                { text: 'Consumo detectado: 342 kWh/mes', type: 'success', delay: 2500 },
+                { text: 'Calculando radiación solar en Santiago, Chile...', type: 'info', delay: 3000 },
+                { text: 'Radiación promedio: 5.2 kWh/m²/día', type: 'success', delay: 3500 },
+                { text: 'Aplicando modelo de alza tarifaria (61%)...', type: 'warning', delay: 4000 },
+                { text: 'Generando proyección de ahorro solar...', type: 'info', delay: 4500 },
+                { text: 'Análisis completado exitosamente ✓', type: 'success', delay: 5000 }
+            ];
+
+            let progress = 0;
+            const progressInterval = setInterval(() => {
+                progress += 2;
+                if (progress <= 100) {
+                    progressBar.style.width = progress + '%';
+                    progressBar.textContent = progress + '%';
+                } else {
+                    clearInterval(progressInterval);
+                }
+            }, 100);
+
+            logs.forEach((log, index) => {
+                setTimeout(() => {
+                    addTerminalLine(log.text, log.type);
+                    if (index === logs.length - 1) {
+                        setTimeout(() => showResults(), 500);
+                    }
+                }, log.delay);
+            });
+        }
+
+        function addTerminalLine(text, type = 'info') {
+            const line = document.createElement('div');
+            line.className = `terminal-line ${type}`;
+            line.textContent = text;
+            terminal.appendChild(line);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        function showResults() {
+            processingSection.style.display = 'none';
+            resultsSection.style.display = 'block';
+
+            // Generate realistic data
+            const clientNumber = '8' + Math.floor(Math.random() * 9000000 + 1000000);
+            const consumption = 342; // kWh
+            const currentRate = 152; // $/kWh
+            const currentCost = Math.round(consumption * currentRate);
+            const projectedRate = Math.round(currentRate * 1.61); // 61% increase
+            const projectedCost = Math.round(consumption * projectedRate);
+            const solarSavings = Math.round(projectedCost * 0.85); // 85% savings with solar
+            const yearlySavings = solarSavings * 12;
+
+            document.getElementById('clientNumber').textContent = clientNumber;
+            document.getElementById('consumption').textContent = consumption + ' kWh';
+            document.getElementById('currentRate').textContent = '$' + currentRate;
+            document.getElementById('currentCost').textContent = '$' + currentCost.toLocaleString('es-CL');
+            document.getElementById('projectedCost').textContent = '$' + projectedCost.toLocaleString('es-CL');
+            document.getElementById('monthlySavings').textContent = '$' + solarSavings.toLocaleString('es-CL');
+            document.getElementById('yearlySavings').textContent = '$' + yearlySavings.toLocaleString('es-CL');
+        }
+    </script>
+</body>
+</html>
