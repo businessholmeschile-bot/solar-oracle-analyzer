@@ -5,6 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SolarOracle - Análisis de Boleta Eléctrica</title>
+
+    <!-- jsPDF Libraries -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
     <style>
         * {
             margin: 0;
@@ -464,6 +469,172 @@
         .investment-note strong {
             color: #e65100;
         }
+
+        /* Modal styles */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease;
+            position: relative;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: transparent;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: #ff6b00;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            color: #ff6b00;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .modal-subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        .email-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: #333;
+            font-size: 0.9rem;
+        }
+
+        .form-input {
+            padding: 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #ff6b00;
+            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
+        }
+
+        .form-input.error {
+            border-color: #d32f2f;
+        }
+
+        .error-message {
+            color: #d32f2f;
+            font-size: 0.85rem;
+            display: none;
+        }
+
+        .error-message.show {
+            display: block;
+        }
+
+        .download-button {
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8c3a 100%);
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .download-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 107, 0, 0.4);
+        }
+
+        .download-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .privacy-note {
+            font-size: 0.75rem;
+            color: #999;
+            text-align: center;
+            margin-top: 15px;
+        }
+
+        .success-message {
+            background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+            border-left: 4px solid #4caf50;
+            padding: 15px 20px;
+            border-radius: 10px;
+            color: #2e7d32;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: fadeIn 0.3s ease;
+        }
     </style>
 </head>
 
@@ -583,8 +754,45 @@
                 </div>
             </div>
 
-            <button class="cta-button">💬 Solicitar Cotización Personalizada</button>
+            <button class="cta-button" id="downloadPdfButton">📥 Descargar Análisis en PDF</button>
             <button class="reset-button" id="resetButton">🔄 Analizar otra boleta</button>
+        </div>
+
+        <!-- Email Modal -->
+        <div class="modal-overlay" id="emailModal">
+            <div class="modal-content">
+                <button class="modal-close" id="closeModal">✕</button>
+
+                <div class="success-message" id="successMessage">
+                    ✓ ¡Email guardado! Descargando tu análisis...
+                </div>
+
+                <h2 class="modal-title">📧 Recibe tu Análisis</h2>
+                <p class="modal-subtitle">
+                    Ingresa tu email para descargar el análisis completo en PDF
+                </p>
+
+                <form class="email-form" id="emailForm">
+                    <div class="form-group">
+                        <label class="form-label" for="userEmail">Email</label>
+                        <input type="email" id="userEmail" class="form-input" placeholder="tu@email.com" required>
+                        <span class="error-message" id="emailError">Por favor ingresa un email válido</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="userName">Nombre (opcional)</label>
+                        <input type="text" id="userName" class="form-input" placeholder="Tu nombre">
+                    </div>
+
+                    <button type="submit" class="download-button" id="submitEmail">
+                        Descargar PDF
+                    </button>
+
+                    <p class="privacy-note">
+                        🔒 Tu información está segura. Solo la usaremos para enviarte información sobre energía solar.
+                    </p>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -739,7 +947,271 @@
             document.getElementById('savings2y').textContent = '$' + savings2y.toLocaleString('es-CL');
             document.getElementById('savings3y').textContent = '$' + savings3y.toLocaleString('es-CL');
             document.getElementById('savings5y').textContent = '$' + savings5y.toLocaleString('es-CL');
+
+            // Store data globally for PDF generation
+            window.analysisData = {
+                clientNumber,
+                consumption,
+                currentRate,
+                currentCost,
+                projectedCost,
+                monthlyIncrease,
+                monthlySavings,
+                savings6m,
+                savings1y,
+                savings2y,
+                savings3y,
+                savings5y
+            };
         }
+
+        // Modal and PDF functionality
+        const downloadPdfButton = document.getElementById('downloadPdfButton');
+        const emailModal = document.getElementById('emailModal');
+        const closeModal = document.getElementById('closeModal');
+        const emailForm = document.getElementById('emailForm');
+        const userEmailInput = document.getElementById('userEmail');
+        const userNameInput = document.getElementById('userName');
+        const emailError = document.getElementById('emailError');
+        const successMessage = document.getElementById('successMessage');
+        const submitButton = document.getElementById('submitEmail');
+
+        // Google Sheets Web App URL - REPLACE WITH YOUR OWN
+        const GOOGLE_SHEETS_URL = 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE';
+
+        // Open modal when download button is clicked
+        downloadPdfButton.addEventListener('click', () => {
+            emailModal.classList.add('active');
+            userEmailInput.focus();
+        });
+
+        // Close modal
+        closeModal.addEventListener('click', () => {
+            emailModal.classList.remove('active');
+            resetForm();
+        });
+
+        // Close modal when clicking outside
+        emailModal.addEventListener('click', (e) => {
+            if (e.target === emailModal) {
+                emailModal.classList.remove('active');
+                resetForm();
+            }
+        });
+
+        // Handle form submission
+        emailForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const email = userEmailInput.value.trim();
+            const name = userNameInput.value.trim();
+
+            // Validate email
+            if (!validateEmail(email)) {
+                userEmailInput.classList.add('error');
+                emailError.classList.add('show');
+                return;
+            }
+
+            // Disable button while processing
+            submitButton.disabled = true;
+            submitButton.textContent = 'Procesando...';
+
+            try {
+                // Send to Google Sheets
+                await sendToGoogleSheets(email, name);
+
+                // Show success message
+                successMessage.classList.add('show');
+
+                // Generate and download PDF
+                setTimeout(() => {
+                    generatePDF(email, name);
+
+                    // Close modal after download
+                    setTimeout(() => {
+                        emailModal.classList.remove('active');
+                        resetForm();
+                    }, 2000);
+                }, 500);
+
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Hubo un error al procesar tu solicitud. Por favor intenta nuevamente.');
+                submitButton.disabled = false;
+                submitButton.textContent = 'Descargar PDF';
+            }
+        });
+
+        // Email validation
+        function validateEmail(email) {
+            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return re.test(email);
+        }
+
+        // Reset form
+        function resetForm() {
+            emailForm.reset();
+            userEmailInput.classList.remove('error');
+            emailError.classList.remove('show');
+            successMessage.classList.remove('show');
+            submitButton.disabled = false;
+            submitButton.textContent = 'Descargar PDF';
+        }
+
+        // Send data to Google Sheets
+        async function sendToGoogleSheets(email, name) {
+            const data = {
+                email: email,
+                name: name || 'No proporcionado',
+                timestamp: new Date().toISOString(),
+                clientNumber: window.analysisData.clientNumber,
+                consumption: window.analysisData.consumption,
+                savings1y: window.analysisData.savings1y
+            };
+
+            // Only send if URL is configured
+            if (GOOGLE_SHEETS_URL && GOOGLE_SHEETS_URL !== 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
+                const response = await fetch(GOOGLE_SHEETS_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+            } else {
+                console.log('Google Sheets URL not configured. Data:', data);
+            }
+        }
+
+        // Generate PDF
+        function generatePDF(email, name) {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const data = window.analysisData;
+
+            // Colors
+            const orange = [255, 107, 0];
+            const darkGray = [51, 51, 51];
+            const lightGray = [153, 153, 153];
+
+            // Header
+            doc.setFillColor(...orange);
+            doc.rect(0, 0, 210, 40, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(28);
+            doc.setFont('helvetica', 'bold');
+            doc.text('☀️ SolarOracle', 105, 20, { align: 'center' });
+
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'normal');
+            doc.text('Análisis de Consumo Eléctrico', 105, 30, { align: 'center' });
+
+            // Client info
+            doc.setTextColor(...darkGray);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`Generado para: ${name || email}`, 20, 50);
+            doc.text(`Fecha: ${new Date().toLocaleDateString('es-CL')}`, 20, 56);
+
+            // Section 1: Datos del Cliente
+            let y = 70;
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...orange);
+            doc.text('📊 Datos del Análisis', 20, y);
+
+            y += 10;
+            doc.autoTable({
+                startY: y,
+                head: [['Concepto', 'Valor']],
+                body: [
+                    ['N° Cliente', data.clientNumber],
+                    ['Consumo Mensual', `${data.consumption} kWh`],
+                    ['Tarifa Actual', `$${data.currentRate}/kWh`]
+                ],
+                theme: 'grid',
+                headStyles: { fillColor: orange },
+                margin: { left: 20, right: 20 }
+            });
+
+            // Section 2: Impacto del Alza
+            y = doc.lastAutoTable.finalY + 15;
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...orange);
+            doc.text('💰 Impacto del Alza Tarifaria (61%)', 20, y);
+
+            y += 10;
+            doc.autoTable({
+                startY: y,
+                head: [['Concepto', 'Monto']],
+                body: [
+                    ['Costo Actual Mensual', `$${data.currentCost.toLocaleString('es-CL')}`],
+                    ['Costo con Alza (61%)', `$${data.projectedCost.toLocaleString('es-CL')}`],
+                    ['Aumento Mensual', `+$${data.monthlyIncrease.toLocaleString('es-CL')}`]
+                ],
+                theme: 'grid',
+                headStyles: { fillColor: orange },
+                margin: { left: 20, right: 20 }
+            });
+
+            // Section 3: Proyecciones de Ahorro
+            y = doc.lastAutoTable.finalY + 15;
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'bold');
+            doc.setTextColor(...orange);
+            doc.text('📈 Proyección de Ahorro con Energía Solar', 20, y);
+
+            y += 5;
+            doc.setFontSize(9);
+            doc.setFont('helvetica', 'italic');
+            doc.setTextColor(...lightGray);
+            doc.text('Sistema solar cubriendo el 85% del consumo', 20, y);
+
+            y += 10;
+            doc.autoTable({
+                startY: y,
+                head: [['Período', 'Ahorro Acumulado', 'Nota']],
+                body: [
+                    ['6 meses', `$${data.savings6m.toLocaleString('es-CL')}`, 'Recuperación inicial'],
+                    ['1 año', `$${data.savings1y.toLocaleString('es-CL')}`, 'Ahorro anual completo'],
+                    ['2 años', `$${data.savings2y.toLocaleString('es-CL')}`, 'ROI acelerado'],
+                    ['3 años', `$${data.savings3y.toLocaleString('es-CL')}`, 'Inversión recuperada'],
+                    ['5 años', `$${data.savings5y.toLocaleString('es-CL')}`, 'Ganancia neta']
+                ],
+                theme: 'grid',
+                headStyles: { fillColor: orange },
+                margin: { left: 20, right: 20 }
+            });
+
+            // Footer
+            const pageCount = doc.internal.getNumberOfPages();
+            for (let i = 1; i <= pageCount; i++) {
+                doc.setPage(i);
+                doc.setFontSize(8);
+                doc.setTextColor(...lightGray);
+                doc.text(
+                    'SolarOracle.cl - Energía Solar Inteligente',
+                    105,
+                    285,
+                    { align: 'center' }
+                );
+                doc.text(
+                    `Página ${i} de ${pageCount}`,
+                    105,
+                    290,
+                    { align: 'center' }
+                );
+            }
+
+            // Save PDF
+            doc.save(`SolarOracle-Analisis-${data.clientNumber}.pdf`);
+        }
+
     </script>
 </body>
 
