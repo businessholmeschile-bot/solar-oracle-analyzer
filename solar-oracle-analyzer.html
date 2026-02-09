@@ -1449,7 +1449,12 @@
             let selectedFile = null;
 
             // --- EVENT LISTENERS ---
-            ELEMENTS.uploadArea.addEventListener('click', () => ELEMENTS.fileInput.click());
+            // Fix: Usar listener directo y robusto
+            document.getElementById('uploadArea').addEventListener('click', (e) => {
+                // Evitar doble trigger si se hace click en el input mismo (propagación)
+                if (e.target.id === 'fileInput') return;
+                document.getElementById('fileInput').click();
+            });
 
             ELEMENTS.uploadArea.addEventListener('dragover', (e) => {
                 e.preventDefault();
