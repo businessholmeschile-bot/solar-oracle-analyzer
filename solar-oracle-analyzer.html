@@ -784,6 +784,11 @@
                         <input type="text" id="userName" class="form-input" placeholder="Tu nombre">
                     </div>
 
+                    <div class="form-group">
+                        <label class="form-label" for="userPhone">Teléfono (opcional)</label>
+                        <input type="tel" id="userPhone" class="form-input" placeholder="+56 9 1234 5678">
+                    </div>
+
                     <button type="submit" class="download-button" id="submitEmail">
                         Descargar PDF
                     </button>
@@ -843,19 +848,23 @@
         });
 
         function handleFile(file) {
+            // Store file globally for later upload to Drive
+            window.uploadedFile = file;
+
             const reader = new FileReader();
 
             reader.onload = function (e) {
+                // Store Base64 for upload to Drive
+                if (file.type.startsWith('image/') || file.type === 'application/pdf') {
+                    window.uploadedFileBase64 = e.target.result;
+                }
+
                 // File loaded successfully, start processing
                 startProcessing(file);
             };
 
-            // Read the file
-            if (file.type.startsWith('image/')) {
-                reader.readAsDataURL(file);
-            } else {
-                reader.readAsArrayBuffer(file);
-            }
+            // Read the file as Data URL (Base64) for all types
+            reader.readAsDataURL(file);
         }
 
         function startProcessing(file) {
@@ -1005,6 +1014,7 @@
 
             const email = userEmailInput.value.trim();
             const name = userNameInput.value.trim();
+            const phone = document.getElementById('userPhone').value.trim();
 
             // Validate email
             if (!validateEmail(email)) {
@@ -1018,8 +1028,8 @@
             submitButton.textContent = 'Procesando...';
 
             try {
-                // Send to Google Sheets
-                await sendToGoogleSheets(email, name);
+                // Send to Google Sheets (with file upload to Drive)
+                await sendToGoogleSheets(email, name, phone);
 
                 // Show success message
                 successMessage.classList.add('show');
@@ -1060,14 +1070,67 @@
         }
 
         // Send data to Google Sheets
-        async function sendToGoogleSheets(email, name) {
-            const data = {
+        async function sendToGoogleSheets(email, name, phone) {
+            const data = window.analysisData;
+
+            // Prepare file data if available
+            let fileData = null;
+            if (window.uploadedFile) {
+                fileData = {
+                    name: window.uploadedFile.name,
+                    type: window.uploadedFile.type,
+                    size: window.uploadedFile.size,
+                    base64: window.uploadedFileBase64 || null
+                };
+            }
+
+            // Collect browser/device info
+            const browserInfo = {
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                screenResolution: `${screen.width}x${screen.height}`,
+                referrer: document.referrer || 'Direct',
+                currentUrl: window.location.href
+            };
+
+            // Prepare complete payload
+            const payload = {
+                // Contact info
                 email: email,
                 name: name || 'No proporcionado',
+                phone: phone || 'No proporcionado',
                 timestamp: new Date().toISOString(),
-                clientNumber: window.analysisData.clientNumber,
-                consumption: window.analysisData.consumption,
-                savings1y: window.analysisData.savings1y
+
+                // Analysis data
+                clientNumber: data.clientNumber,
+                consumption: data.consumption,
+                currentRate: data.currentRate,
+                currentCost: data.currentCost,
+                projectedCost: data.projectedCost,
+                monthlyIncrease: data.monthlyIncrease,
+                monthlySavings: data.monthlySavings,
+
+                // Projections
+                savings6m: data.savings6m,
+                savings1y: data.savings1y,
+                savings2y: data.savings2y,
+                savings3y: data.savings3y,
+                savings5y: data.savings5y,
+
+                // File info
+                fileName: fileData ? fileData.name : 'No disponible',
+                fileType: fileData ? fileData.type : 'No disponible',
+                fileSize: fileData ? fileData.size : 0,
+                fileBase64: fileData ? fileData.base64 : null,
+
+                // Browser/Device info
+                userAgent: browserInfo.userAgent,
+                language: browserInfo.language,
+                timezone: browserInfo.timezone,
+                screenResolution: browserInfo.screenResolution,
+                referrer: browserInfo.referrer,
+                sourceUrl: browserInfo.currentUrl
             };
 
             // Only send if URL is configured
@@ -1078,10 +1141,10 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
             } else {
-                console.log('Google Sheets URL not configured. Data:', data);
+                console.log('Google Sheets URL not configured. Data:', payload);
             }
         }
 
