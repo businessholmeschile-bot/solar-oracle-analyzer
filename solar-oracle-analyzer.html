@@ -1453,11 +1453,18 @@
                 }
             });
 
-            ELEMENTS.fileInput.addEventListener('change', (e) => {
-                if (e.target.files.length) {
-                    handleFile(e.target.files[0]);
-                }
-            });
+            // Evento CHANGE para el input de archivo (crítico)
+            const fileInputEl = document.getElementById('fileInput');
+            if (fileInputEl) {
+                fileInputEl.addEventListener('change', (e) => {
+                    console.log("Input Change Detected", e.target.files);
+                    if (e.target.files && e.target.files.length > 0) {
+                        handleFile(e.target.files[0]);
+                    }
+                });
+            } else {
+                console.error("CRITICAL: fileInput element not found in DOM");
+            }
 
             ELEMENTS.resetBtn.addEventListener('click', resetApp);
             ELEMENTS.downloadBtn.addEventListener('click', () => {
@@ -1473,9 +1480,19 @@
             // --- LOGIC ---
 
             function handleFile(file) {
+                if (!file) {
+                    console.error("handleFile: No file received");
+                    return;
+                }
+                console.log("Procesando archivo:", file.name);
                 selectedFile = file;
-                ELEMENTS.uploadArea.style.display = 'none';
-                ELEMENTS.processing.style.display = 'block';
+
+                // Ocultar wrapper completo para evitar espacios vacíos
+                const wrapper = document.querySelector('.upload-wrapper');
+                if (wrapper) wrapper.style.display = 'none';
+
+                // Asegurar que processing section se muestre
+                if (ELEMENTS.processing) ELEMENTS.processing.style.display = 'block';
 
                 logTerminal('Iniciando análisis del archivo: ' + file.name);
                 simulateProcessing();
@@ -1582,9 +1599,14 @@
 
             function resetApp() {
                 selectedFile = null;
-                ELEMENTS.fileInput.value = '';
+                document.getElementById('fileInput').value = ''; // Limpiar input para permitir subir mismo archivo
+
                 ELEMENTS.results.style.display = 'none';
-                ELEMENTS.uploadArea.style.display = 'block';
+
+                // Mostrar wrapper nuevamente
+                const wrapper = document.querySelector('.upload-wrapper');
+                if (wrapper) wrapper.style.display = 'block';
+
                 ELEMENTS.progressBar.style.width = '0%';
                 ELEMENTS.terminal.innerHTML = '';
             }
