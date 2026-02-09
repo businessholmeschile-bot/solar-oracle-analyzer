@@ -52,7 +52,18 @@
             font-size: 1rem;
         }
 
+        .file-input-hidden {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+
         .upload-area {
+            display: block;
+            /* Importante para Label */
             background: #fff5f0;
             border: 3px dashed #ff6b00;
             border-radius: 20px;
@@ -61,41 +72,9 @@
             cursor: pointer;
             transition: all 0.3s ease;
             margin-bottom: 20px;
-        }
-
-        .upload-area:hover {
-            background: #ffe8d9;
-            border-color: #ff8c3a;
-            transform: translateY(-3px);
-            box-shadow: 0 8px 25px rgba(255, 107, 0, 0.2);
-        }
-
-        .upload-area.dragover {
-            background: #ffd9bf;
-            border-color: #ff8c3a;
-            transform: scale(1.01);
-        }
-
-        .upload-icon {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.8;
-        }
-
-        .upload-text {
-            font-size: 1.2rem;
-            margin-bottom: 10px;
-            color: #1a1a1a;
-            font-weight: 600;
-        }
-
-        .upload-hint {
-            color: #666666;
-            font-size: 0.9rem;
-        }
-
-        .file-input {
-            display: none;
+            position: relative;
+            /* Contexto de apilamiento */
+            z-index: 10;
         }
 
         .processing-section {
@@ -645,11 +624,14 @@
             <div class="subtitle">Análisis Inteligente de Consumo Eléctrico</div>
         </div>
 
-        <div class="upload-area" id="uploadArea">
-            <div class="upload-icon">📄</div>
-            <div class="upload-text">Arrastra tu boleta eléctrica aquí</div>
-            <div class="upload-hint">o haz clic para seleccionar (PDF o imagen)</div>
-            <input type="file" id="fileInput" class="file-input" accept=".pdf,image/*">
+        <!-- UPLOAD AREA REFACTORIZADO (ROBUSTO) -->
+        <div class="upload-wrapper">
+            <input type="file" id="fileInput" class="file-input-hidden" accept=".pdf,image/*">
+            <label for="fileInput" class="upload-area" id="uploadAreaLabel">
+                <div class="upload-icon">📄</div>
+                <div class="upload-text">Arrastra tu boleta eléctrica aquí</div>
+                <div class="upload-hint">o haz clic para seleccionar (PDF o imagen)</div>
+            </label>
         </div>
 
         <div class="processing-section" id="processingSection">
@@ -1427,7 +1409,7 @@
             }
 
             const ELEMENTS = {
-                uploadArea: document.getElementById('uploadArea'),
+                uploadArea: document.getElementById('uploadAreaLabel'),
                 fileInput: document.getElementById('fileInput'),
                 processing: document.getElementById('processingSection'),
                 progressBar: document.getElementById('progressBar'),
@@ -1449,25 +1431,23 @@
             let selectedFile = null;
 
             // --- EVENT LISTENERS ---
-            // Fix: Usar listener directo y robusto
-            document.getElementById('uploadArea').addEventListener('click', (e) => {
-                // Evitar doble trigger si se hace click en el input mismo (propagación)
-                if (e.target.id === 'fileInput') return;
-                document.getElementById('fileInput').click();
-            });
+            // Nota: El listener de CLICK ya no es necesario porque usamos <label for="fileInput">
+            // El navegador maneja el click nativamente.
 
-            ELEMENTS.uploadArea.addEventListener('dragover', (e) => {
+            const uploadLabel = document.getElementById('uploadAreaLabel');
+
+            uploadLabel.addEventListener('dragover', (e) => {
                 e.preventDefault();
-                ELEMENTS.uploadArea.classList.add('dragover');
+                uploadLabel.classList.add('dragover');
             });
 
-            ELEMENTS.uploadArea.addEventListener('dragleave', () => {
-                ELEMENTS.uploadArea.classList.remove('dragover');
+            uploadLabel.addEventListener('dragleave', () => {
+                uploadLabel.classList.remove('dragover');
             });
 
-            ELEMENTS.uploadArea.addEventListener('drop', (e) => {
+            uploadLabel.addEventListener('drop', (e) => {
                 e.preventDefault();
-                ELEMENTS.uploadArea.classList.remove('dragover');
+                uploadLabel.classList.remove('dragover');
                 if (e.dataTransfer.files.length) {
                     handleFile(e.dataTransfer.files[0]);
                 }
