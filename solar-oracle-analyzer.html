@@ -1151,6 +1151,22 @@
         // --- SOLAR ORACLE PRO PDF GENERATOR ---
         async function generatePDF(email, name, phone) {
             const { jsPDF } = window.jspdf;
+
+            // 0. Pre-cargar Imagen (Crucial para que no falle el PDF)
+            // Usamos un proxy de CORS o Base64 directo si es posible. 
+            // Para Unsplash directo, a veces 'crossOrigin = anonymous' no basta si el caché molesta.
+            // Solución: Añadir timestamp para evitar caché agresivo.
+            const imgUrl = "https://images.unsplash.com/photo-1682148026899-d21f17c04e80?q=80&w=1170&auto=format&fit=crop&t=" + new Date().getTime();
+
+            let solarImgData = null;
+
+            try {
+                solarImgData = await loadImage(imgUrl);
+            } catch (e) {
+                console.warn("No se pudo cargar la imagen solar:", e);
+                // No detenemos el PDF, solo no habrá foto.
+            }
+
             const doc = new jsPDF('p', 'mm', 'a4'); // Portrait, Millimeters, A4
             const data = window.analysisData;
 
@@ -1255,45 +1271,24 @@
 
             y += 10;
 
-            // INTENTO DE CARGAR IMAGEN (Con fallback seguro)
-            const imgUrl = "https://images.unsplash.com/photo-1682148026899-d21f17c04e80?q=80&w=1170&auto=format&fit=crop";
+            // RENDERIZAR IMAGEN (Si se cargó correctamente)
+            const imgW = 90;
+            const imgH = 60;
 
-            try {
-                // Dibujar placeholder mientras carga (o si falla)
-                doc.setFillColor(200, 200, 200);
-                doc.rect(margin, y, 90, 60, 'F');
+            if (solarImgData) {
+                try {
+                    doc.addImage(solarImgData, 'JPEG', margin, y, imgW, imgH);
 
-                // Cargar imagen de manera asíncrona
-                const img = new Image();
-                img.crossOrigin = "Anonymous"; // Intentar bypass CORS
-                img.src = imgUrl;
+                    // Borde sutil a la imagen
+                    doc.setDrawColor(...colors.orange);
+                    doc.setLineWidth(0.5);
+                    doc.rect(margin, y, imgW, imgH);
 
-                // Esperar a que cargue (truco con promesa)
-                await new Promise((resolve) => {
-                    img.onload = () => {
-                        // Crear canvas temporal para convertir a dataURL (safe way)
-                        const canvas = document.createElement("canvas");
-                        canvas.width = img.width;
-                        canvas.height = img.height;
-                        const ctx = canvas.getContext("2d");
-                        ctx.drawImage(img, 0, 0);
-                        const dataURL = canvas.toDataURL("image/jpeg");
-
-                        doc.addImage(dataURL, 'JPEG', margin, y, 90, 60);
-                        resolve();
-                    };
-                    img.onerror = () => {
-                        console.log("Error cargando imagen solar, usando fallback.");
-                        // Fallback: Dibujar un gradiente o caja simple
-                        doc.setFillColor(...colors.darkBlue);
-                        doc.rect(margin, y, 90, 60, 'F');
-                        doc.setTextColor(255, 255, 255);
-                        doc.text("SISTEMA SOLAR ORACLE", margin + 45, y + 30, { align: 'center' });
-                        resolve(); // Resolvemos igual para no bloquear el PDF
-                    };
-                });
-            } catch (e) {
-                console.error("Error handling image:", e);
+                } catch (err) {
+                    drawFallbackImage(doc, margin, y, imgW, imgH, colors);
+                }
+            } else {
+                drawFallbackImage(doc, margin, y, imgW, imgH, colors);
             }
 
             // Datos del Sistema (Texto debajo de la imagen)
@@ -1401,6 +1396,33 @@
 
             // GUARDAR Y ABRIR
             doc.save(`SolarOracle-Reporte-${data.clientNumber}.pdf`);
+        }
+
+        // Helper para cargar imagen
+        function loadImage(url) {
+            return new Promise((resolve, reject) => {
+                const img = new Image();
+                img.crossOrigin = "Anonymous";
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = img.width;
+                    canvas.height = img.height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0);
+                    resolve(canvas.toDataURL('image/jpeg'));
+                };
+                img.onerror = reject;
+                img.src = url;
+            });
+        }
+
+        // Helper fallback visual
+        function drawFallbackImage(doc, x, y, w, h, colors) {
+            doc.setFillColor(...colors.darkBlue);
+            doc.rect(x, y, w, h, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(10);
+            doc.text("SISTEMA SOLAR ORACLE", x + w / 2, y + h / 2, { align: 'center' });
         }
 
     </script>
