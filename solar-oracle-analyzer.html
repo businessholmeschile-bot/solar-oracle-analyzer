@@ -1036,7 +1036,7 @@
 
                 // Generate and download PDF
                 setTimeout(() => {
-                    generatePDF(email, name);
+                    generatePDF(email, name, phone);
 
                     // Close modal after download
                     setTimeout(() => {
@@ -1148,128 +1148,135 @@
             }
         }
 
-        // Generate PDF
-        function generatePDF(email, name) {
+        // Generate Premium PDF
+        function generatePDF(email, name, phone) {
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF();
-
             const data = window.analysisData;
 
-            // Colors
-            const orange = [255, 107, 0];
-            const darkGray = [51, 51, 51];
-            const lightGray = [153, 153, 153];
+            // --- CONFIGURACIÓN DE ESTILO ---
+            const primaryColor = [255, 107, 0]; // Naranja SolarOracle
+            const secondaryColor = [44, 62, 80]; // Azul Oscuro Profesional
+            const accentColor = [39, 174, 96];   // Verde Éxito (Ahorro)
+            const lightGray = [240, 240, 240];   // Fondo gris suave
 
-            // Header
-            doc.setFillColor(...orange);
-            doc.rect(0, 0, 210, 40, 'F');
+            // --- HEADER PREMIUM ---
+            // Fondo Naranja degradado (simulado con rect)
+            doc.setFillColor(...primaryColor);
+            doc.rect(0, 0, 210, 45, 'F');
 
+            // Título Principal
             doc.setTextColor(255, 255, 255);
-            doc.setFontSize(28);
+            doc.setFontSize(26);
             doc.setFont('helvetica', 'bold');
-            doc.text('☀️ SolarOracle', 105, 20, { align: 'center' });
+            doc.text('SOLAR ORACLE', 105, 20, { align: 'center' });
 
-            doc.setFontSize(12);
+            doc.setFontSize(14);
             doc.setFont('helvetica', 'normal');
-            doc.text('Análisis de Consumo Eléctrico', 105, 30, { align: 'center' });
+            doc.text('Informe de Factibilidad y Ahorro', 105, 30, { align: 'center' });
 
-            // Client info
-            doc.setTextColor(...darkGray);
+            // --- DATOS DEL CLIENTE (Tarjeta Flotante) ---
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(15, 55, 180, 25, 3, 3, 'F');
+            doc.setDrawColor(200, 200, 200);
+            doc.roundedRect(15, 55, 180, 25, 3, 3, 'S'); // Borde
+
+            doc.setTextColor(...secondaryColor);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'bold');
+            doc.text('PREPARADO PARA:', 20, 65);
+
+            doc.setFont('helvetica', 'normal');
+            doc.text(name || email, 20, 72);
+
+            doc.setFont('helvetica', 'bold');
+            doc.text('FECHA:', 140, 65);
+            doc.text(new Date().toLocaleDateString('es-CL'), 140, 72);
+
+            // --- RESUMEN DE AHORRO (DESTACADO) ---
+            doc.setFillColor(...lightGray);
+            doc.roundedRect(15, 90, 180, 35, 3, 3, 'F');
+
+            doc.setTextColor(...primaryColor);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.text('TU POTENCIAL DE AHORRO ANUAL', 105, 100, { align: 'center' });
+
+            doc.setTextColor(...accentColor);
+            doc.setFontSize(22);
+            doc.setFont('helvetica', 'bold');
+            doc.text(`$${data.savings1y.toLocaleString('es-CL')}`, 105, 112, { align: 'center' });
+
+            doc.setTextColor(...secondaryColor);
             doc.setFontSize(10);
             doc.setFont('helvetica', 'normal');
-            doc.text(`Generado para: ${name || email}`, 20, 50);
-            doc.text(`Fecha: ${new Date().toLocaleDateString('es-CL')}`, 20, 56);
+            doc.text('(Proyección estimada con sistema solar al 85% de cobertura)', 105, 120, { align: 'center' });
 
-            // Section 1: Datos del Cliente
-            let y = 70;
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...orange);
-            doc.text('📊 Datos del Análisis', 20, y);
+            // --- TABLA DETALLADA ---
+            let y = 135;
 
-            y += 10;
             doc.autoTable({
                 startY: y,
-                head: [['Concepto', 'Valor']],
+                head: [['CONCEPTO', 'VALOR ACTUAL', 'CON SOLAR (EST.)']],
                 body: [
-                    ['N° Cliente', data.clientNumber],
-                    ['Consumo Mensual', `${data.consumption} kWh`],
-                    ['Tarifa Actual', `$${data.currentRate}/kWh`]
+                    ['Consumo Mensual', `${data.consumption} kWh`, '30-50 kWh (Red)'],
+                    ['Costo Mensual', `$${data.currentCost}`, `$${Math.round(data.currentCost * 0.15).toLocaleString('es-CL')}`], // Aprox 15% restante
+                    ['Tarifa Eléctrica', `$${data.currentRate}/kWh`, '$0 /kWh (Solar)'],
                 ],
                 theme: 'grid',
-                headStyles: { fillColor: orange },
-                margin: { left: 20, right: 20 }
+                headStyles: { fillColor: secondaryColor, textColor: 255, fontStyle: 'bold' },
+                styles: { fontSize: 10, cellPadding: 6 },
+                alternateRowStyles: { fillColor: [249, 249, 249] },
+                margin: { left: 15, right: 15 }
             });
 
-            // Section 2: Impacto del Alza
-            y = doc.lastAutoTable.finalY + 15;
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...orange);
-            doc.text('💰 Impacto del Alza Tarifaria (61%)', 20, y);
+            // --- PROYECCIÓN A 5 AÑOS ---
+            y = doc.lastAutoTable.finalY + 10;
 
-            y += 10;
+            doc.setFontSize(12);
+            doc.setTextColor(...primaryColor);
+            doc.setFont('helvetica', 'bold');
+            doc.text('💰 Proyección de Retorno (ROI)', 15, y + 5);
+
             doc.autoTable({
-                startY: y,
-                head: [['Concepto', 'Monto']],
+                startY: y + 10,
+                head: [['PERÍODO', 'AHORRO ACUMULADO', 'ESTADO']],
                 body: [
-                    ['Costo Actual Mensual', `$${data.currentCost.toLocaleString('es-CL')}`],
-                    ['Costo con Alza (61%)', `$${data.projectedCost.toLocaleString('es-CL')}`],
-                    ['Aumento Mensual', `+$${data.monthlyIncrease.toLocaleString('es-CL')}`]
+                    ['1 Año', `$${data.savings1y.toLocaleString('es-CL')}`, 'Ahorro Inmediato'],
+                    ['3 Años', `$${data.savings3y.toLocaleString('es-CL')}`, 'Inversión Recuperada (Aprox)'],
+                    ['5 Años', `$${data.savings5y.toLocaleString('es-CL')}`, 'Ganancia Neta'],
+                    ['10 Años', `$${(data.savings1y * 10).toLocaleString('es-CL')}`, 'Libertad Energética']
                 ],
-                theme: 'grid',
-                headStyles: { fillColor: orange },
-                margin: { left: 20, right: 20 }
+                theme: 'striped',
+                headStyles: { fillColor: primaryColor, textColor: 255 },
+                styles: { fontSize: 10, cellPadding: 6 },
+                margin: { left: 15, right: 15 }
             });
 
-            // Section 3: Proyecciones de Ahorro
-            y = doc.lastAutoTable.finalY + 15;
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...orange);
-            doc.text('📈 Proyección de Ahorro con Energía Solar', 20, y);
+            // --- LLAMADO A LA ACCIÓN (CTA) ---
+            y = doc.lastAutoTable.finalY + 20;
 
-            y += 5;
+            doc.setFillColor(37, 211, 102); // Verde WhatsApp
+            doc.roundedRect(55, y, 100, 15, 8, 8, 'F');
+
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(12);
+            doc.setFont('helvetica', 'bold');
+            doc.textWithLink('📲 Hablar con un Experto en WhatsApp', 105, y + 10, {
+                align: 'center',
+                url: 'https://wa.me/56912345678?text=Hola,%20tengo%20mi%20informe%20SolarOracle%20y%20quiero%20cotizar.'
+            });
+
+            // --- FOOTER ---
+            const pageHeight = doc.internal.pageSize.height;
+            doc.setFillColor(...secondaryColor);
+            doc.rect(0, pageHeight - 20, 210, 20, 'F');
+
+            doc.setTextColor(255, 255, 255);
             doc.setFontSize(9);
-            doc.setFont('helvetica', 'italic');
-            doc.setTextColor(...lightGray);
-            doc.text('Sistema solar cubriendo el 85% del consumo', 20, y);
-
-            y += 10;
-            doc.autoTable({
-                startY: y,
-                head: [['Período', 'Ahorro Acumulado', 'Nota']],
-                body: [
-                    ['6 meses', `$${data.savings6m.toLocaleString('es-CL')}`, 'Recuperación inicial'],
-                    ['1 año', `$${data.savings1y.toLocaleString('es-CL')}`, 'Ahorro anual completo'],
-                    ['2 años', `$${data.savings2y.toLocaleString('es-CL')}`, 'ROI acelerado'],
-                    ['3 años', `$${data.savings3y.toLocaleString('es-CL')}`, 'Inversión recuperada'],
-                    ['5 años', `$${data.savings5y.toLocaleString('es-CL')}`, 'Ganancia neta']
-                ],
-                theme: 'grid',
-                headStyles: { fillColor: orange },
-                margin: { left: 20, right: 20 }
-            });
-
-            // Footer
-            const pageCount = doc.internal.getNumberOfPages();
-            for (let i = 1; i <= pageCount; i++) {
-                doc.setPage(i);
-                doc.setFontSize(8);
-                doc.setTextColor(...lightGray);
-                doc.text(
-                    'SolarOracle.cl - Energía Solar Inteligente',
-                    105,
-                    285,
-                    { align: 'center' }
-                );
-                doc.text(
-                    `Página ${i} de ${pageCount}`,
-                    105,
-                    290,
-                    { align: 'center' }
-                );
-            }
+            doc.text('SolarOracle.cl - Inteligencia Artificial Solar', 105, pageHeight - 12, { align: 'center' });
+            doc.setFontSize(7);
+            doc.text('Este informe es una simulación basada en datos promedio de radiación y tarifas vigentes.', 105, pageHeight - 7, { align: 'center' });
 
             // Save PDF
             doc.save(`SolarOracle-Analisis-${data.clientNumber}.pdf`);
