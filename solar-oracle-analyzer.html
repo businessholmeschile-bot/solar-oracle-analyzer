@@ -1144,288 +1144,569 @@
                     body: JSON.stringify(payload)
                 });
             } else {
-                console.log('Google Sheets URL not configured. Data:', payload);
+                // --- SOLAR ORACLE PRO PDF GENERATOR ---
+                // Ahora acepta returnBlob boolean para uso interno
+                async function generatePDF(email, name, phone, returnBlob = false) {
+                    const { jsPDF } = window.jspdf;
+
+                    // 0. Pre-cargar Imagen (Crucial para que no falle el PDF)
+                    // Usamos un proxy de CORS o Base64 directo si es posible. 
+                    // Para Unsplash directo, a veces 'crossOrigin = anonymous' no basta si el caché molesta.
+                    // Solución: Añadir timestamp para evitar caché agresivo.
+                    const imgUrl = "https://images.unsplash.com/photo-1682148026899-d21f17c04e80?q=80&w=1170&auto=format&fit=crop&t=" + new Date().getTime();
+
+                    let solarImgData = null;
+
+                    try {
+                        solarImgData = await loadImage(imgUrl);
+                    } catch (e) {
+                        console.warn("No se pudo cargar la imagen solar:", e);
+                        // No detenemos el PDF, solo no habrá foto.
+                    }
+
+                    const doc = new jsPDF('p', 'mm', 'a4'); // Portrait, Millimeters, A4
+                    const data = window.analysisData;
+
+                    // --- CONFIGURACIÓN DE ESTILO ---
+                    const colors = {
+                        bg: [245, 245, 245],        // Fondo General (Gris muy suave)
+                        darkBlue: [10, 25, 41],     // #0A1929 (Fondo Headers/Cards)
+                        orange: [255, 107, 0],      // #FF6B00 (Acento Principal)
+                        green: [39, 174, 96],       // #27AE60 (Éxito/Ahorro)
+                        textWhite: [255, 255, 255],
+                        textGray: [107, 114, 128],
+                        gridLine: [229, 231, 235]
+                    };
+
+                    // Helpers
+                    const width = doc.internal.pageSize.getWidth();
+                    const height = doc.internal.pageSize.getHeight();
+                    const centerX = width / 2;
+                    const margin = 15;
+
+                    // --- 1. FONDO & HEADER ---
+
+                    // Header Background (Dark Blue)
+                    doc.setFillColor(...colors.darkBlue);
+                    doc.rect(0, 0, width, 45, 'F');
+
+                    // Orange Accent Line
+                    doc.setFillColor(...colors.orange);
+                    doc.rect(0, 43, width, 2, 'F');
+
+                    // Logo & Title
+                    doc.setTextColor(...colors.textWhite);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setFontSize(24);
+                    doc.text('SOLAR ORACLE', margin, 20); // Left aligned
+
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.text('ANÁLISIS DE FACTIBILIDAD & AHORRO', margin, 27);
+
+                    // Client Info Box (Right side of header)
+                    doc.setFontSize(9);
+                    doc.text([
+                        `CLIENTE: ${name || 'Usuario Solar'}`,
+                        `FECHA: ${new Date().toLocaleDateString('es-CL')}`,
+                        `ID: ${data.clientNumber}`
+                    ], width - margin, 18, { align: 'right', lineHeightFactor: 1.5 });
+
+                    // --- 2. RESUMEN EJECUTIVO (3 CARDS) ---
+                    let y = 60;
+                    const cardWidth = (width - (margin * 2) - 10) / 3;
+                    const cardHeight = 35;
+
+                    // Función para dibujar tarjeta estilo "Dashboard"
+                    function drawCard(x, y, label, value, subLabel, isHighlight = false) {
+                        // Background
+                        doc.setFillColor(...(isHighlight ? colors.darkBlue : colors.white || [255, 255, 255]));
+                        if (isHighlight) {
+                            doc.setFillColor(...colors.darkBlue);
+                            doc.setDrawColor(...colors.orange); // Borde naranja si es destacado
+                        } else {
+                            doc.setFillColor(255, 255, 255);
+                            doc.setDrawColor(200, 200, 200);
+                        }
+
+                        doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'FD');
+
+                        // Label
+                        doc.setFontSize(8);
+                        doc.setTextColor(...(isHighlight ? [200, 200, 200] : colors.textGray));
+                        doc.text(label, x + cardWidth / 2, y + 10, { align: 'center' });
+
+                        // Value
+                        doc.setFontSize(16);
+                        doc.setFont('helvetica', 'bold');
+                        doc.setTextColor(...(isHighlight ? colors.orange : colors.darkBlue));
+                        doc.text(value, x + cardWidth / 2, y + 20, { align: 'center' });
+
+                        // SubLabel
+                        doc.setFontSize(7);
+                        doc.setFont('helvetica', 'normal');
+                        doc.setTextColor(...(isHighlight ? [150, 150, 150] : colors.textGray));
+                        doc.text(subLabel, x + cardWidth / 2, y + 28, { align: 'center' });
+                    }
+
+                    drawCard(margin, y, 'GASTO MENSUAL ACTUAL', `$${data.currentCost.toLocaleString('es-CL')}`, `${data.consumption} kWh Promedio`);
+                    drawCard(margin + cardWidth + 5, y, 'AHORRO POTENCIAL', '+70%', 'Reducción Estimada', true);
+                    drawCard(margin + (cardWidth + 5) * 2, y, 'NUEVA BOLETA ESTIMADA', `$${Math.round(data.currentCost * 0.3).toLocaleString('es-CL')}`, 'Con Energía Solar');
+
+                    // --- 3. IMAGEN & GRÁFICO (PROYECCIÓN FINANCIERA) ---
+                    y += 45;
+
+                    // Título Sección
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.setTextColor(...colors.darkBlue);
+                    doc.text('PROYECCIÓN DE SISTEMA SOLAR', margin, y);
+
+                    // Línea separadora
+                    doc.setDrawColor(220, 220, 220);
+                    doc.line(margin, y + 2, width - margin, y + 2);
+
+                    y += 10;
+
+                    // RENDERIZAR IMAGEN (Si se cargó correctamente)
+                    const imgW = 90;
+                    const imgH = 60;
+
+                    if (solarImgData) {
+                        try {
+                            doc.addImage(solarImgData, 'JPEG', margin, y, imgW, imgH);
+
+                            // Borde sutil a la imagen
+                            doc.setDrawColor(...colors.orange);
+                            doc.setLineWidth(0.5);
+                            doc.rect(margin, y, imgW, imgH);
+
+                        } catch (err) {
+                            drawFallbackImage(doc, margin, y, imgW, imgH, colors);
+                        }
+                    } else {
+                        drawFallbackImage(doc, margin, y, imgW, imgH, colors);
+                    }
+
+                    // Datos del Sistema (Texto debajo de la imagen)
+                    doc.setFontSize(10);
+                    doc.setTextColor(...colors.darkBlue);
+                    doc.text('SISTEMA RECOMENDADO', margin, y + 70);
+                    doc.setFontSize(8);
+                    doc.setTextColor(...colors.textGray);
+                    doc.text([
+                        '• Potencia Estimada: 3.5 kWp',
+                        '• Paneles: Monocristalinos Tier-1',
+                        '• Inversor: Híbrido Inteligente',
+                        '• Vida Útil: +25 Años'
+                    ], margin, y + 76, { lineHeightFactor: 1.5 });
+
+
+                    // --- GRÁFICO DE LÍNEAS (VECTORIAL MANUAL) ---
+                    // Ubicación derecha
+                    const chartX = margin + 100;
+                    const chartY = y;
+                    const chartW = 80;
+                    const chartH = 60;
+
+                    // Ejes
+                    doc.setDrawColor(200, 200, 200);
+                    doc.line(chartX, chartY, chartX, chartY + chartH); // Eje Y
+                    doc.line(chartX, chartY + chartH, chartX + chartW, chartY + chartH); // Eje X
+
+                    // Datos simulados de ahorro acumulado (Curva exponencial suave)
+                    const points = [0, 0.15, 0.35, 0.60, 0.85, 1.0]; // % de altura
+                    const savingsTotal = data.savings5y;
+
+                    // Dibujar Línea de Ahorro (Naranja)
+                    doc.setDrawColor(...colors.orange);
+                    doc.setLineWidth(1.5);
+
+                    let prevX = chartX;
+                    let prevY = chartY + chartH; // Empieza abajo (0)
+
+                    for (let i = 1; i <= 5; i++) {
+                        const nextX = chartX + (chartW / 5) * i;
+                        const nextY = chartY + chartH - (chartH * points[i]); // Sube según punto
+
+                        doc.line(prevX, prevY, nextX, nextY);
+
+                        // Punto en cada año
+                        doc.setFillColor(...colors.orange);
+                        doc.circle(nextX, nextY, 1.5, 'F');
+
+                        prevX = nextX;
+                        prevY = nextY;
+                    }
+
+                    // Etiquetas del Gráfico
+                    doc.setFontSize(8);
+                    doc.setTextColor(...colors.textGray);
+                    doc.text('Ahorro Acumulado (5 Años)', chartX + chartW / 2, chartY - 5, { align: 'center' });
+                    doc.text('Año 1', chartX + (chartW / 5), chartY + chartH + 5, { align: 'center' });
+                    doc.text('Año 5', chartX + chartW, chartY + chartH + 5, { align: 'center' });
+
+                    // --- 4. DETALLE FINANCIERO (TABLA) ---
+                    y += 95;
+
+                    doc.autoTable({
+                        startY: y,
+                        head: [['CONCEPTO', 'HOY (SIN SOLAR)', 'FUTURO (CON SOLAR)']],
+                        body: [
+                            ['Pago Mensual Promedio', `$${data.currentCost.toLocaleString('es-CL')}`, `$${Math.round(data.currentCost * 0.3).toLocaleString('es-CL')}`],
+                            ['Gasto Anual Proyectado', `$${(data.currentCost * 12).toLocaleString('es-CL')}`, `$${Math.round(data.currentCost * 12 * 0.3).toLocaleString('es-CL')}`],
+                            ['Protección contra Alzas', 'NULA (Expuesto a 61%)', 'TOTAL (Autogeneración)'],
+                        ],
+                        theme: 'grid',
+                        headStyles: { fillColor: colors.darkBlue, textColor: 255, fontStyle: 'bold' },
+                        styles: { fontSize: 9, cellPadding: 5 },
+                        alternateRowStyles: { fillColor: [249, 250, 251] },
+                        margin: { left: margin, right: margin }
+                    });
+
+                    // --- 5. CALL TO ACTION ---
+                    y = doc.lastAutoTable.finalY + 15;
+
+                    doc.setFillColor(...colors.orange);
+                    doc.roundedRect(margin, y, width - (margin * 2), 20, 3, 3, 'F');
+
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(12);
+                    doc.setFont('helvetica', 'bold');
+                    doc.text('¿LISTO PARA AHORRAR?', centerX, y + 8, { align: 'center' });
+
+                    doc.setFontSize(10);
+                    doc.setFont('helvetica', 'normal');
+                    doc.textWithLink('Hablemos por WhatsApp para activar tu proyecto: +56 9 1234 5678', centerX, y + 15, {
+                        align: 'center',
+                        url: 'https://wa.me/56912345678'
+                    });
+
+                    // --- FOOTER ---
+                    const pageHeight = doc.internal.pageSize.getHeight();
+                    doc.setFillColor(...colors.darkBlue);
+                    doc.rect(0, pageHeight - 15, width, 15, 'F');
+
+                    doc.setFontSize(8);
+                    doc.setTextColor(200, 200, 200);
+                    doc.text('SolarOracle.cl - Informe generado automáticamente con IA', centerX, pageHeight - 6, { align: 'center' });
+
+                    // CONDICIONAL: GUARDAR Y ABRIR O RETORNAR BLOB
+                    if (returnBlob) {
+                        return doc.output('datauristring'); // Retorna base64 completo
+                    } else {
+                        doc.save(`SolarOracle-Analisis-${data.clientNumber}.pdf`);
+                    }
+                }
+
+                // Helper para cargar imagen
+                function loadImage(url) {
+                    return new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.crossOrigin = "Anonymous";
+                        img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            canvas.width = img.width;
+                            canvas.height = img.height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.drawImage(img, 0, 0);
+                            resolve(canvas.toDataURL('image/jpeg'));
+                        };
+                        img.onerror = reject;
+                        img.src = url;
+                    });
+                }
+
+                // Helper fallback visual
+                function drawFallbackImage(doc, x, y, w, h, colors) {
+                    doc.setFillColor(...colors.darkBlue);
+                    doc.rect(x, y, w, h, 'F');
+                    doc.setTextColor(255, 255, 255);
+                    doc.setFontSize(10);
+                    doc.text("SISTEMA SOLAR ORACLE", x + w / 2, y + h / 2, { align: 'center' });
+                }
             }
-        }
 
-        // --- SOLAR ORACLE PRO PDF GENERATOR ---
-        async function generatePDF(email, name, phone) {
-            const { jsPDF } = window.jspdf;
-
-            // 0. Pre-cargar Imagen (Crucial para que no falle el PDF)
-            // Usamos un proxy de CORS o Base64 directo si es posible. 
-            // Para Unsplash directo, a veces 'crossOrigin = anonymous' no basta si el caché molesta.
-            // Solución: Añadir timestamp para evitar caché agresivo.
-            const imgUrl = "https://images.unsplash.com/photo-1682148026899-d21f17c04e80?q=80&w=1170&auto=format&fit=crop&t=" + new Date().getTime();
-
-            let solarImgData = null;
-
-            try {
-                solarImgData = await loadImage(imgUrl);
-            } catch (e) {
-                console.warn("No se pudo cargar la imagen solar:", e);
-                // No detenemos el PDF, solo no habrá foto.
-            }
-
-            const doc = new jsPDF('p', 'mm', 'a4'); // Portrait, Millimeters, A4
-            const data = window.analysisData;
-
-            // --- CONFIGURACIÓN DE ESTILO ---
-            const colors = {
-                bg: [245, 245, 245],        // Fondo General (Gris muy suave)
-                darkBlue: [10, 25, 41],     // #0A1929 (Fondo Headers/Cards)
-                orange: [255, 107, 0],      // #FF6B00 (Acento Principal)
-                green: [39, 174, 96],       // #27AE60 (Éxito/Ahorro)
-                textWhite: [255, 255, 255],
-                textGray: [107, 114, 128],
-                gridLine: [229, 231, 235]
+            const ELEMENTS = {
+                uploadArea: document.getElementById('uploadArea'),
+                fileInput: document.getElementById('fileInput'),
+                processing: document.getElementById('processingSection'),
+                progressBar: document.getElementById('progressBar'),
+                terminal: document.getElementById('terminal'),
+                results: document.getElementById('resultsSection'),
+                resetBtn: document.getElementById('resetButton'),
+                emailModal: document.getElementById('emailModal'),
+                closeModal: document.getElementById('closeModal'),
+                emailForm: document.getElementById('emailForm'),
+                userEmail: document.getElementById('userEmail'),
+                userName: document.getElementById('userName'),
+                userPhone: document.getElementById('userPhone'),
+                downloadBtn: document.getElementById('downloadPdfButton'),
+                successMsg: document.getElementById('successMessage'),
+                submitBtn: document.getElementById('submitEmail')
             };
 
-            // Helpers
-            const width = doc.internal.pageSize.getWidth();
-            const height = doc.internal.pageSize.getHeight();
-            const centerX = width / 2;
-            const margin = 15;
+            // Store File
+            let selectedFile = null;
 
-            // --- 1. FONDO & HEADER ---
+            // --- EVENT LISTENERS ---
+            ELEMENTS.uploadArea.addEventListener('click', () => ELEMENTS.fileInput.click());
 
-            // Header Background (Dark Blue)
-            doc.setFillColor(...colors.darkBlue);
-            doc.rect(0, 0, width, 45, 'F');
-
-            // Orange Accent Line
-            doc.setFillColor(...colors.orange);
-            doc.rect(0, 43, width, 2, 'F');
-
-            // Logo & Title
-            doc.setTextColor(...colors.textWhite);
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(24);
-            doc.text('SOLAR ORACLE', margin, 20); // Left aligned
-
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text('ANÁLISIS DE FACTIBILIDAD & AHORRO', margin, 27);
-
-            // Client Info Box (Right side of header)
-            doc.setFontSize(9);
-            doc.text([
-                `CLIENTE: ${name || 'Usuario Solar'}`,
-                `FECHA: ${new Date().toLocaleDateString('es-CL')}`,
-                `ID: ${data.clientNumber}`
-            ], width - margin, 18, { align: 'right', lineHeightFactor: 1.5 });
-
-            // --- 2. RESUMEN EJECUTIVO (3 CARDS) ---
-            let y = 60;
-            const cardWidth = (width - (margin * 2) - 10) / 3;
-            const cardHeight = 35;
-
-            // Función para dibujar tarjeta estilo "Dashboard"
-            function drawCard(x, y, label, value, subLabel, isHighlight = false) {
-                // Background
-                doc.setFillColor(...(isHighlight ? colors.darkBlue : colors.white || [255, 255, 255]));
-                if (isHighlight) {
-                    doc.setFillColor(...colors.darkBlue);
-                    doc.setDrawColor(...colors.orange); // Borde naranja si es destacado
-                } else {
-                    doc.setFillColor(255, 255, 255);
-                    doc.setDrawColor(200, 200, 200);
-                }
-
-                doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'FD');
-
-                // Label
-                doc.setFontSize(8);
-                doc.setTextColor(...(isHighlight ? [200, 200, 200] : colors.textGray));
-                doc.text(label, x + cardWidth / 2, y + 10, { align: 'center' });
-
-                // Value
-                doc.setFontSize(16);
-                doc.setFont('helvetica', 'bold');
-                doc.setTextColor(...(isHighlight ? colors.orange : colors.darkBlue));
-                doc.text(value, x + cardWidth / 2, y + 20, { align: 'center' });
-
-                // SubLabel
-                doc.setFontSize(7);
-                doc.setFont('helvetica', 'normal');
-                doc.setTextColor(...(isHighlight ? [150, 150, 150] : colors.textGray));
-                doc.text(subLabel, x + cardWidth / 2, y + 28, { align: 'center' });
-            }
-
-            drawCard(margin, y, 'GASTO MENSUAL ACTUAL', `$${data.currentCost.toLocaleString('es-CL')}`, `${data.consumption} kWh Promedio`);
-            drawCard(margin + cardWidth + 5, y, 'AHORRO POTENCIAL', '+70%', 'Reducción Estimada', true);
-            drawCard(margin + (cardWidth + 5) * 2, y, 'NUEVA BOLETA ESTIMADA', `$${Math.round(data.currentCost * 0.3).toLocaleString('es-CL')}`, 'Con Energía Solar');
-
-            // --- 3. IMAGEN & GRÁFICO (PROYECCIÓN FINANCIERA) ---
-            y += 45;
-
-            // Título Sección
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.setTextColor(...colors.darkBlue);
-            doc.text('PROYECCIÓN DE SISTEMA SOLAR', margin, y);
-
-            // Línea separadora
-            doc.setDrawColor(220, 220, 220);
-            doc.line(margin, y + 2, width - margin, y + 2);
-
-            y += 10;
-
-            // RENDERIZAR IMAGEN (Si se cargó correctamente)
-            const imgW = 90;
-            const imgH = 60;
-
-            if (solarImgData) {
-                try {
-                    doc.addImage(solarImgData, 'JPEG', margin, y, imgW, imgH);
-
-                    // Borde sutil a la imagen
-                    doc.setDrawColor(...colors.orange);
-                    doc.setLineWidth(0.5);
-                    doc.rect(margin, y, imgW, imgH);
-
-                } catch (err) {
-                    drawFallbackImage(doc, margin, y, imgW, imgH, colors);
-                }
-            } else {
-                drawFallbackImage(doc, margin, y, imgW, imgH, colors);
-            }
-
-            // Datos del Sistema (Texto debajo de la imagen)
-            doc.setFontSize(10);
-            doc.setTextColor(...colors.darkBlue);
-            doc.text('SISTEMA RECOMENDADO', margin, y + 70);
-            doc.setFontSize(8);
-            doc.setTextColor(...colors.textGray);
-            doc.text([
-                '• Potencia Estimada: 3.5 kWp',
-                '• Paneles: Monocristalinos Tier-1',
-                '• Inversor: Híbrido Inteligente',
-                '• Vida Útil: +25 Años'
-            ], margin, y + 76, { lineHeightFactor: 1.5 });
-
-
-            // --- GRÁFICO DE LÍNEAS (VECTORIAL MANUAL) ---
-            // Ubicación derecha
-            const chartX = margin + 100;
-            const chartY = y;
-            const chartW = 80;
-            const chartH = 60;
-
-            // Ejes
-            doc.setDrawColor(200, 200, 200);
-            doc.line(chartX, chartY, chartX, chartY + chartH); // Eje Y
-            doc.line(chartX, chartY + chartH, chartX + chartW, chartY + chartH); // Eje X
-
-            // Datos simulados de ahorro acumulado (Curva exponencial suave)
-            const points = [0, 0.15, 0.35, 0.60, 0.85, 1.0]; // % de altura
-            const savingsTotal = data.savings5y;
-
-            // Dibujar Línea de Ahorro (Naranja)
-            doc.setDrawColor(...colors.orange);
-            doc.setLineWidth(1.5);
-
-            let prevX = chartX;
-            let prevY = chartY + chartH; // Empieza abajo (0)
-
-            for (let i = 1; i <= 5; i++) {
-                const nextX = chartX + (chartW / 5) * i;
-                const nextY = chartY + chartH - (chartH * points[i]); // Sube según punto
-
-                doc.line(prevX, prevY, nextX, nextY);
-
-                // Punto en cada año
-                doc.setFillColor(...colors.orange);
-                doc.circle(nextX, nextY, 1.5, 'F');
-
-                prevX = nextX;
-                prevY = nextY;
-            }
-
-            // Etiquetas del Gráfico
-            doc.setFontSize(8);
-            doc.setTextColor(...colors.textGray);
-            doc.text('Ahorro Acumulado (5 Años)', chartX + chartW / 2, chartY - 5, { align: 'center' });
-            doc.text('Año 1', chartX + (chartW / 5), chartY + chartH + 5, { align: 'center' });
-            doc.text('Año 5', chartX + chartW, chartY + chartH + 5, { align: 'center' });
-
-            // --- 4. DETALLE FINANCIERO (TABLA) ---
-            y += 95;
-
-            doc.autoTable({
-                startY: y,
-                head: [['CONCEPTO', 'HOY (SIN SOLAR)', 'FUTURO (CON SOLAR)']],
-                body: [
-                    ['Pago Mensual Promedio', `$${data.currentCost.toLocaleString('es-CL')}`, `$${Math.round(data.currentCost * 0.3).toLocaleString('es-CL')}`],
-                    ['Gasto Anual Proyectado', `$${(data.currentCost * 12).toLocaleString('es-CL')}`, `$${Math.round(data.currentCost * 12 * 0.3).toLocaleString('es-CL')}`],
-                    ['Protección contra Alzas', 'NULA (Expuesto a 61%)', 'TOTAL (Autogeneración)'],
-                ],
-                theme: 'grid',
-                headStyles: { fillColor: colors.darkBlue, textColor: 255, fontStyle: 'bold' },
-                styles: { fontSize: 9, cellPadding: 5 },
-                alternateRowStyles: { fillColor: [249, 250, 251] },
-                margin: { left: margin, right: margin }
+            ELEMENTS.uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                ELEMENTS.uploadArea.classList.add('dragover');
             });
 
-            // --- 5. CALL TO ACTION ---
-            y = doc.lastAutoTable.finalY + 15;
-
-            doc.setFillColor(...colors.orange);
-            doc.roundedRect(margin, y, width - (margin * 2), 20, 3, 3, 'F');
-
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(12);
-            doc.setFont('helvetica', 'bold');
-            doc.text('¿LISTO PARA AHORRAR?', centerX, y + 8, { align: 'center' });
-
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.textWithLink('Hablemos por WhatsApp para activar tu proyecto: +56 9 1234 5678', centerX, y + 15, {
-                align: 'center',
-                url: 'https://wa.me/56912345678'
+            ELEMENTS.uploadArea.addEventListener('dragleave', () => {
+                ELEMENTS.uploadArea.classList.remove('dragover');
             });
 
-            // --- FOOTER ---
-            const pageHeight = doc.internal.pageSize.getHeight();
-            doc.setFillColor(...colors.darkBlue);
-            doc.rect(0, pageHeight - 15, width, 15, 'F');
+            ELEMENTS.uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                ELEMENTS.uploadArea.classList.remove('dragover');
+                if (e.dataTransfer.files.length) {
+                    handleFile(e.dataTransfer.files[0]);
+                }
+            });
 
-            doc.setFontSize(8);
-            doc.setTextColor(200, 200, 200);
-            doc.text('SolarOracle.cl - Informe generado automáticamente con IA', centerX, pageHeight - 6, { align: 'center' });
+            ELEMENTS.fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
 
-            // GUARDAR Y ABRIR
-            doc.save(`SolarOracle-Reporte-${data.clientNumber}.pdf`);
-        }
+            ELEMENTS.resetBtn.addEventListener('click', resetApp);
+            ELEMENTS.downloadBtn.addEventListener('click', () => {
+                ELEMENTS.emailModal.classList.add('active');
+            });
 
-        // Helper para cargar imagen
-        function loadImage(url) {
-            return new Promise((resolve, reject) => {
-                const img = new Image();
-                img.crossOrigin = "Anonymous";
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0);
-                    resolve(canvas.toDataURL('image/jpeg'));
+            ELEMENTS.closeModal.addEventListener('click', () => {
+                ELEMENTS.emailModal.classList.remove('active');
+            });
+
+            ELEMENTS.emailForm.addEventListener('submit', handleDownload);
+
+            // --- LOGIC ---
+
+            function handleFile(file) {
+                selectedFile = file;
+                ELEMENTS.uploadArea.style.display = 'none';
+                ELEMENTS.processing.style.display = 'block';
+
+                logTerminal('Iniciando análisis del archivo: ' + file.name);
+                simulateProcessing();
+            }
+
+            function logTerminal(text, type = 'info') {
+                const line = document.createElement('div');
+                line.className = `terminal-line ${type}`;
+                line.innerText = text;
+                ELEMENTS.terminal.appendChild(line);
+                ELEMENTS.terminal.scrollTop = ELEMENTS.terminal.scrollHeight;
+            }
+
+            function simulateProcessing() {
+                let progress = 0;
+                const steps = [
+                    { p: 10, t: 'Extrayendo texto del documento...' },
+                    { p: 30, t: 'Identificando N° Cliente y Distribuidora...' },
+                    { p: 50, t: 'Analizando historial de consumo (kWh)...' },
+                    { p: 70, t: 'Calculando proyección tarifaria 2026...' },
+                    { p: 90, t: 'Simulando generación solar fotovoltaica...' },
+                    { p: 100, t: 'Análisis completado exitosamente.' }
+                ];
+
+                let stepIndex = 0;
+
+                const interval = setInterval(() => {
+                    progress += Math.floor(Math.random() * 5) + 1;
+                    if (progress > 100) progress = 100;
+
+                    ELEMENTS.progressBar.style.width = progress + '%';
+                    ELEMENTS.progressBar.innerText = progress + '%';
+
+                    if (stepIndex < steps.length && progress >= steps[stepIndex].p) {
+                        logTerminal(steps[stepIndex].t, progress === 100 ? 'success' : 'info');
+                        stepIndex++;
+                    }
+
+                    if (progress === 100) {
+                        clearInterval(interval);
+                        setTimeout(showResults, 1000);
+                    }
+                }, 150);
+            }
+
+            function showResults() {
+                // Mock Data extraction (randomized for realism)
+                const baseConsumption = Math.floor(Math.random() * (450 - 250) + 250); // 250-450 kWh
+                const rate = 145; // CLP/kWh approx
+                const currentCost = baseConsumption * rate;
+
+                // Calculations
+                const projectedCost = Math.round(currentCost * 1.61); // +61%
+                const monthlyIncrease = projectedCost - currentCost;
+
+                const solarCoverage = 0.85; // 85%
+                const newBill = Math.round(currentCost * (1 - solarCoverage));
+                const monthlySavings = currentCost - newBill;
+
+                const data = {
+                    clientNumber: Math.floor(Math.random() * 8999999) + 1000000,
+                    consumption: baseConsumption,
+                    currentRate: rate,
+                    currentCost: currentCost,
+                    projectedCost: projectedCost,
+                    monthlyIncrease: monthlyIncrease,
+                    monthlySavings: monthlySavings,
+                    savings6m: monthlySavings * 6,
+                    savings1y: monthlySavings * 12,
+                    savings2y: monthlySavings * 24,
+                    savings3y: monthlySavings * 36,
+                    savings5y: monthlySavings * 60,
+                    // File Metadata
+                    fileName: selectedFile.name,
+                    fileType: selectedFile.type,
+                    fileSize: selectedFile.size
                 };
-                img.onerror = reject;
-                img.src = url;
-            });
-        }
 
-        // Helper fallback visual
-        function drawFallbackImage(doc, x, y, w, h, colors) {
-            doc.setFillColor(...colors.darkBlue);
-            doc.rect(x, y, w, h, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(10);
-            doc.text("SISTEMA SOLAR ORACLE", x + w / 2, y + h / 2, { align: 'center' });
-        }
+                // Store for PDF
+                window.analysisData = data;
 
+                // Render
+                document.getElementById('clientNumber').innerText = data.clientNumber;
+                document.getElementById('consumption').innerText = data.consumption + ' kWh';
+                document.getElementById('currentRate').innerText = '$' + data.currentRate;
+
+                document.getElementById('currentCost').innerText = formatCurrency(data.currentCost);
+                document.getElementById('projectedCost').innerText = formatCurrency(data.projectedCost);
+                document.getElementById('monthlyIncrease').innerText = '+ ' + formatCurrency(data.monthlyIncrease);
+
+                document.getElementById('savings6m').innerText = formatCurrency(data.savings6m);
+                document.getElementById('savings1y').innerText = formatCurrency(data.savings1y);
+                document.getElementById('savings2y').innerText = formatCurrency(data.savings2y);
+                document.getElementById('savings3y').innerText = formatCurrency(data.savings3y);
+                document.getElementById('savings5y').innerText = formatCurrency(data.savings5y);
+
+                ELEMENTS.processing.style.display = 'none';
+                ELEMENTS.results.style.display = 'block';
+            }
+
+            function formatCurrency(val) {
+                return new Intl.NumberFormat('es-CL', { style: 'currency', currency: 'CLP', maximumFractionDigits: 0 }).format(val);
+            }
+
+            function resetApp() {
+                selectedFile = null;
+                ELEMENTS.fileInput.value = '';
+                ELEMENTS.results.style.display = 'none';
+                ELEMENTS.uploadArea.style.display = 'block';
+                ELEMENTS.progressBar.style.width = '0%';
+                ELEMENTS.terminal.innerHTML = '';
+            }
+
+            // --- FORM SUBMIT & PDF DOWNLOAD ---
+            async function handleDownload(e) {
+                e.preventDefault();
+
+                const email = ELEMENTS.userEmail.value;
+                const name = ELEMENTS.userName.value;
+                const phone = ELEMENTS.userPhone.value;
+
+                if (!validateEmail(email)) {
+                    document.getElementById('emailError').classList.add('show');
+                    return;
+                }
+
+                // UI Feedback
+                const subBtn = ELEMENTS.submitBtn;
+                const originalText = subBtn.innerText;
+                subBtn.innerText = 'Generando...';
+                subBtn.disabled = true;
+
+                try {
+                    document.getElementById('emailError').classList.remove('show');
+
+                    // 1. Descargar PDF al usuario (Acción principal)
+                    await generatePDF(email, name, phone, false);
+
+                    // 2. Generar PDF Blob para enviar al Backend
+                    const generatedPdfBase64 = await generatePDF(email, name, phone, true);
+
+                    ELEMENTS.successMsg.classList.add('show');
+
+                    // 3. Send Data to Google Sheets (Async)
+                    await sendDataToGoogleSheets(email, name, phone, generatedPdfBase64);
+
+                    setTimeout(() => {
+                        ELEMENTS.emailModal.classList.remove('active');
+                        subBtn.innerText = originalText;
+                        subBtn.disabled = false;
+                        ELEMENTS.successMsg.classList.remove('show');
+                    }, 3000);
+
+                } catch (error) {
+                    console.error(error);
+                    subBtn.innerText = originalText;
+                    subBtn.disabled = false;
+                    alert('Hubo un error al procesar tu solicitud. Intenta nuevamente.');
+                }
+            }
+
+            function validateEmail(email) {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+            }
+
+            // --- GOOGLE SHEETS INTEGRATION ---
+            async function sendDataToGoogleSheets(email, name, phone, generatedPdfBase64) {
+                if (!selectedFile) return;
+
+                const reader = new FileReader();
+
+                // Convert File to Base64
+                const fileBase64 = await new Promise((resolve) => {
+                    reader.readAsDataURL(selectedFile);
+                    reader.onload = () => resolve(reader.result);
+                });
+
+                const payload = {
+                    ...window.analysisData,
+                    email: email,
+                    name: name,
+                    phone: phone,
+                    timestamp: new Date().toISOString(),
+                    userAgent: navigator.userAgent,
+                    language: navigator.language,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    screenResolution: `${window.screen.width}x${window.screen.height}`,
+                    referrer: document.referrer,
+                    sourceUrl: window.location.href,
+                    fileBase64: fileBase64,  // Boleta Original
+                    generatedPdfBase64: generatedPdfBase64 // PDF generado por sistema
+                };
+
+                // URL del Web App de Google Apps Script 
+                const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbygR6r0R40y9FfKywVpD1Q_e7Lz4Q-5r8d0wQ_C-OVRw0k5yD4q0C1-L2_XN4fX4q1B/exec';
+
+                // Send POST using no-cors (fire and forget for browser, but logs in script)
+                // Note: 'no-cors' prevents reading response json, but allows sending data without preflight effectively.
+                // For better error handling, we would need CORS enabled on script properly.
+                // Google Apps Script usually redirects, so fetch follows.
+
+                try {
+                    await fetch(SCRIPT_URL, {
+                        method: 'POST',
+                        mode: 'no-cors',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    console.log('Datos enviados a Google Sheets (Fire & Forget)');
+                } catch (err) {
+                    console.error('Error enviando a Sheets:', err);
+                }
+            }
     </script>
+
 </body>
 
 </html>

@@ -123,8 +123,26 @@ function uploadToDrive(base64Data, fileName, email, timestamp) {
 // Función Email al ADMIN
 function sendEmailToAdmin(data, driveUrl) {
   const adminEmail = 'solaroracle.cl@gmail.com';
-  const base64Content = data.fileBase64.split(',')[1];
-  const blob = Utilities.newBlob(Utilities.base64Decode(base64Content), getMimeType(data.fileName), data.fileName);
+
+  // Array de adjuntos
+  const attachments = [];
+
+  // 1. Adjuntar Boleta Original (si existe)
+  if (data.fileBase64) {
+    const splitBase64 = data.fileBase64.split(',');
+    const content = splitBase64.length > 1 ? splitBase64[1] : splitBase64[0];
+    const blob = Utilities.newBlob(Utilities.base64Decode(content), getMimeType(data.fileName), 'Boleta_Cliente_' + data.fileName);
+    attachments.push(blob);
+  }
+
+  // 2. Adjuntar PDF Generado (si existe)
+  if (data.generatedPdfBase64) {
+    // datauristring viene como "data:application/pdf;filename=generated.pdf;base64,....."
+    const splitPdf = data.generatedPdfBase64.split(',');
+    const contentPdf = splitPdf.length > 1 ? splitPdf[1] : splitPdf[0];
+    const blobPdf = Utilities.newBlob(Utilities.base64Decode(contentPdf), 'application/pdf', `Analisis_SolarOracle_${data.clientNumber}.pdf`);
+    attachments.push(blobPdf);
+  }
 
   const subject = `🔥 Nuevo Lead: ${data.name || 'Sin nombre'} (${data.email})`;
   const body = `
@@ -132,7 +150,7 @@ function sendEmailToAdmin(data, driveUrl) {
     <p><strong>Cliente:</strong> ${data.name}</p>
     <p><strong>Email:</strong> ${data.email}</p>
     <p><strong>Teléfono:</strong> <a href="tel:${data.phone}">${data.phone}</a></p>
-    <p><strong>Link Boleta Drive:</strong> <a href="${driveUrl}">Ver Boleta</a></p>
+    <p><strong>Link Boleta Drive:</strong> <a href="${driveUrl}">Ver Boleta en Drive</a></p>
     <hr>
     <h3>Resumen Análisis:</h3>
     <ul>
@@ -140,13 +158,14 @@ function sendEmailToAdmin(data, driveUrl) {
       <li>Ahorro 1 Año: ${data.savings1y}</li>
       <li>Inversión 5 Años: ${data.savings5y}</li>
     </ul>
+    <p><em>Se adjuntan: Boleta original del cliente y Reporte PDF generado.</em></p>
   `;
 
   MailApp.sendEmail({
     to: adminEmail,
     subject: subject,
     htmlBody: body,
-    attachments: [blob],
+    attachments: attachments,
     name: 'SolarOracle Bot'
   });
 }
