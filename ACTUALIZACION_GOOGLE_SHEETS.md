@@ -11,7 +11,7 @@
 ### Backend (Google Apps Script)
 ✅ Recepción de todos los datos extendidos
 ✅ Almacenamiento automático de boletas en Google Drive
-✅ Organización por carpetas: `SolarOracle - Boletas/YYYY-MM/`
+✅ Organización por carpetas: `SolarOracle/YYYY-MM/`
 ✅ Link directo a cada boleta en el Google Sheet
 
 ---
@@ -99,7 +99,7 @@ Los archivos se guardarán automáticamente en:
 
 ```
 Google Drive/
-└── SolarOracle - Boletas/
+└── SolarOracle/
     ├── 2026-02/
     │   ├── test_example_com_1739123456789.pdf
     │   └── juan_perez_gmail_com_1739234567890.pdf

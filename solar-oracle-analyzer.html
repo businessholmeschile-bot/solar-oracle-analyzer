@@ -1148,138 +1148,259 @@
             }
         }
 
-        // Generate Premium PDF
-        function generatePDF(email, name, phone) {
+        // --- SOLAR ORACLE PRO PDF GENERATOR ---
+        async function generatePDF(email, name, phone) {
             const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+            const doc = new jsPDF('p', 'mm', 'a4'); // Portrait, Millimeters, A4
             const data = window.analysisData;
 
             // --- CONFIGURACIÓN DE ESTILO ---
-            const primaryColor = [255, 107, 0]; // Naranja SolarOracle
-            const secondaryColor = [44, 62, 80]; // Azul Oscuro Profesional
-            const accentColor = [39, 174, 96];   // Verde Éxito (Ahorro)
-            const lightGray = [240, 240, 240];   // Fondo gris suave
+            const colors = {
+                bg: [245, 245, 245],        // Fondo General (Gris muy suave)
+                darkBlue: [10, 25, 41],     // #0A1929 (Fondo Headers/Cards)
+                orange: [255, 107, 0],      // #FF6B00 (Acento Principal)
+                green: [39, 174, 96],       // #27AE60 (Éxito/Ahorro)
+                textWhite: [255, 255, 255],
+                textGray: [107, 114, 128],
+                gridLine: [229, 231, 235]
+            };
 
-            // --- HEADER PREMIUM ---
-            // Fondo Naranja degradado (simulado con rect)
-            doc.setFillColor(...primaryColor);
-            doc.rect(0, 0, 210, 45, 'F');
+            // Helpers
+            const width = doc.internal.pageSize.getWidth();
+            const height = doc.internal.pageSize.getHeight();
+            const centerX = width / 2;
+            const margin = 15;
 
-            // Título Principal
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(26);
+            // --- 1. FONDO & HEADER ---
+
+            // Header Background (Dark Blue)
+            doc.setFillColor(...colors.darkBlue);
+            doc.rect(0, 0, width, 45, 'F');
+
+            // Orange Accent Line
+            doc.setFillColor(...colors.orange);
+            doc.rect(0, 43, width, 2, 'F');
+
+            // Logo & Title
+            doc.setTextColor(...colors.textWhite);
             doc.setFont('helvetica', 'bold');
-            doc.text('SOLAR ORACLE', 105, 20, { align: 'center' });
+            doc.setFontSize(24);
+            doc.text('SOLAR ORACLE', margin, 20); // Left aligned
 
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'normal');
-            doc.text('Informe de Factibilidad y Ahorro', 105, 30, { align: 'center' });
-
-            // --- DATOS DEL CLIENTE (Tarjeta Flotante) ---
-            doc.setFillColor(255, 255, 255);
-            doc.roundedRect(15, 55, 180, 25, 3, 3, 'F');
-            doc.setDrawColor(200, 200, 200);
-            doc.roundedRect(15, 55, 180, 25, 3, 3, 'S'); // Borde
-
-            doc.setTextColor(...secondaryColor);
             doc.setFontSize(10);
-            doc.setFont('helvetica', 'bold');
-            doc.text('PREPARADO PARA:', 20, 65);
-
             doc.setFont('helvetica', 'normal');
-            doc.text(name || email, 20, 72);
+            doc.text('ANÁLISIS DE FACTIBILIDAD & AHORRO', margin, 27);
 
-            doc.setFont('helvetica', 'bold');
-            doc.text('FECHA:', 140, 65);
-            doc.text(new Date().toLocaleDateString('es-CL'), 140, 72);
+            // Client Info Box (Right side of header)
+            doc.setFontSize(9);
+            doc.text([
+                `CLIENTE: ${name || 'Usuario Solar'}`,
+                `FECHA: ${new Date().toLocaleDateString('es-CL')}`,
+                `ID: ${data.clientNumber}`
+            ], width - margin, 18, { align: 'right', lineHeightFactor: 1.5 });
 
-            // --- RESUMEN DE AHORRO (DESTACADO) ---
-            doc.setFillColor(...lightGray);
-            doc.roundedRect(15, 90, 180, 35, 3, 3, 'F');
+            // --- 2. RESUMEN EJECUTIVO (3 CARDS) ---
+            let y = 60;
+            const cardWidth = (width - (margin * 2) - 10) / 3;
+            const cardHeight = 35;
 
-            doc.setTextColor(...primaryColor);
+            // Función para dibujar tarjeta estilo "Dashboard"
+            function drawCard(x, y, label, value, subLabel, isHighlight = false) {
+                // Background
+                doc.setFillColor(...(isHighlight ? colors.darkBlue : colors.white || [255, 255, 255]));
+                if (isHighlight) {
+                    doc.setFillColor(...colors.darkBlue);
+                    doc.setDrawColor(...colors.orange); // Borde naranja si es destacado
+                } else {
+                    doc.setFillColor(255, 255, 255);
+                    doc.setDrawColor(200, 200, 200);
+                }
+
+                doc.roundedRect(x, y, cardWidth, cardHeight, 3, 3, 'FD');
+
+                // Label
+                doc.setFontSize(8);
+                doc.setTextColor(...(isHighlight ? [200, 200, 200] : colors.textGray));
+                doc.text(label, x + cardWidth / 2, y + 10, { align: 'center' });
+
+                // Value
+                doc.setFontSize(16);
+                doc.setFont('helvetica', 'bold');
+                doc.setTextColor(...(isHighlight ? colors.orange : colors.darkBlue));
+                doc.text(value, x + cardWidth / 2, y + 20, { align: 'center' });
+
+                // SubLabel
+                doc.setFontSize(7);
+                doc.setFont('helvetica', 'normal');
+                doc.setTextColor(...(isHighlight ? [150, 150, 150] : colors.textGray));
+                doc.text(subLabel, x + cardWidth / 2, y + 28, { align: 'center' });
+            }
+
+            drawCard(margin, y, 'GASTO MENSUAL ACTUAL', `$${data.currentCost.toLocaleString('es-CL')}`, `${data.consumption} kWh Promedio`);
+            drawCard(margin + cardWidth + 5, y, 'AHORRO POTENCIAL', '+70%', 'Reducción Estimada', true);
+            drawCard(margin + (cardWidth + 5) * 2, y, 'NUEVA BOLETA ESTIMADA', `$${Math.round(data.currentCost * 0.3).toLocaleString('es-CL')}`, 'Con Energía Solar');
+
+            // --- 3. IMAGEN & GRÁFICO (PROYECCIÓN FINANCIERA) ---
+            y += 45;
+
+            // Título Sección
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.text('TU POTENCIAL DE AHORRO ANUAL', 105, 100, { align: 'center' });
+            doc.setTextColor(...colors.darkBlue);
+            doc.text('PROYECCIÓN DE SISTEMA SOLAR', margin, y);
 
-            doc.setTextColor(...accentColor);
-            doc.setFontSize(22);
-            doc.setFont('helvetica', 'bold');
-            doc.text(`$${data.savings1y.toLocaleString('es-CL')}`, 105, 112, { align: 'center' });
+            // Línea separadora
+            doc.setDrawColor(220, 220, 220);
+            doc.line(margin, y + 2, width - margin, y + 2);
 
-            doc.setTextColor(...secondaryColor);
+            y += 10;
+
+            // INTENTO DE CARGAR IMAGEN (Con fallback seguro)
+            const imgUrl = "https://images.unsplash.com/photo-1682148026899-d21f17c04e80?q=80&w=1170&auto=format&fit=crop";
+
+            try {
+                // Dibujar placeholder mientras carga (o si falla)
+                doc.setFillColor(200, 200, 200);
+                doc.rect(margin, y, 90, 60, 'F');
+
+                // Cargar imagen de manera asíncrona
+                const img = new Image();
+                img.crossOrigin = "Anonymous"; // Intentar bypass CORS
+                img.src = imgUrl;
+
+                // Esperar a que cargue (truco con promesa)
+                await new Promise((resolve) => {
+                    img.onload = () => {
+                        // Crear canvas temporal para convertir a dataURL (safe way)
+                        const canvas = document.createElement("canvas");
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        const ctx = canvas.getContext("2d");
+                        ctx.drawImage(img, 0, 0);
+                        const dataURL = canvas.toDataURL("image/jpeg");
+
+                        doc.addImage(dataURL, 'JPEG', margin, y, 90, 60);
+                        resolve();
+                    };
+                    img.onerror = () => {
+                        console.log("Error cargando imagen solar, usando fallback.");
+                        // Fallback: Dibujar un gradiente o caja simple
+                        doc.setFillColor(...colors.darkBlue);
+                        doc.rect(margin, y, 90, 60, 'F');
+                        doc.setTextColor(255, 255, 255);
+                        doc.text("SISTEMA SOLAR ORACLE", margin + 45, y + 30, { align: 'center' });
+                        resolve(); // Resolvemos igual para no bloquear el PDF
+                    };
+                });
+            } catch (e) {
+                console.error("Error handling image:", e);
+            }
+
+            // Datos del Sistema (Texto debajo de la imagen)
             doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text('(Proyección estimada con sistema solar al 85% de cobertura)', 105, 120, { align: 'center' });
+            doc.setTextColor(...colors.darkBlue);
+            doc.text('SISTEMA RECOMENDADO', margin, y + 70);
+            doc.setFontSize(8);
+            doc.setTextColor(...colors.textGray);
+            doc.text([
+                '• Potencia Estimada: 3.5 kWp',
+                '• Paneles: Monocristalinos Tier-1',
+                '• Inversor: Híbrido Inteligente',
+                '• Vida Útil: +25 Años'
+            ], margin, y + 76, { lineHeightFactor: 1.5 });
 
-            // --- TABLA DETALLADA ---
-            let y = 135;
+
+            // --- GRÁFICO DE LÍNEAS (VECTORIAL MANUAL) ---
+            // Ubicación derecha
+            const chartX = margin + 100;
+            const chartY = y;
+            const chartW = 80;
+            const chartH = 60;
+
+            // Ejes
+            doc.setDrawColor(200, 200, 200);
+            doc.line(chartX, chartY, chartX, chartY + chartH); // Eje Y
+            doc.line(chartX, chartY + chartH, chartX + chartW, chartY + chartH); // Eje X
+
+            // Datos simulados de ahorro acumulado (Curva exponencial suave)
+            const points = [0, 0.15, 0.35, 0.60, 0.85, 1.0]; // % de altura
+            const savingsTotal = data.savings5y;
+
+            // Dibujar Línea de Ahorro (Naranja)
+            doc.setDrawColor(...colors.orange);
+            doc.setLineWidth(1.5);
+
+            let prevX = chartX;
+            let prevY = chartY + chartH; // Empieza abajo (0)
+
+            for (let i = 1; i <= 5; i++) {
+                const nextX = chartX + (chartW / 5) * i;
+                const nextY = chartY + chartH - (chartH * points[i]); // Sube según punto
+
+                doc.line(prevX, prevY, nextX, nextY);
+
+                // Punto en cada año
+                doc.setFillColor(...colors.orange);
+                doc.circle(nextX, nextY, 1.5, 'F');
+
+                prevX = nextX;
+                prevY = nextY;
+            }
+
+            // Etiquetas del Gráfico
+            doc.setFontSize(8);
+            doc.setTextColor(...colors.textGray);
+            doc.text('Ahorro Acumulado (5 Años)', chartX + chartW / 2, chartY - 5, { align: 'center' });
+            doc.text('Año 1', chartX + (chartW / 5), chartY + chartH + 5, { align: 'center' });
+            doc.text('Año 5', chartX + chartW, chartY + chartH + 5, { align: 'center' });
+
+            // --- 4. DETALLE FINANCIERO (TABLA) ---
+            y += 95;
 
             doc.autoTable({
                 startY: y,
-                head: [['CONCEPTO', 'VALOR ACTUAL', 'CON SOLAR (EST.)']],
+                head: [['CONCEPTO', 'HOY (SIN SOLAR)', 'FUTURO (CON SOLAR)']],
                 body: [
-                    ['Consumo Mensual', `${data.consumption} kWh`, '30-50 kWh (Red)'],
-                    ['Costo Mensual', `$${data.currentCost}`, `$${Math.round(data.currentCost * 0.15).toLocaleString('es-CL')}`], // Aprox 15% restante
-                    ['Tarifa Eléctrica', `$${data.currentRate}/kWh`, '$0 /kWh (Solar)'],
+                    ['Pago Mensual Promedio', `$${data.currentCost.toLocaleString('es-CL')}`, `$${Math.round(data.currentCost * 0.3).toLocaleString('es-CL')}`],
+                    ['Gasto Anual Proyectado', `$${(data.currentCost * 12).toLocaleString('es-CL')}`, `$${Math.round(data.currentCost * 12 * 0.3).toLocaleString('es-CL')}`],
+                    ['Protección contra Alzas', 'NULA (Expuesto a 61%)', 'TOTAL (Autogeneración)'],
                 ],
                 theme: 'grid',
-                headStyles: { fillColor: secondaryColor, textColor: 255, fontStyle: 'bold' },
-                styles: { fontSize: 10, cellPadding: 6 },
-                alternateRowStyles: { fillColor: [249, 249, 249] },
-                margin: { left: 15, right: 15 }
+                headStyles: { fillColor: colors.darkBlue, textColor: 255, fontStyle: 'bold' },
+                styles: { fontSize: 9, cellPadding: 5 },
+                alternateRowStyles: { fillColor: [249, 250, 251] },
+                margin: { left: margin, right: margin }
             });
 
-            // --- PROYECCIÓN A 5 AÑOS ---
-            y = doc.lastAutoTable.finalY + 10;
+            // --- 5. CALL TO ACTION ---
+            y = doc.lastAutoTable.finalY + 15;
 
-            doc.setFontSize(12);
-            doc.setTextColor(...primaryColor);
-            doc.setFont('helvetica', 'bold');
-            doc.text('💰 Proyección de Retorno (ROI)', 15, y + 5);
-
-            doc.autoTable({
-                startY: y + 10,
-                head: [['PERÍODO', 'AHORRO ACUMULADO', 'ESTADO']],
-                body: [
-                    ['1 Año', `$${data.savings1y.toLocaleString('es-CL')}`, 'Ahorro Inmediato'],
-                    ['3 Años', `$${data.savings3y.toLocaleString('es-CL')}`, 'Inversión Recuperada (Aprox)'],
-                    ['5 Años', `$${data.savings5y.toLocaleString('es-CL')}`, 'Ganancia Neta'],
-                    ['10 Años', `$${(data.savings1y * 10).toLocaleString('es-CL')}`, 'Libertad Energética']
-                ],
-                theme: 'striped',
-                headStyles: { fillColor: primaryColor, textColor: 255 },
-                styles: { fontSize: 10, cellPadding: 6 },
-                margin: { left: 15, right: 15 }
-            });
-
-            // --- LLAMADO A LA ACCIÓN (CTA) ---
-            y = doc.lastAutoTable.finalY + 20;
-
-            doc.setFillColor(37, 211, 102); // Verde WhatsApp
-            doc.roundedRect(55, y, 100, 15, 8, 8, 'F');
+            doc.setFillColor(...colors.orange);
+            doc.roundedRect(margin, y, width - (margin * 2), 20, 3, 3, 'F');
 
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(12);
             doc.setFont('helvetica', 'bold');
-            doc.textWithLink('📲 Hablar con un Experto en WhatsApp', 105, y + 10, {
+            doc.text('¿LISTO PARA AHORRAR?', centerX, y + 8, { align: 'center' });
+
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.textWithLink('Hablemos por WhatsApp para activar tu proyecto: +56 9 1234 5678', centerX, y + 15, {
                 align: 'center',
-                url: 'https://wa.me/56912345678?text=Hola,%20tengo%20mi%20informe%20SolarOracle%20y%20quiero%20cotizar.'
+                url: 'https://wa.me/56912345678'
             });
 
             // --- FOOTER ---
-            const pageHeight = doc.internal.pageSize.height;
-            doc.setFillColor(...secondaryColor);
-            doc.rect(0, pageHeight - 20, 210, 20, 'F');
+            const pageHeight = doc.internal.pageSize.getHeight();
+            doc.setFillColor(...colors.darkBlue);
+            doc.rect(0, pageHeight - 15, width, 15, 'F');
 
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(9);
-            doc.text('SolarOracle.cl - Inteligencia Artificial Solar', 105, pageHeight - 12, { align: 'center' });
-            doc.setFontSize(7);
-            doc.text('Este informe es una simulación basada en datos promedio de radiación y tarifas vigentes.', 105, pageHeight - 7, { align: 'center' });
+            doc.setFontSize(8);
+            doc.setTextColor(200, 200, 200);
+            doc.text('SolarOracle.cl - Informe generado automáticamente con IA', centerX, pageHeight - 6, { align: 'center' });
 
-            // Save PDF
-            doc.save(`SolarOracle-Analisis-${data.clientNumber}.pdf`);
+            // GUARDAR Y ABRIR
+            doc.save(`SolarOracle-Reporte-${data.clientNumber}.pdf`);
         }
 
     </script>

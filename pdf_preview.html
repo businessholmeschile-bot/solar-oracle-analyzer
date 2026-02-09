@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarOracle PDF Preview</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #e0e0e0;
+            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* A4 Paper Simulation */
+        .pdf-page {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* --- COLORS & VARS --- */
+        :root {
+            --dark-blue: #0A1929;
+            --mid-blue: #132F4C;
+            --orange: #FF6B00;
+            --white: #FFFFFF;
+            --gray: #F3F4F6;
+            --text-gray: #6B7280;
+        }
+
+        /* --- HEADER --- */
+        .header {
+            background: var(--dark-blue);
+            color: var(--white);
+            padding: 20px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 5px solid var(--orange);
+        }
+
+        .header-logo {
+            font-size: 24px;
+            font-weight: 800;
+            letter-spacing: 1px;
+        }
+
+        .header-tagline {
+            font-size: 14px;
+            opacity: 0.8;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .client-info {
+            background: var(--gray);
+            padding: 10px 30px;
+            font-size: 11px;
+            color: var(--text-gray);
+            display: flex;
+            justify-content: space-between;
+            border-bottom: 1px solid #ddd;
+        }
+
+        /* --- CONTENT --- */
+        .content {
+            padding: 30px;
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 700;
+            color: var(--dark-blue);
+            text-transform: uppercase;
+            margin-bottom: 15px;
+            letter-spacing: 0.5px;
+            border-left: 4px solid var(--orange);
+            padding-left: 10px;
+        }
+
+        /* --- RESUMEN EJECUTIVO (3 BOXES) --- */
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 15px;
+        }
+
+        .summary-card {
+            background: var(--dark-blue);
+            color: var(--white);
+            border-radius: 8px;
+            padding: 20px 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border: 1px solid rgba(255, 107, 0, 0.3);
+            /* Subtle Orange Border */
+        }
+
+        /* Glow Effect Simulation */
+        .summary-card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255, 107, 0, 0.15) 0%, transparent 70%);
+            pointer-events: none;
+        }
+
+        .card-value {
+            font-size: 28px;
+            font-weight: 800;
+            margin: 10px 0;
+            color: var(--white);
+        }
+
+        .card-label {
+            font-size: 10px;
+            text-transform: uppercase;
+            opacity: 0.7;
+            letter-spacing: 0.5px;
+        }
+
+        .card-orange-text {
+            color: var(--orange);
+        }
+
+        .card-icon {
+            font-size: 24px;
+            margin-bottom: 5px;
+            color: var(--orange);
+        }
+
+        /* --- CONSUMPTION PROFILE --- */
+        .consumption-section {
+            display: grid;
+            grid-template-columns: 60% 35%;
+            gap: 5%;
+            align-items: center;
+        }
+
+        .chart-placeholder {
+            height: 180px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border: 1px dashed #ccc;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+            padding: 20px 10px 10px;
+        }
+
+        .bar {
+            width: 30px;
+            background: #3498db;
+            border-radius: 4px 4px 0 0;
+            opacity: 0.8;
+        }
+
+        .ai-insights {
+            background: var(--gray);
+            padding: 20px;
+            border-radius: 8px;
+            font-size: 12px;
+        }
+
+        .insight-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .insight-icon {
+            width: 24px;
+            height: 24px;
+            background: var(--mid-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+
+        /* --- FINANCIAL PROJECTION --- */
+        .financial-grid {
+            display: grid;
+            grid-template-columns: 45% 50%;
+            gap: 5%;
+        }
+
+        .solar-image {
+            height: 160px;
+            background: linear-gradient(135deg, #2c3e50, #4ca1af);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .savings-chart {
+            height: 160px;
+            background: white;
+            border: 1px solid #eee;
+            border-radius: 8px;
+            padding: 15px;
+            position: relative;
+        }
+
+        /* Line Chart Simulation */
+        .line-chart-svg {
+            width: 100%;
+            height: 100%;
+        }
+
+        .system-rec {
+            margin-top: 10px;
+            font-size: 12px;
+            color: var(--text-gray);
+        }
+
+        .system-rec strong {
+            color: var(--dark-blue);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 14px;
+        }
+
+        .savings-highlight {
+            margin-top: 10px;
+        }
+
+        .savings-amount {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--orange);
+        }
+
+        .savings-sub {
+            font-size: 10px;
+            color: var(--text-gray);
+        }
+
+        /* --- FOOTER --- */
+        .footer {
+            background: var(--orange);
+            color: white;
+            padding: 15px;
+            text-align: center;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: auto;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="pdf-page">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="header-logo">SOLAR ORACLE</div>
+            <div class="header-tagline">ANÁLISIS DE AHORRO ENERGÉTICO</div>
+        </div>
+
+        <div class="client-info">
+            <span>PREPARADO PARA: <strong>JUAN PÉREZ</strong></span>
+            <span>FECHA: <strong>09/02/2026</strong></span>
+        </div>
+
+        <div class="content">
+
+            <!-- SECCIÓN 1: RESUMEN EJECUTIVO -->
+            <div>
+                <div class="section-title">RESUMEN EJECUTIVO</div>
+                <div class="summary-grid">
+                    <div class="summary-card">
+                        <div class="card-label">GASTO MENSUAL ACTUAL</div>
+                        <div class="card-value">$52.000</div>
+                        <div class="card-label">PROMEDIO 342 kWh</div>
+                    </div>
+                    <div class="summary-card" style="border-color: #27ae60;">
+                        <div class="card-icon">⬆️</div>
+                        <div class="card-value card-orange-text" style="color: #27ae60;">+70%</div>
+                        <div class="card-label">AHORRO POTENCIAL</div>
+                    </div>
+                    <div class="summary-card">
+                        <div class="card-label">NUEVA BOLETA ESTIMADA</div>
+                        <div class="card-value">$15.600</div>
+                        <div class="card-label">CON ENERGÍA SOLAR</div>
+                    </div>
+                </div>
+                <div style="font-size: 10px; color: #888; margin-top: 8px; text-align: center;">
+                    *Basado en análisis de consumo de 12 meses y radiación local.
+                </div>
+            </div>
+
+            <!-- SECCIÓN 2: PERFIL DE CONSUMO -->
+            <div>
+                <div class="section-title">TU PERFIL DE CONSUMO</div>
+                <hr style="border: 0; border-top: 1px solid #eee; margin-bottom: 15px;">
+                <div class="consumption-section">
+                    <div class="chart-placeholder">
+                        <!-- Simulated Bar Chart -->
+                        <div class="bar" style="height: 40%;"></div>
+                        <div class="bar" style="height: 60%;"></div>
+                        <div class="bar" style="height: 85%;"></div>
+                        <div class="bar" style="height: 50%;"></div>
+                        <div class="bar" style="height: 70%;"></div>
+                        <div class="bar" style="height: 90%;"></div>
+                    </div>
+                    <div class="ai-insights">
+                        <div style="font-weight: bold; margin-bottom: 10px; color: var(--dark-blue);">AI INSIGHTS</div>
+                        <div class="insight-item">
+                            <div class="insight-icon">💡</div>
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Consumo Promedio</div>
+                                <strong>342 kWh/Mes</strong>
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <div class="insight-icon">💰</div>
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Costo Anual Proy.</div>
+                                <strong>$837.200</strong>
+                            </div>
+                        </div>
+                        <div class="insight-item">
+                            <div class="insight-icon">🌳</div>
+                            <div>
+                                <div style="font-size: 10px; color: #666;">Impacto CO2</div>
+                                <strong>2.4 Ton/Año</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- SECCIÓN 3: PROYECCIÓN FINANCIERA -->
+            <div>
+                <div class="section-title">PROYECCIÓN FINANCIERA</div>
+                <div class="financial-grid">
+                    <div>
+                        <div class="solar-image"
+                            style="background-image: url('https://images.unsplash.com/photo-1682148026899-d21f17c04e80?q=80&w=1170&auto=format&fit=crop'); background-size: cover; background-position: center;">
+                            <!-- La imagen se ve de fondo -->
+                        </div>
+                        <div class="system-rec">
+                            <strong>SISTEMA RECOMENDADO</strong>
+                            3.5 kWp System<br>
+                            Inversor Híbrido<br>
+                            Garantía 25 Años
+                        </div>
+                    </div>
+                    <div>
+                        <div class="savings-chart">
+                            <!-- SVG Line Chart Simulation -->
+                            <svg class="line-chart-svg" viewBox="0 0 100 60">
+                                <!-- Grid -->
+                                <line x1="10" y1="50" x2="90" y2="50" stroke="#eee" stroke-width="1" />
+                                <line x1="10" y1="10" x2="10" y2="50" stroke="#eee" stroke-width="1" />
+                                <!-- Solar Line (Orange) -->
+                                <polyline points="10,50 30,45 50,35 70,25 90,10" fill="none" stroke="#FF6B00"
+                                    stroke-width="2" />
+                                <!-- Normal Line (Blue) -->
+                                <polyline points="10,50 30,48 50,46 70,44 90,42" fill="none" stroke="#132F4C"
+                                    stroke-width="2" stroke-dasharray="2" />
+                            </svg>
+                            <div style="text-align: center; font-size: 8px; color: #888; margin-top: 5px;">Crecimiento
+                                de Ahorro Acumulado (5 Años)</div>
+                        </div>
+                        <div class="savings-highlight">
+                            <div class="savings-sub">AHORRO TOTAL ESTIMADO (5 AÑOS)</div>
+                            <div class="savings-amount">$4.267.320 CLP</div>
+                            <div class="savings-sub">Periodo de Retorno: 3.2 Años</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            SolarOracle.cl | Inteligencia Artificial Solar | Contacto: +56 9 1234 5678
+        </div>
+    </div>
+
+</body>
+
+</html>
