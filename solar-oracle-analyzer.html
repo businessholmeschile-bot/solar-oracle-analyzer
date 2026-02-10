@@ -1855,20 +1855,26 @@
                 reader.onload = () => resolve(reader.result);
             });
 
+            // Format Helper
+            const fmt = (n) => '$' + (n || 0).toLocaleString('es-CL');
+
             const payload = {
                 ...window.analysisData,
+                // Explicit Mapping for Backend/Email
+                ahorro_1y: fmt(window.analysisData.savings1y),
+                costo_inaccion: fmt(window.analysisData.savings5y), // Using 5-year savings as "Loss if inaction"
+                distribuidora: window.detectedDistributor || "General",
+                kwh_detectados: window.analysisData.consumption,
+
+                // Metadata
                 email: email,
                 name: name,
                 phone: phone,
                 timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent,
-                language: navigator.language,
-                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-                screenResolution: `${window.screen.width}x${window.screen.height}`,
-                referrer: document.referrer,
                 sourceUrl: window.location.href,
-                fileBase64: fileBase64,
-                generatedPdfBase64: generatedPdfBase64
+                // fileBase64: fileBase64, // DISABLED: Too heavy for Apps Script simple trigger sometimes
+                // generatedPdfBase64: generatedPdfBase64 // DISABLED: Too heavy
             };
 
 
