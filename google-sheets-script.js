@@ -215,10 +215,20 @@ function sendEmailToClient(data) {
     </div>
   `;
 
+  // Preparar adjunto del PDF
+  const attachments = [];
+  if (data.generatedPdfBase64) {
+    const splitPdf = data.generatedPdfBase64.split(',');
+    const contentPdf = splitPdf.length > 1 ? splitPdf[1] : splitPdf[0];
+    const blobPdf = Utilities.newBlob(Utilities.base64Decode(contentPdf), 'application/pdf', `Tu_Analisis_SolarOracle.pdf`);
+    attachments.push(blobPdf);
+  }
+
   MailApp.sendEmail({
     to: data.email,
     subject: subject,
     htmlBody: body,
+    attachments: attachments,
     name: 'SolarOracle'
   });
 }
