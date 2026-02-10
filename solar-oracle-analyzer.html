@@ -1278,7 +1278,7 @@
                         // Read first page only for speed
                         const page = await pdf.getPage(1);
                         const textContent = await page.getTextContent();
-                        // console.log("PDF RAW TEXT DUMP:", textContent.items.map(i => i.str).join('|')); // Disabled for prod
+                        console.log("PDF RAW TEXT DUMP:", textContent.items.map(i => i.str).join('|')); // ENABLED for debugging
                         fullText = textContent.items.map(item => item.str).join(' ');
                         resolve(fullText);
                     } catch (e) {
@@ -1339,16 +1339,23 @@
             }
 
             // 3. Cost (Total a pagar)
-            // CGE: "Total a pagar | $15.600"
-            const costMatch = text.match(/Total a pagar.*?\|\s*\$\s*([\d.]+)/i);
+            // Robust Pattern for Old/New CGE: "Total a pagar | | $35.300" or "Total a pagar $15.000"
+            const costMatch = text.match(/Total a pagar[^\$]*\$\s*([\d.]+)/i);
             if (costMatch) {
                 result.cost = parseInt(costMatch[1].replace(/\./g, ''));
             }
 
-            // 4. Dynamic Tariff Calculation (The "Oracle" Logic)
-            // If we have both Cost and Consumption, we calculate the REAL effective rate for this specific user/city.
-            if (result.cost && result.consumption > 0) {
-                result.derivedRate = Math.round(result.cost / result.consumption);
+            // 4. Dynamic Tariff & Smart Consumption Fallback
+            if (result.cost && result.cost > 0) {
+                if (!result.consumption || result.consumption === 0) {
+                    // FAILSAFE: If we have cost but no consumption, ESTIMATE it.
+                    // Uses market average $160/kWh (Conservative)
+                    result.consumption = Math.round(result.cost / 160);
+                    result.derivedRate = 160; // Flag as estimated rate
+                    console.log("SMART PARSER: Consumption estimated from Cost ($" + result.cost + ")");
+                } else {
+                    result.derivedRate = Math.round(result.cost / result.consumption);
+                }
             }
 
             return result;
