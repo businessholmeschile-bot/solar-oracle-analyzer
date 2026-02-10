@@ -1869,7 +1869,9 @@
                 // Metadata
                 email: email,
                 name: name,
+                nombre: name, // Fix: Backend expects 'nombre'
                 phone: phone,
+                telefono: phone, // Fix: Backend expects 'telefono'
                 timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent,
                 sourceUrl: window.location.href,
@@ -1878,7 +1880,7 @@
             };
 
 
-            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxAxhdOIH_HsobPLFgoPmdIcMdZ0JVte7-L36XjmB8y3B0etrxzOCtuaiGJS1M_p25J/exec';
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEL1-RgvKEbYsVVFG3doF6FsML97m5PBV60_eEYOMxG7Se76plwYF_0YFSGafgtzW9/exec';
 
             try {
                 console.log("Intentando enviar datos a:", SCRIPT_URL);
