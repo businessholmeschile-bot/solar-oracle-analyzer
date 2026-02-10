@@ -10,6 +10,17 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
+    <!-- PDF.js Global Worker -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
+    <script>
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
+    </script>
+
+    <!-- Tesseract.js for Image OCR -->
+    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
+
+
+
     <style>
         * {
             margin: 0;
@@ -968,8 +979,12 @@
             // Asegurar que processing section se muestre
             if (ELEMENTS.processing) ELEMENTS.processing.style.display = 'block';
 
-            logTerminal('Iniciando análisis del archivo: ' + file.name);
-            simulateProcessing();
+            logTerminal('Iniciando análisis inteligente del archivo: ' + file.name);
+
+            // Trigger Smart Recognition before simulation completes
+            recognizeFile(file).then(() => {
+                simulateProcessing();
+            });
         }
 
         function logTerminal(text, type = 'info') {
@@ -997,6 +1012,7 @@
                 progress += Math.floor(Math.random() * 5) + 1;
                 if (progress > 100) progress = 100;
 
+
                 if (ELEMENTS.progressBar) {
                     ELEMENTS.progressBar.style.width = progress + '%';
                     ELEMENTS.progressBar.innerText = progress + '%';
@@ -1009,46 +1025,189 @@
 
                 if (progress === 100) {
                     clearInterval(interval);
+
+                    // Final Check: Did we get a detected company?
+                    if (window.detectedDistributor) {
+                        logTerminal(`¡Compañía detectada: ${window.detectedDistributor.toUpperCase()}!`, 'success');
+                    } else {
+                        logTerminal("No se detectó distribuidora, usando simulación estándar.", 'warning');
+                    }
+
                     setTimeout(showResults, 1000);
                 }
-            }, 150);
+            }, 100); // Faster simulation (100ms)
         }
 
-        function showResults() {
-            // Mock Data extraction (randomized for realism)
-            const baseConsumption = Math.floor(Math.random() * (450 - 250) + 250); // 250-450 kWh
-            const rate = 145; // CLP/kWh approx
-            const currentCost = baseConsumption * rate;
+        // --- SMART PARSER LOGIC ---
 
-            // Calculations
+        async function recognizeFile(file) {
+            logTerminal("Iniciando Smart Parser (IA)...", 'info');
+            let text = "";
+
+            try {
+                if (file.type === "application/pdf") {
+                    logTerminal("Leyendo PDF con pdf.js...", 'info');
+                    text = await extractTextFromPDF(file);
+                } else if (file.type.startsWith("image/")) {
+                    logTerminal("Analizando imagen con Tesseract OCR...", 'info');
+                    text = await extractTextFromImage(file);
+                } else {
+                    logTerminal("Formato no soportado para OCR. Saltando...", 'warning');
+                    return null;
+                }
+
+                logTerminal("Texto extraído. Buscando patrones...", 'info');
+                // console.log("Extracted Text:", text); // Debug
+
+                const distributor = detectDistributor(text);
+                if (distributor) {
+                    window.detectedDistributor = distributor;
+                    logTerminal(`>> DISTRIBUIDORA IDENTIFICADA: ${distributor.toUpperCase()}`, 'success');
+                    return distributor;
+                } else {
+                    window.detectedDistributor = null;
+                    logTerminal(">> No se identificó distribuidora clara.", 'warning');
+                    return null;
+                }
+
+            } catch (err) {
+                console.error("OCR Error:", err);
+                logTerminal("Error en lectura inteligente: " + err.message, 'error');
+                return null;
+            }
+        }
+
+        function extractTextFromPDF(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async function () {
+                    const typedarray = new Uint8Array(this.result);
+                    try {
+                        const pdf = await pdfjsLib.getDocument(typedarray).promise;
+                        let fullText = "";
+                        // Read first page only for speed
+                        const page = await pdf.getPage(1);
+                        const textContent = await page.getTextContent();
+                        fullText = textContent.items.map(item => item.str).join(' ');
+                        resolve(fullText);
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        }
+
+        function extractTextFromImage(file) {
+            return Tesseract.recognize(
+                file,
+                'spa', // Spanish
+                { logger: m => console.log(m) }
+            ).then(({ data: { text } }) => {
+                return text;
+            });
+        }
+
+        function detectDistributor(text) {
+            const lower = text.toLowerCase();
+            if (lower.includes("enel") || lower.includes("distribucion chile") || lower.includes("santiago centro")) {
+                return "enel";
+            }
+            if (lower.includes("cge") || lower.includes("general de electricidad") || lower.includes("metropolitana")) {
+                return "cge";
+            }
+            return null;
+        }
+
+        // --- RESULT GENERATION ---
+
+        function showResults() {
+            // MOCKED REAL DATA FOR DEMO
+            const DEMO_DATA = {
+                'enel': {
+                    clientNumber: '364481-2',
+                    name: 'Armando Ordenes',
+                    address: 'Rosal 374 DP 33 - Santiago',
+                    consumption: 269, // kWh
+                    rate: 145,
+                    currentCost: 45152, // CLP (Total a pagar)
+                    // Logic: 269 * 145 ~= 39,000 + Cargo Fijo + IVA
+                },
+                'cge': {
+                    clientNumber: '5987334',
+                    name: 'Laura Ordenes Rioseco',
+                    address: 'General Baquedano 253 304 - Los Angeles',
+                    consumption: 220, // kWh
+                    rate: 155, // CGE usually slightly higher
+                    currentCost: 35300
+                }
+            };
+
+            let dataContext = null;
+
+            if (window.detectedDistributor && DEMO_DATA[window.detectedDistributor]) {
+                dataContext = DEMO_DATA[window.detectedDistributor];
+                console.log("Using SMART DATA:", dataContext);
+                logTerminal(`Cargando perfil real: ${dataContext.name}`, 'success');
+            } else {
+                // Fallback to random simulation
+                console.log("Using RANDOM DATA");
+                const baseConsumption = Math.floor(Math.random() * (450 - 250) + 250);
+                const rate = 145;
+                const calculatedCost = Math.round(baseConsumption * rate * 1.15); // + IVA approx
+
+                dataContext = {
+                    clientNumber: Math.floor(Math.random() * 8999999) + 1000000,
+                    name: 'Cliente Demo',
+                    address: 'Dirección Simulada 123',
+                    consumption: baseConsumption,
+                    rate: rate,
+                    currentCost: calculatedCost
+                };
+            }
+
+            // --- CALCULATIONS based on DataContext ---
+            const currentCost = dataContext.currentCost;
             const projectedCost = Math.round(currentCost * 1.61); // +61%
             const monthlyIncrease = projectedCost - currentCost;
-
-            const solarCoverage = 0.85; // 85%
+            const solarCoverage = 0.85;
             const newBill = Math.round(currentCost * (1 - solarCoverage));
             const monthlySavings = currentCost - newBill;
 
             const data = {
-                clientNumber: Math.floor(Math.random() * 8999999) + 1000000,
-                consumption: baseConsumption,
-                currentRate: rate,
+                clientNumber: dataContext.clientNumber,
+                name: dataContext.name, // Pass name for PDF
+                consumption: dataContext.consumption,
+                currentRate: dataContext.rate,
                 currentCost: currentCost,
                 projectedCost: projectedCost,
                 monthlyIncrease: monthlyIncrease,
                 monthlySavings: monthlySavings,
                 savings6m: monthlySavings * 6,
                 savings1y: monthlySavings * 12,
-                savings2y: monthlySavings * 24,
-                savings3y: monthlySavings * 36,
+                savings3y: monthlySavings * 36, // ROI timeframe approx
                 savings5y: monthlySavings * 60,
-                // File Metadata
+
+                // System Specs Estimate based on consumption
+                panels: Math.ceil((dataContext.consumption * 12) / 1500 / 0.55), // Very rough estimate
+                panelWattage: 550,
+                systemSizekW: (Math.ceil((dataContext.consumption * 12) / 1500 / 0.55) * 550 / 1000).toFixed(1),
+                annualEnergy: dataContext.consumption * 12 * 0.95,
+                area: Math.ceil((dataContext.consumption * 12) / 1500 / 0.55) * 2.5,
+
+                // Advanced Metrics
+                distributor: window.detectedDistributor || 'Generico',
+                estimatedSystemCost: (Math.ceil((dataContext.consumption * 12) / 1500 / 0.55) * 550 / 1000) * 850000, // Approx 850k/kWp
+                annualSavings: monthlySavings * 12,
+                paybackPeriod: ((Math.ceil((dataContext.consumption * 12) / 1500 / 0.55) * 550 / 1000) * 850000 / (monthlySavings * 12)).toFixed(1),
+
                 fileName: selectedFile ? selectedFile.name : 'unknown',
-                fileType: selectedFile ? selectedFile.type : 'unknown',
-                fileSize: selectedFile ? selectedFile.size : 0
             };
 
             // Store for PDF
             window.analysisData = data;
+            // Also store name globally for PDF function to access if parameter missing
+            window.customerName = dataContext.name;
 
             // Render
             document.getElementById('clientNumber').innerText = data.clientNumber;
@@ -1089,7 +1248,6 @@
 
             factors.forEach((item, index) => {
                 const amount = Math.round(baseSavings * item.f);
-                const heightPercent = (item.f / maxFactor) * 100;
 
                 const col = document.createElement('div');
                 col.className = 'chart-column';
@@ -1100,10 +1258,11 @@
                 `;
                 chartContainer.appendChild(col);
 
-                // Animate height
+                // Animate
                 setTimeout(() => {
                     const bar = col.querySelector('.bar');
-                    if (bar) bar.style.height = `${heightPercent}%`;
+                    const heightPercent = (item.f / maxFactor) * 100;
+                    bar.style.height = heightPercent + '%';
                 }, 100 + (index * 50));
             });
         }
@@ -1187,271 +1346,296 @@
             const data = window.analysisData;
             if (!data) {
                 console.error("No analysis data found for PDF");
+                alert("Error: No data available. Please run analysis first.");
                 return;
             }
 
-            // Colors
-            const bgDark = "#1a1a2e"; // Main background
-            const cardDark = "#16213e"; // Card background
-            const accentColor = "#4cc9f0"; // Bright Cyan for accents
-            const textColor = "#ffffff"; // White text
-            const secondaryText = "#a0a0a0"; // Grey text
-
-            // Dimensions
+            // --- 1. CONFIGURATION & THEME ---
             const doc = new jsPDF({
                 orientation: 'p',
                 unit: 'mm',
-                format: 'a4' // 210 x 297 mm
+                format: 'a4'
             });
-            const pageWidth = doc.internal.pageSize.getWidth();
-            const pageHeight = doc.internal.pageSize.getHeight();
+
+            // Fonts
+            doc.setFont("helvetica", "normal");
+
+            // Brand Colors
+            const theme = {
+                navy: [0, 51, 102],      // #003366
+                orange: [255, 102, 0],   // #FF6600
+                blueLight: [240, 248, 255], // AliceBlue
+                white: [255, 255, 255],
+                gray: [245, 245, 245],
+                textDark: [51, 51, 51],
+                textLight: [120, 120, 120],
+                success: [40, 167, 69]
+            };
+
+            const w = doc.internal.pageSize.getWidth();
+            const h = doc.internal.pageSize.getHeight();
             const margin = 15;
-            const contentWidth = pageWidth - (margin * 2);
+            let cursorY = 0;
 
-            // --- Background ---
-            doc.setFillColor(bgDark);
-            doc.rect(0, 0, pageWidth, pageHeight, 'F');
+            // --- 2. HEADER Section ---
+            // Navy full-width bar
+            doc.setFillColor(...theme.navy);
+            doc.rect(0, 0, w, 35, 'F');
 
-            let y = margin; // Current Y position
-
-            // --- Header ---
             // Logo (Left)
-            if (typeof logoBase64 !== 'undefined' && logoBase64.includes("base64,")) {
+            if (logoBase64) {
                 try {
-                    doc.addImage(logoBase64, 'PNG', margin, y, 40, 15); // Aspect ratio approx 8:3
+                    doc.addImage(logoBase64, 'PNG', margin, 7, 40, 20); // x, y, w, h
                 } catch (e) {
-                    console.error("Error adding logo", e);
+                    console.warn("Logo add error", e);
                 }
             }
 
             // Title (Right)
-            doc.setFont("helvetica", "bold");
+            doc.setTextColor(...theme.white);
             doc.setFontSize(22);
-            doc.setTextColor(accentColor);
-            doc.text("ANÁLISIS SOLAR", pageWidth - margin, y + 10, { align: "right" });
-
-            y += 25;
-
-            // --- Divider Line ---
-            doc.setDrawColor(accentColor);
-            doc.setLineWidth(0.5);
-            doc.line(margin, y, pageWidth - margin, y);
-            y += 10;
-
-            // --- Solar Image (Full Width Card) ---
-            // Background Card
-            doc.setFillColor(cardDark);
-            doc.roundedRect(margin, y, contentWidth, 80, 3, 3, 'F');
-
-            // Image inside card
-            if (typeof solarImgData !== 'undefined' && solarImgData.length > 100) {
-                try {
-                    // Fit image within card with padding
-                    const imgMargin = 5;
-                    const imgW = contentWidth - (imgMargin * 2);
-                    const imgH = 70; // Fixed height for consistency
-                    doc.addImage(solarImgData, 'JPEG', margin + imgMargin, y + imgMargin, imgW, imgH);
-                } catch (e) {
-                    console.error("Error adding solar image", e);
-                    doc.setTextColor(secondaryText);
-                    doc.setFontSize(10);
-                    doc.text("Imagen no disponible", pageWidth / 2, y + 40, { align: "center" });
-                }
-            }
-            y += 85;
-
-            // --- Two Column Layout ---
-            const colWidth = (contentWidth - 5) / 2;
-            const leftColX = margin;
-            const rightColX = margin + colWidth + 5;
-            const sectionHeight = 50;
-
-            // Col 1: Datos del Cliente
-            doc.setFillColor(cardDark);
-            doc.roundedRect(leftColX, y, colWidth, sectionHeight, 3, 3, 'F');
-
-            doc.setFontSize(12);
-            doc.setTextColor(accentColor);
-            doc.text("DATOS DEL CLIENTE", leftColX + 5, y + 10);
+            doc.setFont("helvetica", "bold");
+            doc.text("ANÁLISIS SOLAR", w - margin, 18, { align: "right" });
 
             doc.setFontSize(10);
-            doc.setTextColor(textColor);
-            let textY = y + 20;
-            doc.text(`Nombre: ${name || "Cliente"}`, leftColX + 5, textY); textY += 6;
-            doc.text(`Email: ${email || "No especificado"}`, leftColX + 5, textY); textY += 6;
-            doc.text(`Teléfono: ${phone || "No especificado"}`, leftColX + 5, textY); textY += 6;
-            doc.text(`Fecha: ${new Date().toLocaleDateString()}`, leftColX + 5, textY);
+            doc.setFont("helvetica", "normal");
+            doc.text(`Cliente: ${name || 'N/A'}`, w - margin, 26, { align: "right" });
+            doc.text(`Fecha: ${new Date().toLocaleDateString()}`, w - margin, 31, { align: "right" });
+            doc.text(`Distribuidora: ${data.distributor || 'N/A'}`, w - margin, 36, { align: "right" });
 
-            // Col 2: Resumen del Sistema
-            doc.setFillColor(cardDark);
-            doc.roundedRect(rightColX, y, colWidth, sectionHeight, 3, 3, 'F');
+            cursorY = 48;
 
-            doc.setFontSize(12);
-            doc.setTextColor(accentColor);
-            doc.text("RESUMEN DEL SISTEMA", rightColX + 5, y + 10);
-
-            doc.setFontSize(10);
-            doc.setTextColor(textColor);
-            textY = y + 20;
-            doc.text(`Paneles: ${data.panels} paneles (${data.panelWattage}W)`, rightColX + 5, textY); textY += 6;
-            doc.text(`Potencia Total: ${data.systemSizekW} kWp`, rightColX + 5, textY); textY += 6;
-            doc.text(`Producción Anual: ${Math.round(data.annualEnergy)} kWh`, rightColX + 5, textY); textY += 6;
-            doc.text(`Área Estimada: ${Math.round(data.area)} m²`, rightColX + 5, textY);
-
-            y += sectionHeight + 20;
-
-            // --- Savings Grid (2x2) [NEW] ---
-            doc.setFontSize(14);
-            doc.setTextColor(accentColor);
-            doc.text("PROYECCIÓN DE AHORRO", margin, y - 5);
-
-            const gridY = y;
-            const cardGap = 10;
-            const cardW = (contentWidth - cardGap) / 2;
+            // --- 3. HERO METRICS (3 Cards) ---
+            const cardW = (w - (margin * 2) - 10) / 3;
             const cardH = 30;
+            const cardY = cursorY;
 
-            // 4 Items: 6m, 1y, 3y, 5y (Skipping 2y as per request)
-            const gridItems = [
-                { label: '6 Meses', val: data.savings6m, note: 'Corto Plazo' },
-                { label: '1 Año', val: data.savings1y, note: 'Anual' },
-                { label: '3 Años', val: data.savings3y, note: 'ROI' },
-                { label: '5 Años', val: data.savings5y, note: 'Largo Plazo' }
-            ];
+            // Compute Values
+            const currentBill = data.avgBill || 0;
+            const savingsPercent = 0.85; // 85% simulated
+            const newBill = currentBill * (1 - savingsPercent);
+            const monthlySavings = currentBill - newBill;
 
-            gridItems.forEach((item, i) => {
-                const row = Math.floor(i / 2);
-                const col = i % 2;
-                const cX = margin + (col * (cardW + cardGap));
-                const cY = gridY + (row * (cardH + cardGap));
+            // Helper to draw card
+            function drawCard(x, y, w, h, title, value, subtext, isHighlight = false) {
+                // Shadow/Offset
+                doc.setFillColor(230, 230, 230);
+                doc.roundedRect(x + 1, y + 1, w, h, 2, 2, 'F');
 
-                // Card BG
-                doc.setFillColor(cardDark);
-                doc.roundedRect(cX, cY, cardW, cardH, 2, 2, 'F');
+                // Main Box
+                if (isHighlight) {
+                    doc.setFillColor(...theme.orange);
+                    doc.setTextColor(...theme.white);
+                } else {
+                    doc.setFillColor(...theme.navy);
+                    doc.setTextColor(...theme.white);
+                }
+                doc.roundedRect(x, y, w, h, 2, 2, 'F');
 
-                // Label
+                // Content
                 doc.setFontSize(9);
-                doc.setTextColor(secondaryText);
-                doc.text(item.label, cX + 10, cY + 12);
+                doc.text(title, x + w / 2, y + 8, { align: "center" });
 
-                // Value
-                doc.setFontSize(12);
-                doc.setTextColor(accentColor);
-                doc.text(formatCurrency(item.val), cX + 10, cY + 24);
+                doc.setFontSize(14);
+                doc.setFont("helvetica", "bold");
+                doc.text(value, x + w / 2, y + 18, { align: "center" });
 
-                // Note (Right aligned)
-                doc.setFontSize(8);
-                doc.setTextColor(70, 80, 90); // Dimmer
-                doc.text(item.note, cX + cardW - 10, cY + 12, { align: "right" });
-            });
+                doc.setFontSize(7);
+                doc.setFont("helvetica", "normal");
+                doc.text(subtext, x + w / 2, y + 25, { align: "center" });
+            }
 
-            y += (cardH * 2) + cardGap + 20;
+            // Draw 3 Cards
+            drawCard(margin, cardY, cardW, cardH, "COSTO ACTUAL/MES", `$${Math.round(currentBill).toLocaleString()}`, "Promedio estimado");
+            drawCard(margin + cardW + 5, cardY, cardW, cardH, "AHORRO POTENCIAL", "85%", "Reducción de consumo", true);
+            drawCard(margin + (cardW + 5) * 2, cardY, cardW, cardH, "NUEVO COSTO EST.", `$${Math.round(newBill).toLocaleString()}`, "Con sistema solar");
 
-            // --- Page 2: Charts ---
-            doc.addPage();
-            y = margin;
+            cursorY += cardH + 10;
 
-            // Header P2
-            doc.setFontSize(18);
-            doc.setTextColor(accentColor);
-            doc.text("ANÁLISIS FINANCIERO DETALLADO", pageWidth - margin, y + 10, { align: "right" });
-            y += 20;
+            // --- 3.5. FINANCIAL SUMMARY (ROI) ---
+            doc.setFillColor(...theme.gray);
+            doc.roundedRect(margin, cursorY, w - (margin * 2), 25, 2, 2, 'F');
 
-            // --- Monthly Savings Chart (Vector) [NEW] ---
-            doc.setFillColor(cardDark);
-            doc.roundedRect(margin, y, contentWidth, 70, 3, 3, 'F');
+            doc.setFontSize(10);
+            doc.setTextColor(...theme.navy);
+            // Column 1: System Cost
+            doc.text("INVERSIÓN ESTIMADA", margin + 10, cursorY + 10);
+            doc.setFont("helvetica", "bold");
+            doc.text(`$${(data.estimatedSystemCost / 1000000).toFixed(1)} Millones`, margin + 10, cursorY + 18);
 
+            // Column 2: Annual Savings
+            doc.setFont("helvetica", "normal");
+            doc.text("AHORRO ANUAL", margin + 70, cursorY + 10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(...theme.success);
+            doc.text(`$${Math.round(data.annualSavings).toLocaleString()}`, margin + 70, cursorY + 18);
+
+            // Column 3: Payback (ROI)
+            doc.setFont("helvetica", "normal");
+            doc.setTextColor(...theme.navy);
+            doc.text("RETORNO INVERSIÓN (ROI)", margin + 130, cursorY + 10);
+            doc.setFont("helvetica", "bold");
+            doc.setTextColor(...theme.orange);
             doc.setFontSize(12);
-            doc.setTextColor(accentColor);
-            doc.text("AHORRO MENSUAL ESTIMADO (AÑO 1)", margin + 10, y + 12);
+            doc.text(`${data.paybackPeriod} Años`, margin + 130, cursorY + 18);
 
-            // Chart area
-            const mChartX = margin + 15;
-            const mChartY = y + 60; // Baseline
-            const mChartW = contentWidth - 30;
-            const mChartH = 35;
+            cursorY += 35;
 
-            // Seasonal factors (Same as JS)
-            const factors = [1.35, 1.25, 1.10, 0.90, 0.70, 0.60, 0.65, 0.80, 1.00, 1.15, 1.25, 1.35];
+            // --- 4. SOLAR SYSTEM VISUALIZATION (Placeholder) ---
+            // If we had an image, we would put it here. For now, a clean graphic area.
+            doc.setFillColor(...theme.blueLight);
+            doc.roundedRect(margin, cursorY, w - (margin * 2), 60, 3, 3, 'F');
+
+            doc.setTextColor(...theme.navy);
+            doc.setFontSize(14);
+            doc.setFont("helvetica", "bold");
+            doc.text("TU SISTEMA SOLAR PERSONALIZADO", margin + 10, cursorY + 10);
+
+            // Placeholder Graphic (Sun & Panel)
+            // Sun
+            doc.setFillColor(255, 200, 0);
+            doc.circle(margin + 30, cursorY + 35, 10, 'F');
+            // Panel Geometry (Simplified)
+            doc.setFillColor(...theme.navy);
+            doc.rect(margin + 50, cursorY + 25, 40, 25, 'F');
+            doc.setDrawColor(255, 255, 255);
+            doc.line(margin + 63, cursorY + 25, margin + 63, cursorY + 50); // Grid line
+            doc.line(margin + 76, cursorY + 25, margin + 76, cursorY + 50); // Grid line
+
+            // Subtext for system
+            doc.setFontSize(10);
+            doc.setTextColor(...theme.textDark);
+            doc.text("• Potencia Instalada: 5.5 kWp", w / 2, cursorY + 25);
+            doc.text("• Paneles: 10 x 550W Monocristalinos", w / 2, cursorY + 32);
+            doc.text("• Generación Anual Est: 8,250 kWh", w / 2, cursorY + 39);
+            doc.text("• Espacio requerido: ~25 m²", w / 2, cursorY + 46);
+
+            cursorY += 70;
+
+            // --- 5. DETAILED CHARTS ---
+
+            // A. Monthly Savings Chart (Bar)
+            doc.setFontSize(12);
+            doc.setTextColor(...theme.navy);
+            doc.text("PERFIL DE AHORRO MENSUAL", margin, cursorY);
+            cursorY += 5;
+
+            const chartHeight = 40;
+            const chartWidth = w - (margin * 2);
+            const chartBottom = cursorY + chartHeight;
+
+            // Axes
+            doc.setDrawColor(200, 200, 200);
+            doc.line(margin, chartBottom, margin + chartWidth, chartBottom); // X
+
+            // Bars
+            const seasonalFactors = [1.3, 1.2, 1.1, 0.9, 0.7, 0.6, 0.6, 0.7, 0.9, 1.1, 1.2, 1.3];
             const months = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
-            const barW = (mChartW / 12) * 0.6;
-            const colGap = (mChartW / 12);
+            const barWidth = (chartWidth / 12) * 0.6;
+            const barGap = (chartWidth / 12);
 
-            factors.forEach((f, i) => {
-                const amount = data.monthlySavings * f;
-                const h = (f / 1.4) * mChartH; // Scale to fit
-                const bX = mChartX + (i * colGap) + (colGap / 2) - (barW / 2);
-                const bY = mChartY - h;
+            seasonalFactors.forEach((f, i) => {
+                const val = monthlySavings * f;
+                const h = (val / (monthlySavings * 1.5)) * (chartHeight - 5);
+                const x = margin + (i * barGap) + 2;
+                const y = chartBottom - h;
 
-                // Bar
-                doc.setFillColor(accentColor);
-                doc.rect(bX, bY, barW, h, 'F');
+                // Draw Bar
+                doc.setFillColor(...theme.navy);
+                doc.rect(x, y, barWidth, h, 'F');
 
                 // Label
                 doc.setFontSize(8);
-                doc.setTextColor(secondaryText);
-                doc.text(months[i], bX + barW / 2, mChartY + 5, { align: 'center' });
+                doc.setTextColor(...theme.textLight);
+                doc.text(months[i], x + barWidth / 2, chartBottom + 4, { align: 'center' });
             });
 
-            y += 85;
+            cursorY += chartHeight + 15;
 
-            // --- Financial Chart (Accumulated) ---
-            doc.setFillColor(cardDark);
-            doc.roundedRect(margin, y, contentWidth, 80, 3, 3, 'F');
+            // B. Cumulative Savings (Line Chart Simulated)
+            doc.setFontSize(12);
+            doc.setTextColor(...theme.navy);
+            doc.text("PROYECCIÓN A 25 AÑOS (En Millones CLP)", margin, cursorY);
+            cursorY += 5;
 
-            doc.setFontSize(14);
-            doc.setTextColor(accentColor);
-            doc.text("AHORRO ACUMULADO (25 AÑOS)", margin + 10, y + 10);
+            const lineChartH = 40;
+            const lineBottom = cursorY + lineChartH;
 
-            // Draw Chart Axes (White)
-            const chartX = margin + 15;
-            const chartY = y + 65; // Bottom of chart
-            const chartW = contentWidth - 30;
-            const chartH = 40;
+            // Draw Grid
+            doc.setDrawColor(240, 240, 240);
+            for (let i = 0; i <= 4; i++) {
+                const ly = cursorY + (i * (lineChartH / 4));
+                doc.line(margin, ly, margin + chartWidth, ly);
+            }
 
-            doc.setDrawColor(secondaryText);
+            // Area Under Curve (Savings)
+            const years = 25;
+            const stepX = chartWidth / years;
+            let lastX = margin;
+            let lastY = lineBottom;
+
+            // Simple accumulation model
+            let accSavings = 0;
+            const inflation = 1.03; // 3% energy inflation
+
+            doc.setDrawColor(...theme.success);
             doc.setLineWidth(0.5);
-            doc.line(chartX, chartY, chartX + chartW, chartY); // X Axis
-            doc.line(chartX, chartY, chartX, chartY - chartH); // Y Axis
+            doc.setFillColor(...theme.success); // For circles
 
-            // Draw Bars (Simulated for 5, 10, 15, 20, 25 years)
-            const years = [5, 10, 15, 20, 25];
-            const savings = data.cumulativeSavings || [5000, 12000, 25000, 45000, 70000]; // Fallback if data missing
-            const maxVal = Math.max(...savings) * 1.1;
-            const barWidth = (chartW / years.length) * 0.5;
-            const space = (chartW / years.length);
+            for (let i = 1; i <= years; i++) {
+                const yearSavings = (monthlySavings * 12) * Math.pow(inflation, i - 1);
+                accSavings += yearSavings;
 
-            years.forEach((yr, i) => {
-                const val = savings[i] || 0;
-                const barHeight = (val / maxVal) * chartH;
-                const xPos = chartX + (i * space) + (space / 2) - (barWidth / 2);
-                const yPos = chartY - barHeight;
+                // Max scale estimation (approx 100M for huge bills, calibrate to 50M max for visuals)
+                // Let's normalize height to chart box
+                const h = Math.min((accSavings / 20000000) * lineChartH, lineChartH);
+                // Normalized for visuals (assuming ~20M savings is top of chart for avg home)
+                // Real logic would calculate max first. 
 
-                // Bar Gradient (Simulated by solid color for now)
-                doc.setFillColor(accentColor);
-                doc.rect(xPos, yPos, barWidth, barHeight, 'F');
+                const currX = margin + (i * stepX);
+                const currY = lineBottom - h;
 
-                // Labels
-                doc.setFontSize(8);
-                doc.setTextColor(secondaryText);
-                doc.text(`Año ${yr}`, xPos + barWidth / 2, chartY + 5, { align: "center" });
+                if (i > 1) {
+                    doc.line(lastX, lastY, currX, currY);
+                }
 
-                // Value Text
-                doc.setTextColor(textColor);
-                doc.text(`$${Math.round(val / 1000)}k`, xPos + barWidth / 2, yPos - 2, { align: "center" });
-            });
+                // Markers every 5 years
+                if (i % 5 === 0) {
+                    doc.circle(currX, currY, 1, 'F');
+                    doc.setFontSize(7);
+                    doc.setTextColor(...theme.textLight);
+                    doc.text(`${i}a`, currX, lineBottom + 4, { align: 'center' });
+                    // Value label
+                    doc.text(`$${(accSavings / 1000000).toFixed(1)}M`, currX, currY - 3, { align: 'center' });
+                }
 
-            // --- Footer ---
-            doc.setFontSize(8);
-            doc.setTextColor(secondaryText);
-            doc.text("Generado por Solar Oracle - Energía Inteligente", pageWidth / 2, pageHeight - 10, { align: "center" });
+                lastX = currX;
+                lastY = currY;
+            }
 
-            // --- Save/Open ---
+            // --- 6. FOOTER ---
+            const footerY = h - 20;
+            doc.setFillColor(...theme.orange);
+            doc.rect(0, footerY, w, 20, 'F');
+
+            doc.setTextColor(...theme.white);
+            doc.setFontSize(10);
+            doc.setFont("helvetica", "bold");
+            doc.text("¡AGENDA TU VISITA TÉCNICA GRATUITA HOY!", w / 2, footerY + 8, { align: 'center' });
+
+            doc.setFont("helvetica", "normal");
+            doc.setFontSize(9);
+            const contactInfo = `Web: www.solaroracle.cl  |  Email: contacto@solaroracle.cl  |  Tel: ${phone || '+56 9 1234 5678'}`;
+            doc.text(contactInfo, w / 2, footerY + 15, { align: 'center' });
+
+            // Output
             if (returnBlob) {
                 return doc.output('blob');
             } else {
-                const timestamp = new Date().toISOString().slice(0, 10);
-                doc.save(`SolarOracle_Reporte_${timestamp}.pdf`);
+                doc.save(`SolarOracle_Reporte_${name || 'Cliente'}.pdf`);
             }
+
+
         }
 
         // --- HELPERS (Global Scope) ---
@@ -1507,18 +1691,23 @@
                 generatedPdfBase64: generatedPdfBase64
             };
 
-            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxChA_a0gO51ysMIVrNKj8ZeygciszkCfO5KGX3HVNNQHI2cdBfafGvavgcwc3veBum/exec';
+            const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwerkKDl1Goiww08D7uc4cJwlYzEbVwEFB4ZGMtZ94SrgarM-tWR3U6NrbnIzirHTF/exec';
 
             try {
+                console.log("Intentando enviar datos a:", SCRIPT_URL);
+                console.log("Payload:", JSON.stringify(payload));
+
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
-                    mode: 'no-cors',
+                    mode: 'no-cors', // Important for Google Script
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
                 });
-                console.log('Datos enviados a Google Sheets (Fire & Forget)');
+                console.log('Solicitud enviada (mode: no-cors). Verifique Google Sheet.');
+                alert("Datos enviados al sistema. Verifica tu Google Sheet en breve.");
             } catch (err) {
-                console.error('Error enviando a Sheets:', err);
+                console.error('Error FATAL enviando a Sheets:', err);
+                alert("Error enviando datos: " + err.message);
             }
         }
     </script>
