@@ -1,25 +1,41 @@
-// Google Apps Script ACTUALIZADO - SolarOracle Ultimate
+// Google Apps Script ACTUALIZADO - SolarOracle Ultimate (DEBUG MODE)
 // Funcionalidades:
 // 1. Guarda datos en Google Sheet (26 campos)
 // 2. Sube boleta a Google Drive (Carpeta 'SolarOracle')
 // 3. Envía alerta al ADMIN (solaroracle.cl@gmail.com)
 // 4. Envía estudio al CLIENTE (data.email)
+// 5. DIAGNÓSTICO: Logs detallados en consola de Google
 
 function doPost(e) {
   const response = { result: 'error', actions: [] };
 
   try {
+    console.log("1. doPost iniciado. Recibiendo datos...");
+
     // 1. Parsear datos
+    if (!e || !e.postData || !e.postData.contents) {
+      throw new Error("No postData found");
+    }
     const data = JSON.parse(e.postData.contents);
-    const sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+    console.log("2. JSON Parseado correctamente. Email:", data.email);
+
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    if (!spreadsheet) throw new Error("No se pudo acceder al Spreadsheet activo");
+
+    const sheet = spreadsheet.getActiveSheet();
+    if (!sheet) throw new Error("No se pudo acceder a la hoja activa");
+
+    console.log("3. Hoja accedida:", sheet.getName());
 
     // 2. Encabezados (si es hoja nueva)
     if (sheet.getLastRow() === 0) {
+      console.log("3.1. Hoja vacía, creando encabezados...");
       sheet.appendRow([
         'Timestamp', 'Email', 'Nombre', 'Teléfono', 'N° Cliente',
-        'Consumo (kWh)', 'Tarifa Actual ($/kWh)', 'Costo Actual ($)', 'Costo Proyectado ($)',
-        'Aumento Mensual ($)', 'Ahorro Mensual ($)', 'Ahorro 6 meses ($)',
-        'Ahorro 1 año ($)', 'Ahorro 2 años ($)', 'Ahorro 3 años ($)', 'Ahorro 5 años ($)',
+        'Distribuidora', 'Consumo (kWh)', 'Tarifa Actual ($/kWh)', 'Costo Actual ($)',
+        'Costo Sistema Est. ($)', 'ROI (Años)', 'Ahorro Anual ($)',
+        'Costo Proyectado ($)', 'Aumento Mensual ($)', 'Ahorro Mensual ($)',
+        'Ahorro 6 meses ($)', 'Ahorro 5 años ($)',
         'Nombre Archivo', 'Tipo Archivo', 'Tamaño Archivo (bytes)', 'Link Drive',
         'User Agent', 'Idioma', 'Zona Horaria', 'Resolución', 'Referrer', 'URL Origen',
         'Estado Email Admin', 'Estado Email Cliente'
@@ -29,18 +45,24 @@ function doPost(e) {
     // 3. Subir a Drive (si hay archivo)
     let driveUrl = 'No disponible';
     if (data.fileBase64) {
+      console.log("4. Intentando subir a Drive...");
       try {
         driveUrl = uploadToDrive(data.fileBase64, data.fileName, data.email, data.timestamp);
         response.actions.push('Drive Upload OK');
+        console.log("4.1. Drive Upload OK:", driveUrl);
       } catch (error) {
         driveUrl = 'Error: ' + error.toString();
         response.actions.push('Drive Upload Fail');
+        console.log("4.1. Drive Upload Error:", error.toString());
       }
+    } else {
+      console.log("4. No hay archivo para subir a Drive (Data Only)");
     }
 
     // 4. Enviar Email al ADMIN
     let emailAdminStatus = 'No enviado';
     if (data.fileBase64) {
+      console.log("5. Intentando enviar email Admin...");
       try {
         sendEmailToAdmin(data, driveUrl);
         emailAdminStatus = 'Enviado OK';
@@ -48,12 +70,14 @@ function doPost(e) {
       } catch (error) {
         emailAdminStatus = 'Error: ' + error.toString();
         response.actions.push('Email Admin Fail');
+        console.log("5.1. Email Admin Error:", error.toString());
       }
     }
 
     // 5. Enviar Email al CLIENTE
     let emailClientStatus = 'No enviado';
     if (data.fileBase64 && data.email) {
+      console.log("6. Intentando enviar email Cliente...");
       try {
         sendEmailToClient(data);
         emailClientStatus = 'Enviado OK';
@@ -61,27 +85,40 @@ function doPost(e) {
       } catch (error) {
         emailClientStatus = 'Error: ' + error.toString();
         response.actions.push('Email Client Fail');
+        console.log("6.1. Email Cliente Error:", error.toString());
       }
     }
 
     // 6. Guardar en Sheet
-    sheet.appendRow([
-      new Date(data.timestamp), data.email, data.name, data.phone, data.clientNumber,
-      data.consumption, data.currentRate, data.currentCost, data.projectedCost,
-      data.monthlyIncrease, data.monthlySavings, data.savings6m, data.savings1y,
-      data.savings2y, data.savings3y, data.savings5y, data.fileName, data.fileType,
-      data.fileSize, driveUrl, data.userAgent, data.language, data.timezone,
-      data.screenResolution, data.referrer, data.sourceUrl,
-      emailAdminStatus, emailClientStatus
-    ]);
+    console.log("7. Guardando fila en Sheet...");
+    try {
+      const rowData = [
+        new Date(data.timestamp), data.email, data.name, data.phone, data.clientNumber,
+        data.distributor, data.consumption, data.currentRate, data.currentCost,
+        data.estimatedSystemCost, data.paybackPeriod, data.annualSavings,
+        data.projectedCost, data.monthlyIncrease, data.monthlySavings,
+        data.savings6m, data.savings5y,
+        data.fileName, data.fileType, data.fileSize, driveUrl,
+        data.userAgent, data.language, data.timezone,
+        data.screenResolution, data.referrer, data.sourceUrl,
+        emailAdminStatus, emailClientStatus
+      ];
+      sheet.appendRow(rowData);
+      console.log("8. Fila guardada correctamente.");
+    } catch (rowError) {
+      console.error("7.1 Error FATAL en sheet.appendRow:", rowError);
+      throw rowError;
+    }
 
     response.result = 'success';
     response.driveUrl = driveUrl;
 
+    console.log("9. Finalizando doPost con éxito.");
     return ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
 
   } catch (error) {
+    console.error("ERROR GENERAL EN SCRIPT:", error.toString());
     response.error = error.toString();
     return ContentService.createTextOutput(JSON.stringify(response))
       .setMimeType(ContentService.MimeType.JSON);
