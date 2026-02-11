@@ -296,46 +296,99 @@
             box-shadow: 0 0 20px rgba(255, 107, 0, 0.5);
         }
 
+        /* Terminal Experience V2: Glass Navy */
         .terminal {
-            background: #0a0a0a;
-            border-radius: 10px;
+            background: rgba(10, 25, 47, 0.95);
+            /* Deep Navy */
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(25, 50, 90, 1);
+            font-family: 'Consolas', 'Monaco', monospace;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 400px;
+            margin-top: 20px;
+        }
+
+        .terminal-header {
+            background: #020c1b;
+            padding: 12px 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .terminal-title {
+            color: #64ffda;
+            /* Cyan Tech */
+            font-size: 0.8rem;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .terminal-controls {
+            display: flex;
+            gap: 8px;
+        }
+
+        .control-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .dot-red {
+            background: #ff5f56;
+        }
+
+        .dot-yellow {
+            background: #ffbd2e;
+        }
+
+        .dot-green {
+            background: #27c93f;
+        }
+
+        .terminal-body {
             padding: 20px;
-            font-family: 'Courier New', monospace;
-            font-size: 0.9rem;
-            max-height: 300px;
             overflow-y: auto;
-            border: 1px solid #333;
+            flex: 1;
+            color: #a8b2d1;
+            /* Slate Blue Text */
+            font-size: 0.9rem;
         }
 
         .terminal-line {
-            margin-bottom: 8px;
+            margin-bottom: 6px;
+            border-left: 2px solid transparent;
+            padding-left: 10px;
             opacity: 0;
-            animation: fadeIn 0.3s ease forwards;
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-            }
-        }
-
-        .terminal-line::before {
-            content: '> ';
-            color: #ff6b00;
-            font-weight: bold;
-        }
-
-        .terminal-line.success {
-            color: #4ade80;
+            animation: fadeIn 0.1s ease forwards;
         }
 
         .terminal-line.info {
-            color: #60a5fa;
+            border-left-color: #64ffda;
+            color: #e6f1ff;
+        }
+
+        .terminal-line.success {
+            border-left-color: #4ade80;
+            color: #4ade80;
         }
 
         .terminal-line.warning {
-            color: #fbbf24;
+            border-left-color: #ff6b00;
+            color: #ffbd2e;
         }
+
+        .terminal-line.error {
+            border-left-color: #ff4444;
+            color: #ff8888;
+        }
+
+
 
         .results-section {
             display: none;
@@ -906,7 +959,18 @@
             <div class="progress-bar-container">
                 <div class="progress-bar" id="progressBar">0%</div>
             </div>
-            <div class="terminal" id="terminal"></div>
+            <div class="terminal" id="terminal">
+                <div class="terminal-header">
+                    <div class="terminal-controls">
+                        <div class="control-dot dot-red"></div>
+                        <div class="control-dot dot-yellow"></div>
+                        <div class="control-dot dot-green"></div>
+                    </div>
+                    <div class="terminal-title">SolarCore Kernel v2.4</div>
+                    <div style="width: 40px;"></div>
+                </div>
+                <div class="terminal-body" id="terminalBody"></div>
+            </div>
         </div>
 
         <div class="results-section" id="resultsSection">
@@ -1071,6 +1135,7 @@
                 processing: document.getElementById('processingSection'),
                 progressBar: document.getElementById('progressBar'),
                 terminal: document.getElementById('terminal'),
+                terminalBody: document.getElementById('terminalBody'), // New Body
                 results: document.getElementById('resultsSection'),
                 resetBtn: document.getElementById('resetButton'),
                 emailModal: document.getElementById('emailModal'),
@@ -1171,15 +1236,62 @@
         }
 
         function logTerminal(text, type = 'info') {
-            if (!ELEMENTS.terminal) return;
+            const container = ELEMENTS.terminalBody || ELEMENTS.terminal;
+            if (!container) return;
             const line = document.createElement('div');
             line.className = `terminal-line ${type}`;
             line.innerText = text;
-            ELEMENTS.terminal.appendChild(line);
-            ELEMENTS.terminal.scrollTop = ELEMENTS.terminal.scrollHeight;
+            container.appendChild(line);
+            container.scrollTop = container.scrollHeight;
         }
 
         function simulateProcessing() {
+            let stepIndex = 0;
+            const steps = [
+                { p: 5, t: 'Initializing SolarCore Kernel v2.4...', type: 'info' },
+                { p: 10, t: 'Allocating MEMFS buffer 1024MB...', type: 'info' },
+                { p: 15, t: 'Mounting virtual file system...', type: 'info' },
+                { p: 20, t: 'Loading PDF parsing modules (Legacy/V2)...', type: 'info' },
+                { p: 25, t: 'Extracting raw vector data from document...', type: 'info' },
+                { p: 30, t: 'Pattern Matching: Searching for Utility Provider...', type: 'warning' },
+                { p: 35, t: '>> DISTRIBUIDORA DETECTADA: ' + (window.detectedDistributor ? window.detectedDistributor.toUpperCase() : 'GENERIC'), type: 'success' },
+                { p: 40, t: 'Normalizing consumption histogram...', type: 'info' },
+                { p: 45, t: 'Downloading seasonal tariff index (2026)...', type: 'info' },
+                { p: 50, t: 'Triangulating optimal panel azimuth...', type: 'info' },
+                { p: 55, t: 'Calculating Global Horizontal Irradiance (GHI)...', type: 'info' },
+                { p: 60, t: 'Running PVSyst simulation algorithm...', type: 'warning' },
+                { p: 65, t: 'Optimizing financial models (LCOE)...', type: 'info' },
+                { p: 70, t: 'Rendering vector assets for PDF...', type: 'info' },
+                { p: 75, t: 'Allocating secure payload...', type: 'info' },
+                { p: 80, t: 'Syncing with Google Cloud Database...', type: 'warning' },
+                { p: 85, t: 'Generating cryptographic hash...', type: 'info' },
+                { p: 90, t: 'Finalizing Report Structure...', type: 'info' },
+                { p: 95, t: 'Cleaning up temporary buffers...', type: 'info' },
+                { p: 100, t: 'Análisis completado exitosamente.', type: 'success' }
+            ];
+
+            // Clear previous interval if any
+            if (window.simInterval) clearInterval(window.simInterval);
+
+            window.simInterval = setInterval(() => {
+                if (stepIndex >= steps.length) {
+                    clearInterval(window.simInterval);
+                    setTimeout(showResults, 800);
+                    return;
+                }
+
+                const step = steps[stepIndex];
+                if (ELEMENTS.progressBar) {
+                    ELEMENTS.progressBar.style.width = step.p + '%';
+                    ELEMENTS.progressBar.innerText = step.p + '%';
+                }
+                logTerminal(step.t, step.type);
+
+                stepIndex++;
+            }, 100); // Super fast pace
+        }
+
+        function simulateProcessingOld() {
             let progress = 0;
             const steps = [
                 { p: 10, t: 'Extrayendo texto del documento...' },
