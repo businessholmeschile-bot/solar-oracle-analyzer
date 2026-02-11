@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Oracle Admin | Nexos Corp</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+        }
+
+        .status-ghost {
+            background: #334155;
+            color: #94a3b8;
+        }
+
+        .status-lead {
+            background: #065f46;
+            color: #34d399;
+        }
+    </style>
+</head>
+
+<body class="p-8">
+
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-8">
+        <h1 class="text-3xl font-bold text-white tracking-widest">SOLAR<span class="text-amber-500">ORACLE</span> <span
+                class="text-xs text-slate-500 font-normal">ADMIN V1.0</span></h1>
+        <div class="flex gap-4">
+            <button onclick="fetchLeads()"
+                class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white font-medium transition">🔄 Refrescar
+                Datos</button>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+        <div class="glass-panel p-6">
+            <div class="text-slate-400 text-sm uppercase font-semibold">Total Registros</div>
+            <div class="text-4xl font-bold text-white mt-2" id="kpi-total">0</div>
+        </div>
+        <div class="glass-panel p-6">
+            <div class="text-slate-400 text-sm uppercase font-semibold">Leads Reales</div>
+            <div class="text-4xl font-bold text-green-400 mt-2" id="kpi-leads">0</div>
+        </div>
+        <div class="glass-panel p-6">
+            <div class="text-slate-400 text-sm uppercase font-semibold">Ghosts (Abandonos)</div>
+            <div class="text-4xl font-bold text-slate-400 mt-2" id="kpi-ghosts">0</div>
+        </div>
+        <div class="glass-panel p-6">
+            <div class="text-slate-400 text-sm uppercase font-semibold">Tasa Conversión</div>
+            <div class="text-4xl font-bold text-amber-500 mt-2" id="kpi-rate">0%</div>
+        </div>
+    </div>
+
+    <!-- Data Table -->
+    <div class="glass-panel overflow-hidden">
+        <div class="p-4 border-b border-slate-700 flex justify-between items-center">
+            <h3 class="font-semibold text-lg">Base de Datos de Factibilidad</h3>
+            <span class="text-xs text-slate-500" id="last-updated">Actualizado: Nunca</span>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full text-sm text-left">
+                <thead class="text-xs text-slate-400 uppercase bg-slate-800/50">
+                    <tr>
+                        <th class="px-6 py-3">Fecha</th>
+                        <th class="px-6 py-3">Tipo</th>
+                        <th class="px-6 py-3">Nombre / ID</th>
+                        <th class="px-6 py-3">Email</th>
+                        <th class="px-6 py-3">Teléfono</th>
+                        <th class="px-6 py-3 text-right">Consumo</th>
+                        <th class="px-6 py-3 text-right">Ahorro Est.</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="divide-y divide-slate-700">
+                    <!-- Rows will be injected here -->
+                    <tr>
+                        <td colspan="7" class="px-6 py-8 text-center text-slate-500">Cargando datos de la nube...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- SUPABASE CONFIG ---
+        const SB_URL = 'https://zqwkwnywndkwyzzggorf.supabase.co';
+        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxd2t3bnl3bmRrd3l6emdnb3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NjE3MjUsImV4cCI6MjA4NjMzNzcyNX0._Gxg6pdJTIAbFG5hAg-r4LeYx8w7FwUIEXQkJt8WFWI';
+        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+
+        async function fetchLeads() {
+            const tbody = document.getElementById('table-body');
+
+            try {
+                // 1. Fetch Data
+                const { data, error } = await supabase
+                    .from('leads')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                // 2. Update KPIs
+                const total = data.length;
+                const leads = data.filter(r => r.tipo === 'LEAD').length;
+                const ghosts = total - leads;
+                const rate = total > 0 ? ((leads / total) * 100).toFixed(1) : 0;
+
+                document.getElementById('kpi-total').innerText = total;
+                document.getElementById('kpi-leads').innerText = leads;
+                document.getElementById('kpi-ghosts').innerText = ghosts;
+                document.getElementById('kpi-rate').innerText = rate + '%';
+
+                // 3. Render Table
+                tbody.innerHTML = '';
+                if (total === 0) {
+                    tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-slate-500">Aún no hay registros en la base de datos.</td></tr>`;
+                    return;
+                }
+
+                data.forEach(row => {
+                    const isLead = row.tipo === 'LEAD';
+                    const badgeClass = isLead ? 'bg-green-900 text-green-300' : 'bg-slate-700 text-slate-300';
+                    const date = new Date(row.created_at).toLocaleString('es-CL');
+
+                    const tr = document.createElement('tr');
+                    tr.className = 'hover:bg-slate-800/50 transition';
+                    tr.innerHTML = `
+                        <td class="px-6 py-4 text-slate-400 whitespace-nowrap">${date}</td>
+                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold ${badgeClass}">${row.tipo || 'GHOST'}</span></td>
+                        <td class="px-6 py-4 font-medium text-white">${row.nombre || 'Anónimo'}</td>
+                        <td class="px-6 py-4 text-slate-400">${row.email || '-'}</td>
+                        <td class="px-6 py-4 text-slate-400">${row.telefono || '-'}</td>
+                        <td class="px-6 py-4 text-right text-amber-400 font-mono">${row.kwh_mensual || 0} kWh</td>
+                        <td class="px-6 py-4 text-right text-green-400 font-mono">${row.ahorro_anual || '$0'}</td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+                document.getElementById('last-updated').innerText = 'Actualizado: ' + new Date().toLocaleTimeString();
+
+            } catch (err) {
+                console.error(err);
+                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-red-400">Error cargando datos: ${err.message}</td></tr>`;
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', fetchLeads);
+    </script>
+</body>
+
+</html>
