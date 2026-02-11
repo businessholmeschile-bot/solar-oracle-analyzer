@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -1741,9 +1742,10 @@
             div.className = `terminal-line ${type}`;
             div.innerHTML = `<span style="opacity:0.5">[${date}]</span> ${msg}`;
 
-            if (ELEMENTS.terminal) {
-                ELEMENTS.terminal.appendChild(div);
-                ELEMENTS.terminal.scrollTop = ELEMENTS.terminal.scrollHeight;
+            const target = ELEMENTS.terminalBody || ELEMENTS.terminal;
+            if (target) {
+                target.appendChild(div);
+                target.scrollTop = target.scrollHeight;
             }
         }
 
@@ -1787,7 +1789,7 @@
                 };
 
                 logTerminal("Datos simulados cargados.", 'info');
-                setTimeout(openVerificationModal, 1500);
+                setTimeout(() => finalizeProcessing('cge', '9999999-K', 450), 1500);
                 return;
             }
 
@@ -1823,10 +1825,14 @@
                     consumption: data.consumption || ''
                 };
 
-                logTerminal(`Datos preliminares: ${JSON.stringify(extractedDataTemp)}`, 'info');
+                logTerminal(`Datos extraídos: ${JSON.stringify(extractedDataTemp)}`, 'info');
 
-                // STOP -> Open Verification Modal
-                openVerificationModal();
+                // Proceed directly to processing (no verification modal)
+                finalizeProcessing(
+                    extractedDataTemp.distributor,
+                    extractedDataTemp.clientNumber,
+                    extractedDataTemp.consumption ? parseInt(extractedDataTemp.consumption) : 0
+                );
 
             } catch (err) {
                 console.error("OCR Error:", err);
@@ -1902,61 +1908,117 @@
         async function finalizeProcessing(distributor, clientNumber, consumption) {
             updateProgressStep(4); // Step 4: Generando
             updateProgressBar(90);
-            logTerminal("Datos verificados por usuario.", 'success');
+            logTerminal("Procesando datos...", 'success');
             logTerminal(`Generando reporte para Cliente ${clientNumber}...`, 'info');
 
-            // Update Global/Window objects as expected by legacy functions
-            // (Though we are passing them directly now, generatePDF might verify window.extractedData)
+            // Update Global/Window objects
             window.detectedDistributor = distributor;
             window.extractedData = { clientNumber, consumption };
+
+            // --- SOLAR CALCULATIONS ---
+            const TARIFF_RATE = 180; // CLP per kWh (current average)
+            const TARIFF_HIKE = 1.61; // 61% increase announced for 2026
+            const SOLAR_COVERAGE = 0.85; // 85% coverage
+            const PANEL_WATT = 550;
+            const SUN_HOURS = 4.5; // Average peak sun hours Chile
+            const COST_PER_WATT = 650; // CLP installed cost per watt
+
+            const currentCost = consumption * TARIFF_RATE;
+            const projectedCost = Math.round(currentCost * TARIFF_HIKE);
+            const monthlyIncrease = projectedCost - currentCost;
+            const solarSavings = Math.round(projectedCost * SOLAR_COVERAGE);
+
+            // System sizing
+            const dailyConsumption = consumption / 30;
+            const systemSizekW = Math.round((dailyConsumption / SUN_HOURS) * 10) / 10;
+            const systemSizeW = systemSizekW * 1000;
+            const panels = Math.ceil(systemSizeW / PANEL_WATT);
+            const annualEnergy = Math.round(systemSizekW * SUN_HOURS * 365);
+            const area = Math.round(panels * 2.2); // ~2.2 m² per panel
+            const estimatedSystemCost = Math.round(systemSizeW * COST_PER_WATT);
+
+            // Savings projections
+            const annualSavings = solarSavings * 12;
+            const savings6m = Math.round(solarSavings * 6);
+            const savings1y = annualSavings;
+            const savings3y = Math.round(annualSavings * 3 * 1.03); // with ~3% annual tariff inflation
+            const savings5y = Math.round(annualSavings * 5 * 1.08); // compounded loss
+
+            // --- POPULATE window.analysisData (Bug 1 Fix) ---
+            window.analysisData = {
+                distributor: distributor,
+                clientNumber: clientNumber,
+                consumption: consumption,
+                currentRate: TARIFF_RATE,
+                currentCost: currentCost,
+                projectedCost: projectedCost,
+                monthlyIncrease: monthlyIncrease,
+                solarSavings: solarSavings,
+                annualSavings: annualSavings,
+                savings6m: savings6m,
+                savings1y: savings1y,
+                savings3y: savings3y,
+                savings5y: savings5y,
+                systemSizekW: systemSizekW,
+                panels: panels,
+                annualEnergy: annualEnergy,
+                area: area,
+                estimatedSystemCost: estimatedSystemCost,
+                monthlySavings: solarSavings
+            };
+
+            console.log('window.analysisData populated:', window.analysisData);
 
             // Simulate slight delay for UX
             await new Promise(r => setTimeout(r, 1000));
 
-            let pdfBase64 = null;
-            try {
-                // Trigger PDF Generation
-                logTerminal('Iniciando motor PDF (html2canvas)...', 'info');
-                pdfBase64 = await generatePDF('usuario@demo.com', 'Usuario Demo', '555-5555', false);
-                logTerminal('PDF Generado exitosamente.', 'success');
-            } catch (err) {
-                console.error("PDF Gen Error:", err);
-                logTerminal('Error generando PDF: ' + err.message, 'error');
-                logTerminal('Continuando sin PDF...', 'warning');
-            }
+            // Show Results (PDF is generated later when user clicks download)
+            showResultsV2(distributor, consumption);
 
-            // Show Results
-            showResultsV2(distributor, consumption, pdfBase64);
+            // Save ghost lead data to Supabase (fire-and-forget, non-blocking)
+            processLeadData(null, null, null, null, true)
+                .then(() => logTerminal('📡 Datos sincronizados.', 'success'))
+                .catch(e => console.warn('Ghost lead save failed:', e));
 
             updateProgressBar(100);
-            updateProgressStep(5); // Completion state (all checked ideally)
+            updateProgressStep(5);
         }
 
-        function showResultsV2(distributor, consumption, pdfBase64) {
-            // Hide processing
+        function showResultsV2(distributor, consumption) {
+            const data = window.analysisData;
+            if (!data) {
+                console.error('showResultsV2: No analysis data available');
+                return;
+            }
+
+            // Hide processing UI
             ELEMENTS.processing.style.display = 'none';
             ELEMENTS.filePreview.style.display = 'none';
             ELEMENTS.progressSteps.style.display = 'none';
 
-            // Calculate savings
-            const currentCost = consumption * 180; // aprox CLP price
-            const solarSavings = currentCost * 0.95; // 95% savings
+            // --- Populate Results UI (Bug 2 Fix: use correct DOM IDs) ---
+            const setEl = (id, val) => {
+                const el = document.getElementById(id);
+                if (el) el.textContent = val;
+            };
 
-            // Populate Results UI (Existing UI elements)
-            document.getElementById('displayDistributor').textContent = distributor.toUpperCase();
-            document.getElementById('displayConsumption').textContent = `${consumption} kWh`;
-            document.getElementById('displaySavings').textContent = `$${Math.round(solarSavings).toLocaleString('es-CL')}`;
+            setEl('clientNumber', data.clientNumber || '-');
+            setEl('consumption', data.consumption + ' kWh');
+            setEl('currentRate', formatCurrency(data.currentRate) + ' /kWh');
+            setEl('currentCost', formatCurrency(data.currentCost));
+            setEl('projectedCost', formatCurrency(data.projectedCost));
+            setEl('monthlyIncrease', '+' + formatCurrency(data.monthlyIncrease));
+            setEl('savings6m', formatCurrency(data.savings6m));
+            setEl('savings1y', formatCurrency(data.savings1y));
+            setEl('savings3y', formatCurrency(data.savings3y));
+            setEl('savings5y', formatCurrency(data.savings5y));
 
-            // PDF Download Link
-            const link = document.getElementById('downloadPdfBtn');
-            if (link) {
-                link.onclick = () => {
-                    const a = document.createElement('a');
-                    a.href = pdfBase64;
-                    a.download = `SolarOracle_Reporte_${distributor}.pdf`;
-                    a.click();
-                };
-            }
+            // --- Render Monthly Chart (Bug 6 Fix) ---
+            renderMonthlyChart(data.monthlySavings);
+
+            logTerminal('✅ Análisis completo. Resultados listos.', 'success');
+            logTerminal(`Sistema recomendado: ${data.systemSizekW} kWp (${data.panels} paneles)`, 'info');
+            logTerminal(`Ahorro anual estimado: ${formatCurrency(data.annualSavings)}`, 'info');
 
             // Show Results Section
             ELEMENTS.results.style.display = 'block';
@@ -1985,7 +2047,8 @@
             ELEMENTS.results.style.display = 'none';
             ELEMENTS.uploadArea.style.display = 'block'; // Show drag zone
 
-            ELEMENTS.terminal.innerHTML = '<div class="terminal-line">> Sistema reiniciado.</div>';
+            const termTarget = ELEMENTS.terminalBody || ELEMENTS.terminal;
+            if (termTarget) termTarget.innerHTML = '<div class="terminal-line">> Sistema reiniciado.</div>';
             updateProgressBar(0);
         }
 
@@ -2584,3 +2647,6 @@
 </body>
 
 </html>
+Pressing key...Getting DOM...Stopping...
+
+Stop Agent
