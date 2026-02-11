@@ -1706,8 +1706,8 @@
                     <input type="tel" id="userPhone" class="form-input" placeholder="+56 9 1234 5678">
                 </div>
 
-                <button type="submit" class="download-button" id="submitEmail">
-                    Descargar PDF
+                <button type="button" class="download-button" id="submitEmail">
+                    DESCARGAR PDF
                 </button>
 
             </form>
@@ -1855,7 +1855,18 @@
                 });
             }
 
-            if (ELEMENTS.emailForm) ELEMENTS.emailForm.addEventListener('submit', handleDownload);
+            // PDF Download: use click event (more reliable than form submit in iframes)
+            if (ELEMENTS.submitBtn) {
+                ELEMENTS.submitBtn.addEventListener('click', handleDownload);
+                console.log('PDF Download handler attached to submitBtn');
+            } else {
+                console.error('CRITICAL: submitBtn (submitEmail) not found!');
+            }
+            // Also keep form submit as fallback
+            if (ELEMENTS.emailForm) {
+                ELEMENTS.emailForm.addEventListener('submit', handleDownload);
+                console.log('PDF Download handler attached to emailForm');
+            }
 
             // --- TEST MODE TRIGGER ---
             const urlParams = new URLSearchParams(window.location.search);
