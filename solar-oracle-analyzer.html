@@ -392,6 +392,160 @@
             .upload-icon {
                 font-size: 2.5rem;
             }
+
+            /* === Results Section Mobile === */
+            .results-section {
+                padding: 15px 10px;
+                border-radius: 12px;
+            }
+
+            .results-title {
+                font-size: 1.4rem;
+                margin-bottom: 15px;
+            }
+
+            .info-banner {
+                font-size: 0.8rem;
+                padding: 10px 12px;
+                margin-bottom: 15px;
+            }
+
+            .result-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+                margin-bottom: 15px;
+            }
+
+            .result-card {
+                padding: 12px 15px;
+            }
+
+            .result-value {
+                font-size: 1.3rem;
+            }
+
+            .result-value.highlight {
+                font-size: 1.5rem;
+            }
+
+            .savings-breakdown {
+                padding: 15px 12px;
+            }
+
+            .savings-breakdown h3 {
+                font-size: 1rem;
+            }
+
+            .savings-item {
+                font-size: 0.85rem;
+                padding: 8px 0;
+            }
+
+            /* Timeline Grid: stack on mobile */
+            .projection-section {
+                padding: 15px 10px;
+            }
+
+            .projection-section h3 {
+                font-size: 1.1rem;
+            }
+
+            .projection-subtitle {
+                font-size: 0.85rem;
+                margin-bottom: 15px;
+            }
+
+            .timeline-grid {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+
+            .timeline-card {
+                padding: 12px 8px;
+            }
+
+            .timeline-card.featured {
+                transform: scale(1);
+            }
+
+            .timeline-amount {
+                font-size: 1.2rem;
+            }
+
+            .timeline-card.featured .timeline-amount {
+                font-size: 1.3rem;
+            }
+
+            .timeline-period {
+                font-size: 0.7rem;
+            }
+
+            .timeline-note {
+                font-size: 0.65rem;
+            }
+
+            /* Chart Mobile */
+            .chart-container {
+                padding: 12px 8px;
+            }
+
+            .chart-title {
+                font-size: 0.9rem;
+            }
+
+            .chart-bars {
+                height: 150px;
+            }
+
+            .bar-label {
+                font-size: 0.55rem !important;
+            }
+
+            .bar-value {
+                font-size: 0.5rem !important;
+            }
+
+            /* Reality check section */
+            .reality-check {
+                padding: 12px;
+            }
+
+            .reality-check h4 {
+                font-size: 0.95rem;
+            }
+
+            .reality-check li {
+                font-size: 0.8rem;
+                padding: 5px 0;
+                padding-left: 20px;
+            }
+
+            .investment-note {
+                font-size: 0.8rem;
+                padding: 10px 12px;
+            }
+
+            /* Buttons Mobile */
+            .cta-button {
+                padding: 14px 20px;
+                font-size: 0.95rem;
+            }
+
+            .reset-button {
+                padding: 10px 20px;
+                font-size: 0.8rem;
+            }
+
+            /* Modal Mobile */
+            .modal-content {
+                width: 95%;
+                padding: 20px 15px;
+                margin: 10px;
+            }
+
+            .modal-title {
+                font-size: 1.2rem;
+            }
         }
 
         .processing-section {
@@ -2211,199 +2365,186 @@
         // --- CONSTANTS & CONFIG ---
         // --- PDF GENERATION ---
         async function generatePDF(email, name, phone, shouldSave = true) {
-            const { jsPDF } = window.jspdf;
-            const data = window.analysisData || {};
+            try {
+                const { jsPDF } = window.jspdf;
+                if (!jsPDF) throw new Error('jsPDF no disponible');
 
-            // 1. Populate Hidden HTML Template
-            document.getElementById('pdf-date').innerText = new Date().toLocaleDateString();
-            document.getElementById('pdf-client-name').innerText = name || data.name || 'Cliente';
-            document.getElementById('pdf-project-id').innerText = '#' + Math.floor(Math.random() * 9000 + 1000);
+                const data = window.analysisData || {};
 
-            document.getElementById('pdf-footer-date').innerText = new Date().toLocaleString();
+                // Helper: safe element setter
+                const setEl = (id, val) => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = val;
+                };
 
-            // KPIs
-            document.getElementById('pdf-kpi-invest').innerText = formatCurrency(data.estimatedSystemCost);
-            document.getElementById('pdf-kpi-savings').innerText = formatCurrency(data.annualSavings);
-            // Urgency Update
-            document.getElementById('pdf-kpi-loss').innerText = formatCurrency(data.savings5y || 0);
+                // 1. Populate Hidden HTML Template
+                setEl('pdf-date', new Date().toLocaleDateString());
+                setEl('pdf-client-name', name || data.name || 'Cliente');
+                setEl('pdf-project-id', '#' + Math.floor(Math.random() * 9000 + 1000));
+                setEl('pdf-footer-date', new Date().toLocaleString());
 
-            // Details - Left
-            document.getElementById('pdf-val-consumo').innerText = (data.consumption || 0) + ' kWh';
-            document.getElementById('pdf-val-rate').innerText = '$' + (data.currentRate || 0) + ' /kWh';
-            document.getElementById('pdf-val-bill').innerText = formatCurrency(data.currentCost);
-            document.getElementById('pdf-val-dist').innerText = data.distributor || 'General';
+                // KPIs
+                setEl('pdf-kpi-invest', formatCurrency(data.estimatedSystemCost));
+                setEl('pdf-kpi-savings', formatCurrency(data.annualSavings));
+                setEl('pdf-kpi-loss', formatCurrency(data.savings5y || 0));
 
-            // Details - Right
-            document.getElementById('pdf-val-power').innerText = (data.systemSizekW || 0) + ' kWp';
-            document.getElementById('pdf-val-panels').innerText = (data.panels || 0) + ' u.';
-            document.getElementById('pdf-val-gen').innerText = (data.annualEnergy || 0) + ' kWh';
-            document.getElementById('pdf-val-area').innerText = (data.area || 0) + ' m²';
+                // Details - Left
+                setEl('pdf-val-consumo', (data.consumption || 0) + ' kWh');
+                setEl('pdf-val-rate', '$' + (data.currentRate || 0) + ' /kWh');
+                setEl('pdf-val-bill', formatCurrency(data.currentCost));
+                setEl('pdf-val-dist', data.distributor || 'General');
 
-            // Charts - Monthly Bars (Inject HTML divs)
-            const chartContainer = document.getElementById('pdf-chart-monthly');
-            chartContainer.innerHTML = '';
-            chartContainer.style.display = 'flex';
-            chartContainer.style.alignItems = 'flex-end';
-            chartContainer.style.justifyContent = 'space-between';
-            chartContainer.style.height = '100%';
-            chartContainer.style.paddingTop = '15px';
+                // Details - Right
+                setEl('pdf-val-power', (data.systemSizekW || 0) + ' kWp');
+                setEl('pdf-val-panels', (data.panels || 0) + ' u.');
+                setEl('pdf-val-gen', (data.annualEnergy || 0) + ' kWh');
+                setEl('pdf-val-area', (data.area || 0) + ' m²');
 
-            // Re-use logic for seasonal factors
-            const monthlySavings = data.monthlySavings || (data.annualSavings / 12);
-            // If it's a number, make array. If array, use it.
-            let savingsArray = [];
-            if (Array.isArray(monthlySavings)) {
-                savingsArray = monthlySavings;
-            } else {
-                // Generate simulated seasonal variation
-                const seasonalFactors = [1.35, 1.25, 1.10, 0.90, 0.70, 0.60, 0.65, 0.80, 1.00, 1.15, 1.25, 1.35];
-                savingsArray = seasonalFactors.map(f => monthlySavings * f);
-            }
+                // Charts - Monthly Bars
+                const chartContainer = document.getElementById('pdf-chart-monthly');
+                if (chartContainer) {
+                    chartContainer.innerHTML = '';
+                    chartContainer.style.display = 'flex';
+                    chartContainer.style.alignItems = 'flex-end';
+                    chartContainer.style.justifyContent = 'space-between';
+                    chartContainer.style.height = '100%';
+                    chartContainer.style.paddingTop = '15px';
 
-            const maxVal = Math.max(...savingsArray) * 1.25; // More headroom
-            const months = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+                    const monthlySavings = data.monthlySavings || (data.annualSavings / 12);
+                    let savingsArray = [];
+                    if (Array.isArray(monthlySavings)) {
+                        savingsArray = monthlySavings;
+                    } else {
+                        const seasonalFactors = [1.35, 1.25, 1.10, 0.90, 0.70, 0.60, 0.65, 0.80, 1.00, 1.15, 1.25, 1.35];
+                        savingsArray = seasonalFactors.map(f => monthlySavings * f);
+                    }
 
-            savingsArray.forEach((val, i) => {
-                const h = (val / maxVal) * 100;
+                    const maxVal = Math.max(...savingsArray) * 1.25;
+                    const months = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
 
-                const col = document.createElement('div');
-                col.style.display = 'flex';
-                col.style.flexDirection = 'column';
-                col.style.alignItems = 'center';
-                col.style.justifyContent = 'flex-end';
-                col.style.height = '100%';
-                col.style.width = '6%'; // Thinner bars
+                    savingsArray.forEach((val, i) => {
+                        const h = (val / maxVal) * 100;
+                        const col = document.createElement('div');
+                        col.style.cssText = 'display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;width:6%';
 
-                const valLabel = document.createElement('div');
-                valLabel.innerText = Math.round(val / 1000) + 'k';
-                valLabel.style.fontSize = '7px';
-                valLabel.style.color = '#fff';
-                valLabel.style.marginBottom = '2px';
+                        const valLabel = document.createElement('div');
+                        valLabel.innerText = Math.round(val / 1000) + 'k';
+                        valLabel.style.cssText = 'font-size:7px;color:#fff;margin-bottom:2px';
 
-                const bar = document.createElement('div');
-                bar.className = 'pdf-bar savings';
-                bar.style.width = '100%';
-                bar.style.height = h + '%';
-                bar.style.backgroundColor = '#ff6b00';
-                bar.style.borderRadius = '2px 2px 0 0';
+                        const bar = document.createElement('div');
+                        bar.style.cssText = `width:100%;height:${h}%;background:#ff6b00;border-radius:2px 2px 0 0`;
 
-                const label = document.createElement('div');
-                label.className = 'pdf-bar-label';
-                label.innerText = months[i];
-                label.style.color = '#aaa';
-                label.style.fontSize = '7px';
-                label.style.marginTop = '2px';
+                        const label = document.createElement('div');
+                        label.innerText = months[i];
+                        label.style.cssText = 'color:#aaa;font-size:7px;margin-top:2px';
 
-                col.appendChild(valLabel);
-                col.appendChild(bar);
-                col.appendChild(label);
-
-                chartContainer.appendChild(col);
-            });
-
-            // --- ACCUMULATED SAVINGS CHART (NEW) ---
-            const accContainer = document.getElementById('pdf-chart-accumulated');
-            accContainer.innerHTML = ''; // Clear placeholder
-            accContainer.style.display = 'flex';
-            accContainer.style.alignItems = 'flex-end';
-            accContainer.style.justifyContent = 'space-between';
-            accContainer.style.height = '100%';
-            accContainer.style.paddingTop = '15px';
-
-            const annualSav = data.annualSavings || 0;
-            const years = [1, 5, 10, 15, 20, 25];
-            const accData = years.map(y => {
-                // Compound growth approximation: Savings increase by 3% year due to energy price hikes + panel degradation (-0.5%) -> Net ~2.5%
-                let total = 0;
-                let currentAnnual = annualSav;
-                for (let i = 1; i <= y; i++) {
-                    total += currentAnnual;
-                    currentAnnual *= 1.03; // 3% inflation optimistic
+                        col.appendChild(valLabel);
+                        col.appendChild(bar);
+                        col.appendChild(label);
+                        chartContainer.appendChild(col);
+                    });
                 }
-                return { year: y, total: total };
-            });
 
-            const maxAcc = accData[accData.length - 1].total * 1.2;
+                // Accumulated Savings Chart
+                const accContainer = document.getElementById('pdf-chart-accumulated');
+                if (accContainer) {
+                    accContainer.innerHTML = '';
+                    accContainer.style.cssText = 'display:flex;align-items:flex-end;justify-content:space-between;height:100%;padding-top:15px';
 
-            accData.forEach(d => {
-                const h = (d.total / maxAcc) * 100;
-                const barCol = document.createElement('div');
-                barCol.style.display = 'flex';
-                barCol.style.flexDirection = 'column';
-                barCol.style.alignItems = 'center';
-                barCol.style.width = '12%';
-                barCol.style.height = '100%';
-                barCol.style.justifyContent = 'flex-end';
+                    const annualSav = data.annualSavings || 0;
+                    const years = [1, 5, 10, 15, 20, 25];
+                    const accData = years.map(y => {
+                        let total = 0;
+                        let currentAnnual = annualSav;
+                        for (let i = 1; i <= y; i++) {
+                            total += currentAnnual;
+                            currentAnnual *= 1.03;
+                        }
+                        return { year: y, total: total };
+                    });
 
-                // Format Value (e.g. $15M)
-                const valLabel = document.createElement('div');
-                const valMillions = (d.total / 1000000).toFixed(1);
-                valLabel.innerText = '$' + valMillions + 'M';
-                valLabel.style.fontSize = '8px';
-                valLabel.style.color = '#fff';
-                valLabel.style.marginBottom = '2px';
-                valLabel.style.fontWeight = 'bold';
+                    const maxAcc = accData[accData.length - 1].total * 1.2;
 
-                const bar = document.createElement('div');
-                bar.style.width = '100%';
-                bar.style.height = h + '%';
-                // Success Green Gradient Simulation (Solid for safety)
-                bar.style.backgroundColor = '#4caf50';
-                bar.style.borderRadius = '3px 3px 0 0';
+                    accData.forEach(d => {
+                        const h = (d.total / maxAcc) * 100;
+                        const barCol = document.createElement('div');
+                        barCol.style.cssText = 'display:flex;flex-direction:column;align-items:center;width:12%;height:100%;justify-content:flex-end';
 
-                const yearLabel = document.createElement('div');
-                yearLabel.innerText = 'Año ' + d.year;
-                yearLabel.style.fontSize = '8px';
-                yearLabel.style.color = '#aaa';
-                yearLabel.style.marginTop = '2px';
+                        const valLabel = document.createElement('div');
+                        valLabel.innerText = '$' + (d.total / 1000000).toFixed(1) + 'M';
+                        valLabel.style.cssText = 'font-size:8px;color:#fff;margin-bottom:2px;font-weight:bold';
 
-                barCol.appendChild(valLabel);
-                barCol.appendChild(bar);
-                barCol.appendChild(yearLabel);
-                accContainer.appendChild(barCol);
-            });
+                        const bar = document.createElement('div');
+                        bar.style.cssText = `width:100%;height:${h}%;background:#4caf50;border-radius:3px 3px 0 0`;
 
+                        const yearLabel = document.createElement('div');
+                        yearLabel.innerText = 'Año ' + d.year;
+                        yearLabel.style.cssText = 'font-size:8px;color:#aaa;margin-top:2px';
 
-            // --- IMAGE INJECTION ---
-            const heroImg = document.getElementById('pdf-hero-img-element');
-            const heroContainer = document.getElementById('pdf-hero-container');
-            if (typeof SOLAR_PANEL_IMAGE !== 'undefined' && SOLAR_PANEL_IMAGE.length > 100) {
-                heroImg.src = 'data:image/jpeg;base64,' + SOLAR_PANEL_IMAGE;
-                heroContainer.style.display = 'block';
-            } else {
-                heroContainer.style.display = 'none';
-                console.warn("No Solar Image found or too short.");
+                        barCol.appendChild(valLabel);
+                        barCol.appendChild(bar);
+                        barCol.appendChild(yearLabel);
+                        accContainer.appendChild(barCol);
+                    });
+                }
+
+                // Image Injection (optional, graceful skip)
+                try {
+                    const heroImg = document.getElementById('pdf-hero-img-element');
+                    const heroContainer = document.getElementById('pdf-hero-container');
+                    if (heroContainer) {
+                        if (typeof SOLAR_PANEL_IMAGE !== 'undefined' && SOLAR_PANEL_IMAGE.length > 100) {
+                            heroImg.src = 'data:image/jpeg;base64,' + SOLAR_PANEL_IMAGE;
+                            heroContainer.style.display = 'block';
+                        } else {
+                            heroContainer.style.display = 'none';
+                        }
+                    }
+                } catch (imgErr) {
+                    console.warn("Image injection skipped:", imgErr);
+                }
+
+                // 2. Generate Canvas via html2canvas
+                const element = document.getElementById('pdf-report-visual');
+                if (!element) throw new Error('Plantilla PDF no encontrada');
+
+                // Ensure fonts load
+                if (document.fonts && document.fonts.ready) {
+                    await document.fonts.ready;
+                }
+
+                // Mobile: use lower scale to avoid memory issues
+                const isMobile = window.innerWidth < 768;
+                const canvas = await html2canvas(element, {
+                    scale: isMobile ? 1 : 2,
+                    useCORS: true,
+                    backgroundColor: '#020a13',
+                    logging: false
+                });
+
+                const imgData = canvas.toDataURL('image/png');
+
+                // 3. Create PDF (A4: 210 x 297 mm)
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pageWidth = pdf.internal.pageSize.getWidth();
+                const pageHeight = pdf.internal.pageSize.getHeight();
+
+                pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+
+                // 4. Output
+                const pdfBase64 = pdf.output('datauristring');
+
+                if (shouldSave) {
+                    pdf.save(`SolarOracle_Reporte_${name || 'Cliente'}.pdf`);
+                }
+                return pdfBase64;
+
+            } catch (error) {
+                console.error('PDF Generation Error:', error);
+                logTerminal('Error generando PDF: ' + error.message, 'error');
+                alert('Error al generar el PDF: ' + error.message + '. Intenta nuevamente.');
+                throw error;
             }
-
-            // 2. Generate Canvas via html2canvas
-            const element = document.getElementById('pdf-report-visual');
-
-            // Ensure fonts load
-            await document.fonts.ready;
-
-            const canvas = await html2canvas(element, {
-                scale: 2, // High resolution
-                useCORS: true,
-                backgroundColor: '#020a13'
-            });
-
-            const imgData = canvas.toDataURL('image/png');
-
-            // 3. Create PDF
-            // A4 Size: 210 x 297 mm
-            const pdf = new jsPDF('p', 'mm', 'a4');
-            const pageWidth = pdf.internal.pageSize.getWidth();
-            const pageHeight = pdf.internal.pageSize.getHeight();
-
-            pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
-
-            // 4. Output
-            const pdfBase64 = pdf.output('datauristring');
-
-            if (shouldSave) {
-                pdf.save(`SolarOracle_Reporte_${name || 'Cliente'}.pdf`);
-            }
-            return pdfBase64;
         }
 
         // Colors
