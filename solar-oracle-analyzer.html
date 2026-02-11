@@ -297,35 +297,41 @@
         }
 
         /* Terminal Experience V2: Glass Navy */
+        /* Terminal Experience V3: Modern Minimalist Light */
         .terminal {
-            background: rgba(10, 25, 47, 0.95);
-            /* Deep Navy */
-            border-radius: 12px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(25, 50, 90, 1);
-            font-family: 'Consolas', 'Monaco', monospace;
+            background: rgba(255, 255, 255, 0.95);
+            /* Elegant White Glass */
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            font-family: 'Space Mono', 'Consolas', monospace;
+            /* Modern Font */
             overflow: hidden;
             display: flex;
             flex-direction: column;
             height: 400px;
-            margin-top: 20px;
+            margin-top: 25px;
+            transition: all 0.3s ease;
         }
 
         .terminal-header {
-            background: #020c1b;
-            padding: 12px 20px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: #f8f9fa;
+            /* Soft Grey Header */
+            padding: 14px 24px;
+            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
 
         .terminal-title {
-            color: #64ffda;
-            /* Cyan Tech */
-            font-size: 0.8rem;
-            letter-spacing: 2px;
+            color: #666;
+            /* Elegant Dark Grey */
+            font-size: 0.75rem;
+            letter-spacing: 1.5px;
             text-transform: uppercase;
+            font-weight: 600;
         }
 
         .terminal-controls {
@@ -337,6 +343,7 @@
             width: 10px;
             height: 10px;
             border-radius: 50%;
+            opacity: 0.7;
         }
 
         .dot-red {
@@ -352,41 +359,61 @@
         }
 
         .terminal-body {
-            padding: 20px;
+            padding: 24px;
             overflow-y: auto;
             flex: 1;
-            color: #a8b2d1;
-            /* Slate Blue Text */
+            color: #333;
+            /* Readable Dark Text */
             font-size: 0.9rem;
+            line-height: 1.6;
         }
 
         .terminal-line {
-            margin-bottom: 6px;
+            margin-bottom: 8px;
             border-left: 2px solid transparent;
-            padding-left: 10px;
+            padding-left: 12px;
             opacity: 0;
-            animation: fadeIn 0.1s ease forwards;
+            animation: fadeIn 0.3s ease forwards;
+            /* Slower, smoother fade */
         }
 
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+        }
+
+        /* Elegant Status Colors */
         .terminal-line.info {
-            border-left-color: #64ffda;
-            color: #e6f1ff;
+            border-left-color: #3b82f6;
+            color: #1e293b;
         }
 
+        /* Blue/Dark Slate */
         .terminal-line.success {
-            border-left-color: #4ade80;
-            color: #4ade80;
+            border-left-color: #10b981;
+            color: #064e3b;
         }
 
+        /* Emerald/Dark Green */
         .terminal-line.warning {
-            border-left-color: #ff6b00;
-            color: #ffbd2e;
+            border-left-color: #f59e0b;
+            color: #78350f;
         }
 
+        /* Amber/Brown */
         .terminal-line.error {
-            border-left-color: #ff4444;
-            color: #ff8888;
+            border-left-color: #ef4444;
+            color: #7f1d1d;
         }
+
+        /* Red/Dark Red */
 
 
 
