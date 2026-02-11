@@ -256,16 +256,10 @@
 
         /* --- END PDF STYLES --- */
 
-        /* --- UPLOAD COMMAND CENTER (Premium Responsive) --- */
-        .upload-command-center {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 16px;
-            margin-bottom: 30px;
-        }
-
-        .upload-wrapper-main {
-            grid-column: 1 / -1;
+        /* --- UNIFIED UPLOAD ZONE (Glassmorphism) --- */
+        .upload-container {
+            width: 100%;
+            margin-bottom: 25px;
         }
 
         .upload-area {
@@ -282,7 +276,9 @@
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             position: relative;
-            min-height: 200px;
+            min-height: 220px;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .upload-area:hover,
@@ -305,14 +301,14 @@
         }
 
         .upload-text {
-            font-size: 1.1rem;
+            font-size: 1.2rem;
             font-weight: 700;
             color: #1e293b;
             margin-bottom: 5px;
         }
 
         .upload-hint {
-            font-size: 0.85rem;
+            font-size: 0.9rem;
             color: #64748b;
         }
 
@@ -363,17 +359,8 @@
 
         /* Mobile Optimization */
         @media (max-width: 640px) {
-            .upload-command-center {
-                gap: 12px;
-            }
-
-            .action-btn {
-                padding: 15px 10px;
-                font-size: 0.9rem;
-                flex-direction: column;
-                /* Icon Top, Text Bottom */
-                gap: 8px;
-                text-align: center;
+            .upload-container {
+                margin-bottom: 20px;
             }
 
             .upload-area {
@@ -1088,31 +1075,15 @@
             <div class="subtitle">Análisis Inteligente de Consumo Eléctrico</div>
         </div>
 
-        <!-- UPLOAD COMMAND CENTER -->
-        <div class="upload-command-center">
-            <!-- Hidden Inputs -->
+        <!-- UNIFIED UPLOAD ZONE -->
+        <div class="upload-container" style="margin-bottom: 30px;">
             <input type="file" id="fileInput" class="file-input-hidden" accept=".pdf,image/*">
-            <input type="file" id="cameraInput" class="file-input-hidden" accept="image/*" capture="environment">
-            <!-- Cloud Input: Docs only to trigger Files picker on iOS -->
-            <input type="file" id="cloudInput" class="file-input-hidden"
-                accept=".pdf,application/pdf,application/vnd.google-apps.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
 
-            <!-- Main Drop Zone -->
-            <div class="upload-wrapper-main">
-                <label for="fileInput" class="upload-area" id="uploadAreaLabel">
-                    <div class="upload-icon">📄</div>
-                    <div class="upload-text">Subir Boleta (PDF/Imagen)</div>
-                    <div class="upload-hint">Arrastra o haz clic aquí</div>
-                </label>
-            </div>
-
-            <!-- Quick Actions -->
-            <button class="action-btn btn-camera" onclick="document.getElementById('cameraInput').click()">
-                <span style="font-size: 1.2rem;">📸</span> Escanear con Cámara
-            </button>
-            <button class="action-btn btn-cloud" onclick="handleCloudUpload()">
-                <span style="font-size: 1.2rem;">☁️</span> Importar de Nube
-            </button>
+            <label for="fileInput" class="upload-area" id="uploadAreaLabel">
+                <div class="upload-icon">☁️</div>
+                <div class="upload-text">Subir Boleta o Tomar Foto</div>
+                <div class="upload-hint">Arrastra tu archivo aquí o haz clic para usar la cámara</div>
+            </label>
         </div>
 
         <div class="processing-section" id="processingSection">
@@ -1295,7 +1266,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Populate Global ELEMENTS
             ELEMENTS = {
-                uploadArea: document.getElementById('uploadAreaLabel'), // Correct ID from new HTML
+                uploadArea: document.getElementById('uploadAreaLabel'), // Synced
                 fileInput: document.getElementById('fileInput'),
                 processing: document.getElementById('processingSection'),
                 progressBar: document.getElementById('progressBar'),
@@ -1349,60 +1320,6 @@
             } else {
                 console.error("CRITICAL: fileInput element not found in DOM");
             }
-
-            // CAMERA INPUT EVENT
-            const cameraInputEl = document.getElementById('cameraInput');
-            if (cameraInputEl) {
-                cameraInputEl.addEventListener('change', (e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                        handleFile(e.target.files[0]);
-                    }
-                });
-            }
-
-            // CLOUD INPUT EVENT (New: Dedicated for Documents/Drive)
-            const cloudInputEl = document.getElementById('cloudInput');
-            if (cloudInputEl) {
-                cloudInputEl.addEventListener('change', (e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                        handleFile(e.target.files[0]);
-                    }
-                });
-            }
-
-            // CLOUD UPLOAD SIMULATION
-            window.handleCloudUpload = function () {
-                // 1. Show Connecting Overlay
-                const overlay = document.createElement('div');
-                overlay.className = 'modal-overlay active';
-                overlay.innerHTML = `
-                    <div class="modal-content" style="text-align:center; max-width:400px;">
-                        <div style="font-size:3rem; margin-bottom:20px;">☁️</div>
-                        <h3 style="color:#333; margin-bottom:10px;">Conectando a Google Drive...</h3>
-                        <p style="color:#666; font-size:0.9rem;">Autenticando credenciales seguras de Nexos Corp.</p>
-                        <div style="margin-top:20px; height:4px; background:#eee; border-radius:2px; overflow:hidden;">
-                            <div style="width:0%; height:100%; background:#4285F4; transition:width 2s ease;" id="cloudProgress"></div>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(overlay);
-
-                // 2. Simulate Progress
-                setTimeout(() => {
-                    const bar = document.getElementById('cloudProgress');
-                    if (bar) bar.style.width = '70%';
-                }, 500);
-                setTimeout(() => {
-                    const bar = document.getElementById('cloudProgress');
-                    if (bar) bar.style.width = '100%';
-                }, 1500);
-
-                // 3. Fallback to File Picker (Triggering CLOUD input now)
-                setTimeout(() => {
-                    if (document.body.contains(overlay)) document.body.removeChild(overlay);
-                    if (cloudInputEl) cloudInputEl.click(); // Opens picker optimized for Documents
-                }, 2200);
-            };
 
             if (ELEMENTS.resetBtn) ELEMENTS.resetBtn.addEventListener('click', resetApp);
 
