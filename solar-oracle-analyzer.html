@@ -1093,6 +1093,9 @@
             <!-- Hidden Inputs -->
             <input type="file" id="fileInput" class="file-input-hidden" accept=".pdf,image/*">
             <input type="file" id="cameraInput" class="file-input-hidden" accept="image/*" capture="environment">
+            <!-- Cloud Input: Docs only to trigger Files picker on iOS -->
+            <input type="file" id="cloudInput" class="file-input-hidden"
+                accept=".pdf,application/pdf,application/vnd.google-apps.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet">
 
             <!-- Main Drop Zone -->
             <div class="upload-wrapper-main">
@@ -1335,8 +1338,7 @@
                 });
             }
 
-            // Evento CHANGE para el input de archivo (crítico)
-            // Evento CHANGE para el input de archivo (crítico)
+            // Evento CHANGE para el input de archivo (General)
             const fileInputEl = document.getElementById('fileInput');
             if (fileInputEl) {
                 fileInputEl.addEventListener('change', (e) => {
@@ -1352,6 +1354,16 @@
             const cameraInputEl = document.getElementById('cameraInput');
             if (cameraInputEl) {
                 cameraInputEl.addEventListener('change', (e) => {
+                    if (e.target.files && e.target.files.length > 0) {
+                        handleFile(e.target.files[0]);
+                    }
+                });
+            }
+
+            // CLOUD INPUT EVENT (New: Dedicated for Documents/Drive)
+            const cloudInputEl = document.getElementById('cloudInput');
+            if (cloudInputEl) {
+                cloudInputEl.addEventListener('change', (e) => {
                     if (e.target.files && e.target.files.length > 0) {
                         handleFile(e.target.files[0]);
                     }
@@ -1385,10 +1397,10 @@
                     if (bar) bar.style.width = '100%';
                 }, 1500);
 
-                // 3. Fallback to File Picker (Simulating Cloud File selection)
+                // 3. Fallback to File Picker (Triggering CLOUD input now)
                 setTimeout(() => {
                     if (document.body.contains(overlay)) document.body.removeChild(overlay);
-                    if (fileInputEl) fileInputEl.click(); // Opens picker as if browsing drive folder
+                    if (cloudInputEl) cloudInputEl.click(); // Opens picker optimized for Documents
                 }, 2200);
             };
 
