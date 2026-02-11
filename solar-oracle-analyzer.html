@@ -1356,7 +1356,7 @@
             selectedFile = file;
 
             // Ocultar wrapper completo para evitar espacios vacíos
-            const wrapper = document.querySelector('.upload-wrapper');
+            const wrapper = document.querySelector('.upload-container');
             if (wrapper) wrapper.style.display = 'none';
 
             // Asegurar que processing section se muestre
@@ -1820,7 +1820,7 @@
             if (ELEMENTS.results) ELEMENTS.results.style.display = 'none';
 
             // Mostrar wrapper nuevamente
-            const wrapper = document.querySelector('.upload-wrapper');
+            const wrapper = document.querySelector('.upload-container');
             if (wrapper) wrapper.style.display = 'block';
 
             if (ELEMENTS.progressBar) ELEMENTS.progressBar.style.width = '0%';
