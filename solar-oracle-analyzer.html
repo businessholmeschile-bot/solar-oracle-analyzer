@@ -455,11 +455,18 @@
             }
 
             .timeline-grid {
-                grid-template-columns: 1fr 1fr;
+                display: flex;
+                overflow-x: auto;
+                scroll-snap-type: x mandatory;
                 gap: 10px;
+                padding-bottom: 10px;
+                -webkit-overflow-scrolling: touch;
             }
 
             .timeline-card {
+                min-width: 44%;
+                flex-shrink: 0;
+                scroll-snap-align: start;
                 padding: 12px 8px;
             }
 
@@ -545,6 +552,12 @@
 
             .modal-title {
                 font-size: 1.2rem;
+            }
+
+            /* WhatsApp CTA mobile */
+            .whatsapp-cta {
+                font-size: 1rem;
+                padding: 16px 20px;
             }
         }
 
@@ -675,125 +688,8 @@
             font-weight: 700;
         }
 
-        /* --- NEW: Verification Modal --- */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(5px);
-            z-index: 9999;
-            display: none;
-            /* Hidden by default */
-            justify-content: center;
-            align-items: center;
-            animation: fadeIn 0.3s ease;
-        }
+        /* Verification modal styles removed — consolidated into email modal styles below */
 
-        .modal-content {
-            background: white;
-            padding: 30px;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 500px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            position: relative;
-            animation: slideUpModal 0.4s ease;
-        }
-
-        @keyframes slideUpModal {
-            from {
-                transform: translateY(20px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-header h3 {
-            margin: 0;
-            color: #1f2937;
-            font-size: 1.25rem;
-        }
-
-        .modal-body {
-            margin: 20px 0;
-        }
-
-        .input-group {
-            margin-bottom: 15px;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 0.9rem;
-            color: #4b5563;
-            font-weight: 500;
-        }
-
-        .input-group input,
-        .input-group select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #d1d5db;
-            border-radius: 8px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-
-        .input-group input:focus,
-        .input-group select:focus {
-            border-color: #ff6b00;
-            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
-        }
-
-        .modal-footer {
-            display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-        }
-
-        .btn-cancel {
-            padding: 10px 20px;
-            border: 1px solid #d1d5db;
-            background: white;
-            color: #4b5563;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-
-        .btn-cancel:hover {
-            background: #f3f4f6;
-        }
-
-        .btn-confirm {
-            padding: 10px 20px;
-            background: #ff6b00;
-            color: white;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            box-shadow: 0 4px 10px rgba(255, 107, 0, 0.2);
-            transition: all 0.2s;
-        }
-
-        .btn-confirm:hover {
-            background: #e66000;
-            transform: translateY(-1px);
-        }
-
-        /* Terminal Experience V2: Glass Navy */
         /* Terminal Experience V3: Modern Minimalist Light */
         .terminal {
             background: rgba(255, 255, 255, 0.95);
@@ -1052,6 +948,108 @@
             border-color: #ff6b00;
             color: #ff6b00;
             background: #fff5f0;
+        }
+
+        /* WhatsApp CTA Button */
+        .whatsapp-cta {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #25D366;
+            color: white;
+            border: none;
+            padding: 18px 40px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 15px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            text-decoration: none;
+        }
+
+        .whatsapp-cta:hover {
+            background: #1DA851;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(37, 211, 102, 0.4);
+        }
+
+        .whatsapp-cta svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+
+        /* Manual Fallback Form */
+        .manual-fallback {
+            display: none;
+            background: #fff8f0;
+            border: 2px dashed #ff6b00;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .manual-fallback.show {
+            display: block;
+        }
+
+        .manual-fallback h4 {
+            color: #ff6b00;
+            margin-bottom: 10px;
+            font-size: 1rem;
+        }
+
+        .manual-fallback p {
+            color: #666;
+            font-size: 0.85rem;
+            margin-bottom: 15px;
+        }
+
+        .manual-fallback .form-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+
+        .manual-fallback .form-row select,
+        .manual-fallback .form-row input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .manual-fallback .form-row input:focus,
+        .manual-fallback .form-row select:focus {
+            outline: none;
+            border-color: #ff6b00;
+        }
+
+        .manual-fallback button {
+            background: #ff6b00;
+            color: white;
+            border: none;
+            padding: 14px 30px;
+            font-size: 1rem;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .manual-fallback button:hover {
+            background: #e66000;
+            transform: translateY(-2px);
         }
 
         .info-banner {
@@ -1481,6 +1479,23 @@
             </label>
         </div>
 
+        <!-- Manual Fallback Form (shown when OCR fails) -->
+        <div class="manual-fallback" id="manualFallback">
+            <h4>📝 No pudimos leer tu boleta automáticamente</h4>
+            <p>Ingresa tus datos manualmente para recibir tu análisis:</p>
+            <div class="form-row">
+                <select id="manualDistributor">
+                    <option value="cge">CGE</option>
+                    <option value="enel">Enel</option>
+                    <option value="chilquinta">Chilquinta</option>
+                    <option value="saesa">Saesa / Frontel</option>
+                    <option value="other">Otra</option>
+                </select>
+                <input type="number" id="manualConsumption" placeholder="Consumo kWh (ej: 350)" min="1" max="9999">
+            </div>
+            <button onclick="submitManualData()">⚡ Generar Análisis</button>
+        </div>
+
         <!-- Progress Steps -->
         <div class="progress-steps" id="progressSteps" style="display: none;">
             <div class="step-item active" id="step-1">
@@ -1532,44 +1547,7 @@
         </div>
     </div>
 
-    <!-- Verification Modal -->
-    <div class="modal-overlay" id="verificationModal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Verificación de Datos</h3>
-            </div>
-            <div class="modal-body">
-                <p style="margin-bottom: 15px; color: #666; font-size: 0.9rem;">
-                    Por favor verifica los datos extraídos antes de generar el reporte.
-                </p>
-
-                <div class="input-group">
-                    <label>Distribuidora Detectada</label>
-                    <select id="verifyDistributor">
-                        <option value="cge">CGE</option>
-                        <option value="enel">Enel</option>
-                        <option value="chilquinta">Chilquinta</option>
-                        <option value="saesa">Saesa / Frontel</option>
-                        <option value="other">Otra / Desconocida</option>
-                    </select>
-                </div>
-
-                <div class="input-group">
-                    <label>N° Cliente</label>
-                    <input type="text" id="verifyClientNumber" placeholder="Ej: 1234567-8">
-                </div>
-
-                <div class="input-group">
-                    <label>Consumo (kWh)</label>
-                    <input type="number" id="verifyConsumption" placeholder="Ej: 350">
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn-cancel" onclick="cancelVerification()">Cancelar</button>
-                <button class="btn-confirm" onclick="confirmVerification()">Confirmar y Generar</button>
-            </div>
-        </div>
-    </div>
+    <!-- Verification Modal removed (dead code) -->
     <div class="results-section" id="resultsSection">
         <div class="results-title">📊 Análisis Completado</div>
 
@@ -1672,6 +1650,13 @@
         </div>
 
         <button class="cta-button" id="downloadPdfButton">📥 Descargar Análisis en PDF</button>
+        <a class="whatsapp-cta" id="whatsappCta" href="#" target="_blank" rel="noopener">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+            Agendar Cotización Gratis
+        </a>
         <button class="reset-button" id="resetButton">🔄 Analizar otra boleta</button>
     </div>
 
@@ -1993,6 +1978,14 @@
 
                 logTerminal(`Datos extraídos: ${JSON.stringify(extractedDataTemp)}`, 'info');
 
+                // Check if we got useful data
+                if (!extractedDataTemp.consumption || parseInt(extractedDataTemp.consumption) === 0) {
+                    logTerminal('⚠️ No se pudo extraer el consumo automáticamente.', 'warning');
+                    logTerminal('Mostrando formulario manual...', 'info');
+                    showManualFallback();
+                    return;
+                }
+
                 // Proceed directly to processing (no verification modal)
                 finalizeProcessing(
                     extractedDataTemp.distributor,
@@ -2003,7 +1996,8 @@
             } catch (err) {
                 console.error("OCR Error:", err);
                 logTerminal("Error en lectura: " + err.message, 'error');
-                updateProgressBar(0);
+                logTerminal('Mostrando formulario manual...', 'info');
+                showManualFallback();
             }
         }
 
@@ -2186,6 +2180,13 @@
             logTerminal(`Sistema recomendado: ${data.systemSizekW} kWp (${data.panels} paneles)`, 'info');
             logTerminal(`Ahorro anual estimado: ${formatCurrency(data.annualSavings)}`, 'info');
 
+            // Update WhatsApp CTA with dynamic data
+            const whatsappCta = document.getElementById('whatsappCta');
+            if (whatsappCta) {
+                const msg = `Hola, acabo de analizar mi boleta eléctrica con SolarOracle. Mi consumo es ${data.consumption} kWh y me gustaría una cotización solar. ¿Pueden ayudarme?`;
+                whatsappCta.href = `https://wa.me/56955228008?text=${encodeURIComponent(msg)}`;
+            }
+
             // Show Results Section
             ELEMENTS.results.style.display = 'block';
             window.scrollTo({ top: ELEMENTS.results.offsetTop, behavior: 'smooth' });
@@ -2216,6 +2217,38 @@
             const termTarget = ELEMENTS.terminalBody || ELEMENTS.terminal;
             if (termTarget) termTarget.innerHTML = '<div class="terminal-line">> Sistema reiniciado.</div>';
             updateProgressBar(0);
+
+            // Hide manual fallback if visible
+            const manualForm = document.getElementById('manualFallback');
+            if (manualForm) manualForm.classList.remove('show');
+        }
+
+        // --- MANUAL FALLBACK ---
+        function showManualFallback() {
+            const fb = document.getElementById('manualFallback');
+            if (fb) {
+                fb.classList.add('show');
+                updateProgressBar(0);
+            }
+        }
+
+        function submitManualData() {
+            const consumption = parseInt(document.getElementById('manualConsumption')?.value) || 0;
+            const distributor = document.getElementById('manualDistributor')?.value || 'cge';
+
+            if (consumption <= 0 || consumption > 9999) {
+                alert('Por favor ingresa un consumo válido (entre 1 y 9999 kWh)');
+                return;
+            }
+
+            // Hide fallback form
+            const fb = document.getElementById('manualFallback');
+            if (fb) fb.classList.remove('show');
+
+            logTerminal(`Datos manuales: ${consumption} kWh, Distribuidora: ${distributor}`, 'info');
+
+            // Proceed to processing
+            finalizeProcessing(distributor, 'Manual', consumption);
         }
 
         // --- REGEX HELPERS (Existing Logic) ---
@@ -2736,7 +2769,7 @@
                         <div class="pdf-kpi-value highlight" id="pdf-kpi-savings">0</div>
                     </div>
                     <div class="pdf-kpi-card" style="border: 1px solid #ff4444; background: #2a0000;">
-                        <div class="pdf-kpi-label" style="color: #ff8888;">Si no haces nada perdies</div>
+                        <div class="pdf-kpi-label" style="color: #ff8888;">Si no haces nada pierdes</div>
                         <div class="pdf-kpi-value" id="pdf-kpi-loss" style="color: #ffcccc;">$0</div>
                     </div>
                 </div>
@@ -2805,6 +2838,3 @@
 </body>
 
 </html>
-Pressing key...Getting DOM...Stopping...
-
-Stop Agent
