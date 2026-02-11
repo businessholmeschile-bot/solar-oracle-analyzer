@@ -1288,9 +1288,11 @@
             console.log("SolarOracle Initialized. Ready to rock.");
 
             // --- EVENT LISTENERS ---
+            // --- EVENT LISTENERS ---
             const uploadLabel = document.getElementById('uploadAreaLabel');
 
             if (uploadLabel) {
+                // Drag & Drop
                 uploadLabel.addEventListener('dragover', (e) => {
                     e.preventDefault();
                     uploadLabel.classList.add('dragover');
@@ -1307,12 +1309,26 @@
                         handleFile(e.dataTransfer.files[0]);
                     }
                 });
+
+                // ROBUST CLICK HANDLER (Fix for mobile/hidden input issues)
+                uploadLabel.addEventListener('click', (e) => {
+                    e.preventDefault(); // Stop default "label for" behavior to prevent double-open
+                    // Prevent recursive clicks if label triggers input naturally
+                    if (e.target.tagName === 'INPUT') return;
+
+                    const fileInput = document.getElementById('fileInput');
+                    if (fileInput) {
+                        // Small delay to ensure UI feedback
+                        setTimeout(() => fileInput.click(), 50);
+                    }
+                });
             }
 
             // Evento CHANGE para el input de archivo (General)
             const fileInputEl = document.getElementById('fileInput');
             if (fileInputEl) {
                 fileInputEl.addEventListener('change', (e) => {
+                    console.log("File Input Changed:", e.target.files); // Debug
                     if (e.target.files && e.target.files.length > 0) {
                         handleFile(e.target.files[0]);
                     }
