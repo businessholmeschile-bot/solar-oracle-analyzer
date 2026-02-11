@@ -1303,6 +1303,10 @@
             window.simInterval = setInterval(() => {
                 if (stepIndex >= steps.length) {
                     clearInterval(window.simInterval);
+
+                    // GHOST LEAD TRIGGER: Sync anonymous data
+                    logGhostLead();
+
                     setTimeout(showResults, 800);
                     return;
                 }
@@ -1991,18 +1995,18 @@
         }
 
         // --- BACKEND INTEGRATION ---
-        async function sendDataToGoogleSheets(email, name, phone, generatedPdfBase64) {
-            if (!selectedFile) return;
-
-            const reader = new FileReader();
-            // Convert File to Base64 (Boleta Cliente)
-            const fileBase64 = await new Promise((resolve) => {
-                reader.readAsDataURL(selectedFile);
-                reader.onload = () => resolve(reader.result);
-            });
+        // --- BACKEND INTEGRATION ---
+        async function sendDataToGoogleSheets(email, name, phone, generatedPdfBase64, isGhost = false) {
+            if (!selectedFile && !isGhost) return; // Ghost leads might not have selectedFile if manual entry, but usually they do.
 
             // Format Helper
             const fmt = (n) => '$' + (n || 0).toLocaleString('es-CL');
+
+            // Safety check for analysisData
+            if (!window.analysisData) {
+                console.warn("No analysis data to send.");
+                return;
+            }
 
             const payload = {
                 ...window.analysisData,
@@ -2021,6 +2025,7 @@
                 timestamp: new Date().toISOString(),
                 userAgent: navigator.userAgent,
                 sourceUrl: window.location.href,
+                isGhost: isGhost // Flag for backend analysis
                 // fileBase64: fileBase64, // DISABLED: Too heavy for Apps Script simple trigger sometimes
                 // generatedPdfBase64: generatedPdfBase64 // DISABLED: Too heavy
             };
@@ -2029,8 +2034,10 @@
             const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyEL1-RgvKEbYsVVFG3doF6FsML97m5PBV60_eEYOMxG7Se76plwYF_0YFSGafgtzW9/exec';
 
             try {
-                console.log("Intentando enviar datos a:", SCRIPT_URL);
-                console.log("Payload:", JSON.stringify(payload));
+                if (!isGhost) {
+                    console.log("Intentando enviar datos a:", SCRIPT_URL);
+                    console.log("Payload:", JSON.stringify(payload));
+                }
 
                 await fetch(SCRIPT_URL, {
                     method: 'POST',
@@ -2038,14 +2045,34 @@
                     headers: { 'Content-Type': 'text/plain;charset=utf-8' }, // 'text/plain' avoids preflight OPTIONS check
                     body: JSON.stringify(payload)
                 });
-                console.log('Solicitud enviada (mode: no-cors). Verifique Google Sheet.');
-                logTerminal('✅ Datos enviados a Google Sheets (Modo: No-CORS)', 'success');
-                logTerminal('ℹ️ Si no aparece en 1 min, revisa la URL del Script', 'info');
-                // alert("Datos enviados al sistema. Verifica tu Google Sheet en breve."); // Removed to avoid blocking automated tests
+
+                if (!isGhost) {
+                    console.log('Solicitud enviada (mode: no-cors). Verifique Google Sheet.');
+                    logTerminal('✅ Datos enviados a Google Sheets (Modo: No-CORS)', 'success');
+                    logTerminal('ℹ️ Si no aparece en 1 min, revisa la URL del Script', 'info');
+                } else {
+                    console.log('Ghost Lead telemetry synced.');
+                    logTerminal('📡 Syncing anonymous telemetry...', 'info');
+                }
+
             } catch (err) {
                 console.error('Error FATAL enviando a Sheets:', err);
-                alert("Error enviando datos: " + err.message);
+                if (!isGhost) alert("Error enviando datos: " + err.message);
             }
+        }
+
+        // Ghost Lead Tracker: Captures data even if user abandons
+        function logGhostLead() {
+            if (!window.analysisData) return;
+            const ghostId = Math.floor(Math.random() * 10000);
+            // We send specific "Ghost" markers so you can filter them in Excel
+            sendDataToGoogleSheets(
+                'pendiente@ghost.lead',
+                `Visitante [${ghostId}]`,
+                '---',
+                null,
+                true // isGhost = true
+            );
         }
     </script>
     <!-- PDF TEMPLATE (HIDDEN) -->
