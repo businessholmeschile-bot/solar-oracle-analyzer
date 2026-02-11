@@ -1706,7 +1706,7 @@
                     <input type="tel" id="userPhone" class="form-input" placeholder="+56 9 1234 5678">
                 </div>
 
-                <button type="button" class="download-button" id="submitEmail">
+                <button type="button" class="download-button" id="submitEmail" onclick="handleDownload(event)">
                     DESCARGAR PDF
                 </button>
 
@@ -1762,6 +1762,7 @@
                 emailForm: document.getElementById('emailForm'),
                 userEmail: document.getElementById('userEmail'),
                 userName: document.getElementById('userName'),
+                userPhone: document.getElementById('userPhone'),
                 downloadBtn: document.getElementById('downloadPdfButton'),
                 successMsg: document.getElementById('successMessage'),
                 submitBtn: document.getElementById('submitEmail'),
@@ -2329,46 +2330,51 @@
 
         // --- FORM SUBMIT HANDLER ---
         async function handleDownload(e) {
-            e.preventDefault();
-
-            const email = ELEMENTS.userEmail.value;
-            const name = ELEMENTS.userName.value;
-            const phone = ELEMENTS.userPhone.value;
-
-            if (!validateEmail(email)) {
-                document.getElementById('emailError').classList.add('show');
-                return;
-            }
-
-            // UI Feedback
-            const subBtn = ELEMENTS.submitBtn;
-            const originalText = subBtn.innerText;
-            subBtn.innerText = 'Generando...';
-            subBtn.disabled = true;
-
+            if (e && e.preventDefault) e.preventDefault();
+            console.log('handleDownload called');
             try {
-                document.getElementById('emailError').classList.remove('show');
+                const email = (ELEMENTS.userEmail && ELEMENTS.userEmail.value) || document.getElementById('userEmail')?.value || '';
+                const name = (ELEMENTS.userName && ELEMENTS.userName.value) || document.getElementById('userName')?.value || '';
+                const phone = (ELEMENTS.userPhone && ELEMENTS.userPhone.value) || document.getElementById('userPhone')?.value || '';
 
-                // 1. Generar PDF, Descargar y obtener Base64 (Todo en uno)
-                const generatedPdfBase64 = await generatePDF(email, name, phone, true);
+                if (!validateEmail(email)) {
+                    document.getElementById('emailError').classList.add('show');
+                    return;
+                }
 
-                if (ELEMENTS.successMsg) ELEMENTS.successMsg.classList.add('show');
+                // UI Feedback
+                const subBtn = ELEMENTS.submitBtn || document.getElementById('submitEmail');
+                const originalText = subBtn.innerText;
+                subBtn.innerText = 'Generando...';
+                subBtn.disabled = true;
 
-                // 3. Send Data to Supabase (Hybrid)
-                await processLeadData(email, name, phone, generatedPdfBase64);
+                try {
+                    document.getElementById('emailError').classList.remove('show');
 
-                setTimeout(() => {
-                    if (ELEMENTS.emailModal) ELEMENTS.emailModal.classList.remove('active');
+                    // 1. Generar PDF, Descargar y obtener Base64
+                    const generatedPdfBase64 = await generatePDF(email, name, phone, true);
+
+                    if (ELEMENTS.successMsg) ELEMENTS.successMsg.classList.add('show');
+
+                    // 2. Send Data to Supabase
+                    await processLeadData(email, name, phone, generatedPdfBase64);
+
+                    setTimeout(() => {
+                        if (ELEMENTS.emailModal) ELEMENTS.emailModal.classList.remove('active');
+                        subBtn.innerText = originalText;
+                        subBtn.disabled = false;
+                        if (ELEMENTS.successMsg) ELEMENTS.successMsg.classList.remove('show');
+                    }, 3000);
+
+                } catch (innerError) {
+                    console.error('PDF/Save error:', innerError);
                     subBtn.innerText = originalText;
                     subBtn.disabled = false;
-                    if (ELEMENTS.successMsg) ELEMENTS.successMsg.classList.remove('show');
-                }, 3000);
-
-            } catch (error) {
-                console.error(error);
-                subBtn.innerText = originalText;
-                subBtn.disabled = false;
-                alert('Hubo un error al procesar tu solicitud. Intenta nuevamente.');
+                    alert('Error generando PDF: ' + innerError.message);
+                }
+            } catch (outerError) {
+                console.error('handleDownload crashed:', outerError);
+                alert('Error: ' + outerError.message);
             }
         }
 
