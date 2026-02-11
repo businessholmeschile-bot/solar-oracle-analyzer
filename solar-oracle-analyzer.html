@@ -392,144 +392,11 @@
                 font-size: 2.5rem;
             }
 
-            /* === Results Section Mobile === */
+            /* === Results Section Mobile (new design is mobile-first) === */
             .results-section {
-                padding: 15px 10px;
-                border-radius: 12px;
-            }
-
-            .results-title {
-                font-size: 1.4rem;
-                margin-bottom: 15px;
-            }
-
-            .info-banner {
-                font-size: 0.8rem;
-                padding: 10px 12px;
-                margin-bottom: 15px;
-            }
-
-            .result-grid {
-                grid-template-columns: 1fr;
-                gap: 10px;
-                margin-bottom: 15px;
-            }
-
-            .result-card {
-                padding: 12px 15px;
-            }
-
-            .result-value {
-                font-size: 1.3rem;
-            }
-
-            .result-value.highlight {
-                font-size: 1.5rem;
-            }
-
-            .savings-breakdown {
-                padding: 15px 12px;
-            }
-
-            .savings-breakdown h3 {
-                font-size: 1rem;
-            }
-
-            .savings-item {
-                font-size: 0.85rem;
-                padding: 8px 0;
-            }
-
-            /* Timeline Grid: stack on mobile */
-            .projection-section {
-                padding: 15px 10px;
-            }
-
-            .projection-section h3 {
-                font-size: 1.1rem;
-            }
-
-            .projection-subtitle {
-                font-size: 0.85rem;
-                margin-bottom: 15px;
-            }
-
-            .timeline-grid {
-                display: flex;
-                overflow-x: auto;
-                scroll-snap-type: x mandatory;
-                gap: 10px;
-                padding-bottom: 10px;
-                -webkit-overflow-scrolling: touch;
-            }
-
-            .timeline-card {
-                min-width: 44%;
-                flex-shrink: 0;
-                scroll-snap-align: start;
-                padding: 12px 8px;
-            }
-
-            .timeline-card.featured {
-                transform: scale(1);
-            }
-
-            .timeline-amount {
-                font-size: 1.2rem;
-            }
-
-            .timeline-card.featured .timeline-amount {
-                font-size: 1.3rem;
-            }
-
-            .timeline-period {
-                font-size: 0.7rem;
-            }
-
-            .timeline-note {
-                font-size: 0.65rem;
-            }
-
-            /* Chart Mobile */
-            .chart-container {
-                padding: 12px 8px;
-                overflow-x: hidden;
-            }
-
-            .chart-title {
-                font-size: 0.9rem;
-            }
-
-            .chart-bars {
-                height: 150px;
-            }
-
-            .bar-label {
-                font-size: 0.55rem !important;
-            }
-
-            .bar-value {
-                font-size: 0.5rem !important;
-            }
-
-            /* Reality check section */
-            .reality-check {
-                padding: 12px;
-            }
-
-            .reality-check h4 {
-                font-size: 0.95rem;
-            }
-
-            .reality-check li {
-                font-size: 0.8rem;
-                padding: 5px 0;
-                padding-left: 20px;
-            }
-
-            .investment-note {
-                font-size: 0.8rem;
-                padding: 10px 12px;
+                padding: 0;
+                border: none;
+                box-shadow: none;
             }
 
             /* Buttons Mobile */
@@ -811,20 +678,23 @@
 
 
 
+        /* =============================================
+           NEW MOBILE-FIRST RESULTS DESIGN
+           ============================================= */
         .results-section {
             display: none;
-            background: #ffffff;
-            border-radius: 20px;
-            padding: 30px;
-            border: 2px solid #ff6b00;
-            box-shadow: 0 4px 20px rgba(255, 107, 0, 0.15);
-            animation: slideUp 0.5s ease;
+            background: #f8f9fa;
+            border-radius: 0;
+            padding: 0;
+            border: none;
+            box-shadow: none;
+            animation: fadeInUp 0.5s ease;
         }
 
-        @keyframes slideUp {
+        @keyframes fadeInUp {
             from {
                 opacity: 0;
-                transform: translateY(30px);
+                transform: translateY(10px);
             }
 
             to {
@@ -833,113 +703,347 @@
             }
         }
 
-        .results-title {
-            font-size: 2rem;
-            margin-bottom: 30px;
+        /* Header */
+        .results-header {
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+            padding: 24px 20px;
             text-align: center;
-            color: #ff6b00;
+            color: white;
         }
 
-        .result-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+        .results-header h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 6px;
         }
 
-        .result-card {
-            background: #fff5f0;
-            border-radius: 15px;
+        .results-header p {
+            font-size: 0.8rem;
+            opacity: 0.85;
+        }
+
+        /* Info Pill */
+        .info-pill {
+            background: #eef6ff;
+            border-left: 4px solid #3b82f6;
+            margin: 16px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            color: #1e40af;
+            line-height: 1.5;
+        }
+
+        /* Data Rows */
+        .data-rows {
+            padding: 0 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .data-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 14px 16px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .data-row .label {
+            font-size: 0.82rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .data-row .value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        /* Impact Card (Dark) */
+        .impact-card {
+            margin: 0 16px 16px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%);
+            border-radius: 14px;
             padding: 20px;
-            border: 2px solid #ffe8d9;
-            transition: all 0.3s ease;
+            color: white;
         }
 
-        .result-card:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(255, 107, 0, 0.15);
-            border-color: #ff6b00;
-        }
-
-        .result-label {
-            font-size: 0.75rem;
-            color: #666666;
-            margin-bottom: 8px;
+        .impact-card h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: #94a3b8;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+        }
+
+        .impact-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .impact-row:last-child {
+            border: none;
+            padding-top: 12px;
+        }
+
+        .impact-row .label {
+            font-size: 0.82rem;
+            color: #94a3b8;
+        }
+
+        .impact-row .value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: white;
+        }
+
+        .impact-row .value.danger {
+            color: #ef4444;
+            font-size: 1.1rem;
+        }
+
+        .impact-row .value.warning {
+            color: #fbbf24;
+        }
+
+        /* Savings Section */
+        .savings-section {
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a2e;
+        }
+
+        .savings-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .savings-card {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+            animation: fadeInUp 0.4s ease-out both;
+        }
+
+        .savings-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #22c55e;
+        }
+
+        .savings-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .savings-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .savings-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+
+        .savings-card .period {
+            min-width: 70px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .savings-card .amount {
+            flex: 1;
+            text-align: right;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #16a34a;
+        }
+
+        /* Danger Card */
+        .danger-card {
+            margin: 0 16px 16px;
+            background: linear-gradient(135deg, #450a0a 0%, #1c0000 100%);
+            border: 1px solid #dc2626;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .danger-card .danger-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .danger-card .danger-label {
+            font-size: 0.82rem;
+            color: #fca5a5;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .danger-card .danger-amount {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fecaca;
+            margin-bottom: 4px;
+        }
+
+        .danger-card .danger-note {
+            font-size: 0.75rem;
+            color: #f87171;
+        }
+
+        /* Chart Section */
+        .chart-section {
+            margin: 0 16px 16px;
+            background: white;
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-section h4 {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 12px;
             font-weight: 600;
         }
 
-        .result-value {
-            font-size: 1.6rem;
-            font-weight: 700;
-            color: #1a1a1a;
-        }
-
-        .result-value.highlight {
-            color: #ff6b00;
-            font-size: 2rem;
-        }
-
-        .savings-breakdown {
-            background: #fff5f0;
-            border-radius: 15px;
-            padding: 20px;
-            margin-top: 20px;
-            border: 2px solid #ff6b00;
-        }
-
-        .savings-breakdown h3 {
-            color: #ff6b00;
-            margin-bottom: 15px;
-            font-size: 1.2rem;
-        }
-
-        .savings-item {
+        .chart-bars-container {
             display: flex;
+            align-items: flex-end;
             justify-content: space-between;
-            margin-bottom: 10px;
-            padding: 10px 0;
-            border-bottom: 1px solid rgba(255, 107, 0, 0.2);
-            color: #1a1a1a;
+            height: 120px;
+            gap: 3px;
         }
 
-        .savings-item:last-child {
-            border-bottom: none;
+        .chart-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            flex: 1;
+            height: 100%;
+        }
+
+        .chart-col .bar {
+            width: 100%;
+            background: linear-gradient(to top, #ff6b00, #ffaa00);
+            border-radius: 3px 3px 0 0;
+            min-height: 4px;
+            transition: height 0.8s ease-out;
+        }
+
+        .chart-col .bar-label {
+            font-size: 9px;
+            color: #9ca3af;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        /* Reality / Trust Section */
+        .reality-section {
+            margin: 0 16px 16px;
+            background: #f0fdf4;
+            border-radius: 14px;
+            padding: 16px 18px;
+        }
+
+        .reality-section h4 {
+            font-size: 0.9rem;
+            color: #166534;
+            margin-bottom: 10px;
             font-weight: 700;
-            font-size: 1.05rem;
+        }
+
+        .reality-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .reality-section li {
+            position: relative;
+            padding: 6px 0 6px 20px;
+            font-size: 0.78rem;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .reality-section li::before {
+            content: '\2713';
+            position: absolute;
+            left: 0;
+            color: #22c55e;
+            font-weight: 700;
+        }
+
+        /* CTA Section */
+        .cta-section {
+            padding: 0 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
 
         .cta-button {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             background: #ff6b00;
             color: white;
             border: none;
-            padding: 18px 40px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 10px;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
             cursor: pointer;
             width: 100%;
-            margin-top: 20px;
-            transition: all 0.3s ease;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 0.5px;
+            transition: all 0.3s ease;
         }
 
         .cta-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(255, 107, 0, 0.4);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 0, 0.4);
         }
 
         .reset-button {
             background: transparent;
-            color: #666666;
-            border: 2px solid #cccccc;
-            padding: 12px 30px;
-            font-size: 0.9rem;
-            border-radius: 8px;
+            color: #9ca3af;
+            border: 1.5px solid #e5e7eb;
+            padding: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 10px;
             cursor: pointer;
-            margin-top: 15px;
             width: 100%;
             transition: all 0.3s ease;
         }
@@ -947,7 +1051,6 @@
         .reset-button:hover {
             border-color: #ff6b00;
             color: #ff6b00;
-            background: #fff5f0;
         }
 
         /* WhatsApp CTA Button */
@@ -1063,235 +1166,7 @@
             line-height: 1.6;
         }
 
-        .highlight-row {
-            background: rgba(255, 107, 0, 0.1);
-            padding: 12px 10px !important;
-            border-radius: 8px;
-            margin-top: 5px;
-        }
-
-        .danger-text {
-            color: #d32f2f;
-            font-weight: 700;
-        }
-
-        .projection-section {
-            margin-top: 30px;
-            padding: 25px;
-            background: #f5f5f5;
-            border-radius: 15px;
-            border: 2px solid #e0e0e0;
-        }
-
-        .projection-section h3 {
-            color: #ff6b00;
-            font-size: 1.4rem;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .projection-subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 25px;
-            font-size: 0.95rem;
-        }
-
-        .timeline-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            /* 2x2 Grid */
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .timeline-card {
-            background: white;
-            border-radius: 12px;
-            padding: 20px 15px;
-            text-align: center;
-            border: 2px solid #e0e0e0;
-            transition: all 0.3s ease;
-        }
-
-        .timeline-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-            border-color: #ff6b00;
-        }
-
-        .timeline-card.featured {
-            background: #fff5f0;
-            border: 3px solid #ff6b00;
-            transform: scale(1.05);
-        }
-
-        .timeline-card.featured:hover {
-            transform: scale(1.08) translateY(-5px);
-        }
-
-        .timeline-period {
-            font-size: 0.85rem;
-            color: #666;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .timeline-card.featured .timeline-period {
-            color: #ff6b00;
-            font-size: 0.9rem;
-        }
-
-        .timeline-amount {
-            font-size: 1.6rem;
-            font-weight: 800;
-            color: #ff6b00;
-            margin-bottom: 8px;
-        }
-
-        .timeline-card.featured .timeline-amount {
-            font-size: 1.8rem;
-        }
-
-        .timeline-note {
-            font-size: 0.75rem;
-            color: #999;
-            font-style: italic;
-        }
-
-        .timeline-card.featured .timeline-note {
-            color: #ff6b00;
-            font-weight: 600;
-            font-style: normal;
-        }
-
-        .reality-check {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-            border: 2px solid #4caf50;
-        }
-
-        .reality-check h4 {
-            color: #4caf50;
-            margin-bottom: 15px;
-            font-size: 1.1rem;
-        }
-
-        .reality-check ul {
-            list-style: none;
-            padding: 0;
-            margin: 0;
-        }
-
-        .reality-check li {
-            padding: 8px 0;
-            padding-left: 25px;
-            position: relative;
-            color: #333;
-            line-height: 1.6;
-            font-size: 0.9rem;
-        }
-
-        .reality-check li::before {
-            content: '✓';
-            position: absolute;
-            left: 0;
-            color: #4caf50;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        .investment-note {
-            background: #fff9c4;
-            border-left: 4px solid #fbc02d;
-            padding: 15px 20px;
-            border-radius: 10px;
-            font-size: 0.85rem;
-            color: #f57f17;
-            line-height: 1.6;
-        }
-
-        .investment-note strong {
-            color: #e65100;
-        }
-
-
-        /* Monthly Chart Styles */
-        .chart-container {
-            margin-top: 30px;
-            margin-bottom: 30px;
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #e0e0e0;
-        }
-
-        .chart-title {
-            color: #1a1a1a;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .chart-bars {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-end;
-            height: 200px;
-            padding-bottom: 10px;
-            border-bottom: 2px solid #eee;
-        }
-
-        .chart-column {
-            display: flex;
-            flex-direction: column-reverse;
-            align-items: center;
-            width: 100%;
-            margin: 0 4px;
-            position: relative;
-            height: 100%;
-        }
-
-        .bar {
-            width: 100%;
-            background: #ff6b00;
-            border-radius: 6px 6px 0 0;
-            transition: height 1s ease-out;
-            position: relative;
-            min-height: 4px;
-            /* Ensure visibility */
-        }
-
-        .bar:hover {
-            filter: brightness(1.1);
-        }
-
-        .bar-label {
-            font-size: 0.7rem;
-            color: #666;
-            margin-top: 8px;
-            text-align: center;
-        }
-
-        .bar-value {
-            font-size: 0.65rem;
-            color: #1a1a1a;
-            font-weight: 700;
-            margin-bottom: 4px;
-            /* Animation handled by JS or simple transition */
-        }
-
-        @keyframes fadeInValue {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+        /* (Old extended styles removed — now in new design above) */
 
         /* Modal styles */
         .modal-overlay {
@@ -1549,115 +1424,108 @@
 
     <!-- Verification Modal removed (dead code) -->
     <div class="results-section" id="resultsSection">
-        <div class="results-title">📊 Análisis Completado</div>
-
-        <div class="info-banner">
-            <strong>💡 Sobre este análisis:</strong> Los cálculos están basados en el alza tarifaria del 61%
-            anunciada para 2026 y consideran un sistema solar que cubre el 85% de tu consumo eléctrico. Los ahorros
-            son proyecciones conservadoras basadas en datos reales del mercado chileno.
+        <!-- Header -->
+        <div class="results-header">
+            <h2>📊 Análisis Completado</h2>
+            <p>Resultados basados en tu boleta eléctrica</p>
         </div>
 
-        <div class="result-grid">
-            <div class="result-card">
-                <div class="result-label">N° Cliente</div>
-                <div class="result-value" id="clientNumber">-</div>
-            </div>
-            <div class="result-card">
-                <div class="result-label">Consumo Mensual</div>
-                <div class="result-value" id="consumption">-</div>
-            </div>
-            <div class="result-card">
-                <div class="result-label">Tarifa Actual</div>
-                <div class="result-value" id="currentRate">-</div>
-            </div>
+        <!-- Info Pill -->
+        <div class="info-pill">
+            <strong>💡</strong> Cálculos basados en el alza tarifaria del 61% (CNE 2026) con cobertura solar del 85%.
         </div>
 
-        <div class="savings-breakdown">
-            <h3>💰 Impacto del Alza Tarifaria (61%)</h3>
-            <div class="savings-item">
-                <span>Costo actual mensual:</span>
-                <span id="currentCost">-</span>
+        <!-- Data Rows -->
+        <div class="data-rows">
+            <div class="data-row">
+                <span class="label">N° Cliente</span>
+                <span class="value" id="clientNumber">-</span>
             </div>
-            <div class="savings-item">
-                <span>Costo proyectado con alza:</span>
-                <span id="projectedCost">-</span>
+            <div class="data-row">
+                <span class="label">Consumo Mensual</span>
+                <span class="value" id="consumption">-</span>
             </div>
-            <div class="savings-item highlight-row">
-                <span>Aumento mensual sin solar:</span>
-                <span id="monthlyIncrease" class="danger-text">-</span>
+            <div class="data-row">
+                <span class="label">Tarifa Actual</span>
+                <span class="value" id="currentRate">-</span>
             </div>
         </div>
 
-        <div class="projection-section">
-            <h3>📈 Proyección de Ahorro con Energía Solar</h3>
-            <p class="projection-subtitle">
-                Con un sistema solar que cubre el 85% de tu consumo, estos son tus ahorros proyectados:
-            </p>
-
-            <div class="timeline-grid">
-                <div class="timeline-card">
-                    <div class="timeline-period">6 meses</div>
-                    <div class="timeline-amount" id="savings6m">-</div>
-                    <div class="timeline-note">Recuperación inicial</div>
-                </div>
-                <div class="timeline-card">
-                    <div class="timeline-period">1 año</div>
-                    <div class="timeline-amount" id="savings1y">-</div>
-                    <div class="timeline-note">Ahorro anual</div>
-                </div>
-                <!-- 2 años removido para grid 2x2 -->
-                <div class="timeline-card">
-                    <div class="timeline-period">3 años</div>
-                    <div class="timeline-amount" id="savings3y">-</div>
-                    <div class="timeline-note">Inversión 100% recuperada</div>
-                </div>
-                <div class="timeline-card featured"
-                    style="background: linear-gradient(135deg, #3a1c1c 0%, #000 100%); border: 1px solid #ff4444;">
-                    <div class="timeline-period" style="color: #ff8888;">Si no haces nada</div>
-                    <div class="timeline-amount" id="savings5y" style="color: #ffcccc;">-</div>
-                    <div class="timeline-note" id="label-loss-5y" style="color: #ffaaaa;">DINERO PERDIDO (5 años)
-                    </div>
-                </div>
+        <!-- Impact Card -->
+        <div class="impact-card">
+            <h3>⚡ Impacto del Alza 61%</h3>
+            <div class="impact-row">
+                <span class="label">Costo actual</span>
+                <span class="value" id="currentCost">-</span>
             </div>
-
-            <!-- Monthly Chart Section -->
-            <div class="chart-container">
-                <div class="chart-title">📊 Ahorro Mensual Proyectado (Año 1)</div>
-                <div class="chart-bars" id="monthlyChartBars">
-                    <!-- Bars will be injected by JS -->
-                </div>
+            <div class="impact-row">
+                <span class="label">Con alza 61%</span>
+                <span class="value warning" id="projectedCost">-</span>
             </div>
-
-            <div class="reality-check">
-                <h4>✅ ¿Qué tan real es este ahorro?</h4>
-                <ul>
-                    <li><strong>Muy real.</strong> Estos cálculos están basados en el alza del 61% confirmada por la
-                        CNE para 2026.</li>
-                    <li><strong>Conservador.</strong> Asumimos solo 85% de cobertura solar. Muchos sistemas alcanzan
-                        90-95%.</li>
-                    <li><strong>Sin considerar alzas futuras.</strong> Históricamente, las tarifas eléctricas suben
-                        cada año. Tu ahorro podría ser mayor.</li>
-                    <li><strong>Garantizado por 25 años.</strong> Los paneles solares tienen garantía de rendimiento
-                        de 25+ años.</li>
-                </ul>
-            </div>
-
-            <div class="investment-note">
-                <p><strong>* Inversión típica:</strong> Un sistema solar residencial en Chile cuesta entre $2.5M -
-                    $4.5M CLP. Con estos ahorros, la inversión se recupera en 3-4 años, y los siguientes 20+ años
-                    son ganancia pura.</p>
+            <div class="impact-row">
+                <span class="label">Aumento mensual</span>
+                <span class="value danger" id="monthlyIncrease">-</span>
             </div>
         </div>
 
-        <button class="cta-button" id="downloadPdfButton">📥 Descargar Análisis en PDF</button>
-        <a class="whatsapp-cta" id="whatsappCta" href="#" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24">
-                <path
-                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-            </svg>
-            Agendar Cotización Gratis
-        </a>
-        <button class="reset-button" id="resetButton">🔄 Analizar otra boleta</button>
+        <!-- Savings Timeline -->
+        <div class="savings-section">
+            <div class="section-title">📈 Tu Ahorro con Energía Solar</div>
+            <div class="savings-stack">
+                <div class="savings-card">
+                    <span class="period">6 meses</span>
+                    <span class="amount" id="savings6m">-</span>
+                </div>
+                <div class="savings-card">
+                    <span class="period">1 año</span>
+                    <span class="amount" id="savings1y">-</span>
+                </div>
+                <div class="savings-card">
+                    <span class="period">3 años</span>
+                    <span class="amount" id="savings3y">-</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Danger Card -->
+        <div class="danger-card">
+            <div class="danger-icon">⚠️</div>
+            <div class="danger-label">SI NO HACES NADA, PIERDES</div>
+            <div class="danger-amount" id="savings5y">-</div>
+            <div class="danger-note">en los próximos 5 años (sin solar)</div>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-section">
+            <h4>📊 Ahorro Mensual Proyectado (Año 1)</h4>
+            <div class="chart-bars-container" id="monthlyChartBars">
+                <!-- Bars injected by JS -->
+            </div>
+        </div>
+
+        <!-- Reality / Trust -->
+        <div class="reality-section">
+            <h4>✅ ¿Qué tan real es este ahorro?</h4>
+            <ul>
+                <li><strong>Muy real.</strong> Basado en el alza del 61% confirmada por la CNE.</li>
+                <li><strong>Conservador.</strong> Asumimos solo 85% de cobertura. Muchos llegan a 90-95%.</li>
+                <li><strong>Sin alzas futuras.</strong> Tu ahorro real podría ser mayor.</li>
+                <li><strong>25 años de garantía</strong> en paneles solares.</li>
+            </ul>
+        </div>
+
+        <!-- CTAs -->
+        <div class="cta-section">
+            <button class="cta-button" id="downloadPdfButton">📥 Descargar Análisis en PDF</button>
+            <a class="whatsapp-cta" id="whatsappCta" href="#" target="_blank" rel="noopener">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+                </svg>
+                Agendar Cotización Gratis
+            </a>
+            <button class="reset-button" id="resetButton">🔄 Analizar otra boleta</button>
+        </div>
     </div>
 
     <!-- Email Modal -->
@@ -2314,42 +2182,31 @@
         function renderMonthlyChart(baseSavings) {
             const chartContainer = document.getElementById('monthlyChartBars');
             if (!chartContainer) return;
-            chartContainer.innerHTML = ''; // Clear previous
+            chartContainer.innerHTML = '';
 
-            // Seasonal Factors (Chile: Summer > Winter)
             const factors = [
-                { m: 'Ene', f: 1.35 }, { m: 'Feb', f: 1.25 }, { m: 'Mar', f: 1.10 },
-                { m: 'Abr', f: 0.90 }, { m: 'May', f: 0.70 }, { m: 'Jun', f: 0.60 },
-                { m: 'Jul', f: 0.65 }, { m: 'Ago', f: 0.80 }, { m: 'Sep', f: 1.00 },
-                { m: 'Oct', f: 1.15 }, { m: 'Nov', f: 1.25 }, { m: 'Dic', f: 1.35 }
+                { m: 'E', f: 1.35 }, { m: 'F', f: 1.25 }, { m: 'M', f: 1.10 },
+                { m: 'A', f: 0.90 }, { m: 'M', f: 0.70 }, { m: 'J', f: 0.60 },
+                { m: 'J', f: 0.65 }, { m: 'A', f: 0.80 }, { m: 'S', f: 1.00 },
+                { m: 'O', f: 1.15 }, { m: 'N', f: 1.25 }, { m: 'D', f: 1.35 }
             ];
 
             const maxFactor = 1.35;
 
             factors.forEach((item, index) => {
-                const amount = Math.round(baseSavings * item.f);
-
                 const col = document.createElement('div');
-                col.className = 'chart-column';
-                col.style.display = 'flex';
-                col.style.flexDirection = 'column';
-                col.style.alignItems = 'center';
-                col.style.justifyContent = 'flex-end';
-                col.style.height = '100%';
-
+                col.className = 'chart-col';
                 col.innerHTML = `
-                <div class="bar-value" style="color: #fff; font-size: 10px; margin-bottom: 4px;">$${(amount / 1000).toFixed(0)}k</div>
-                <div class="bar" style="width: 100%; background: linear-gradient(to top, #ff6b00, #ff8800); border-radius: 4px 4px 0 0; transition: height 1s ease-out; height: 0%;"></div>
-                <div class="bar-label" style="color: #888; font-size: 10px; margin-top: 4px;">${item.m}</div>
-            `;
+                    <div class="bar" style="height: 0%"></div>
+                    <div class="bar-label">${item.m}</div>
+                `;
                 chartContainer.appendChild(col);
 
-                // Animate
                 setTimeout(() => {
                     const bar = col.querySelector('.bar');
                     const heightPercent = (item.f / maxFactor) * 100;
                     bar.style.height = heightPercent + '%';
-                }, 100 + (index * 50));
+                }, 200 + (index * 60));
             });
         }
 

@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Oracle — Propuesta de Diseño Mobile</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap"
+        rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f8f9fa;
+            color: #1a1a2e;
+            max-width: 400px;
+            /* Simula iframe de Carrd */
+            margin: 0 auto;
+            padding: 0;
+        }
+
+        /* === HEADER === */
+        .results-header {
+            background: linear-gradient(135deg, #ff6b00 0%, #ff8c00 100%);
+            padding: 24px 20px;
+            text-align: center;
+            color: white;
+        }
+
+        .results-header h2 {
+            font-size: 1.3rem;
+            font-weight: 800;
+            margin-bottom: 6px;
+        }
+
+        .results-header p {
+            font-size: 0.8rem;
+            opacity: 0.85;
+        }
+
+        /* === INFO BANNER === */
+        .info-pill {
+            background: #eef6ff;
+            border-left: 4px solid #3b82f6;
+            margin: 16px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            font-size: 0.78rem;
+            color: #1e40af;
+            line-height: 1.5;
+        }
+
+        /* === DATA ROWS (Client, Consumption, Rate) === */
+        .data-rows {
+            padding: 0 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .data-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: white;
+            padding: 14px 16px;
+            border-radius: 10px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .data-row .label {
+            font-size: 0.82rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .data-row .value {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #1a1a2e;
+        }
+
+        /* === IMPACT CARD (Dark) === */
+        .impact-card {
+            margin: 0 16px 16px;
+            background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%);
+            border-radius: 14px;
+            padding: 20px;
+            color: white;
+        }
+
+        .impact-card h3 {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 14px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .impact-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .impact-row:last-child {
+            border: none;
+            padding-top: 12px;
+        }
+
+        .impact-row .label {
+            font-size: 0.82rem;
+            color: #94a3b8;
+        }
+
+        .impact-row .value {
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+
+        .impact-row .value.danger {
+            color: #ef4444;
+            font-size: 1.1rem;
+        }
+
+        /* === SAVINGS TIMELINE (Stacked) === */
+        .savings-section {
+            padding: 0 16px;
+            margin-bottom: 16px;
+        }
+
+        .section-title {
+            font-size: 0.95rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+            color: #1a1a2e;
+        }
+
+        .savings-stack {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .savings-card {
+            display: flex;
+            align-items: center;
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .savings-card::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: #22c55e;
+        }
+
+        .savings-card .period {
+            min-width: 70px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: #6b7280;
+            text-transform: uppercase;
+        }
+
+        .savings-card .amount {
+            flex: 1;
+            text-align: right;
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: #16a34a;
+        }
+
+        .savings-card .note {
+            display: none;
+            /* Hidden on mobile, shown in tooltip */
+        }
+
+        /* === DANGER CARD === */
+        .danger-card {
+            margin: 0 16px 16px;
+            background: linear-gradient(135deg, #450a0a 0%, #1c0000 100%);
+            border: 1px solid #dc2626;
+            border-radius: 14px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .danger-card .danger-icon {
+            font-size: 2rem;
+            margin-bottom: 8px;
+        }
+
+        .danger-card .danger-label {
+            font-size: 0.82rem;
+            color: #fca5a5;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .danger-card .danger-amount {
+            font-size: 1.8rem;
+            font-weight: 900;
+            color: #fecaca;
+            margin-bottom: 4px;
+        }
+
+        .danger-card .danger-note {
+            font-size: 0.75rem;
+            color: #f87171;
+        }
+
+        /* === CHART === */
+        .chart-section {
+            margin: 0 16px 16px;
+            background: white;
+            border-radius: 14px;
+            padding: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        }
+
+        .chart-section h4 {
+            font-size: 0.85rem;
+            color: #6b7280;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        .chart-bars-container {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            height: 120px;
+            gap: 3px;
+        }
+
+        .chart-col {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-end;
+            flex: 1;
+            height: 100%;
+        }
+
+        .chart-col .bar {
+            width: 100%;
+            background: linear-gradient(to top, #ff6b00, #ffaa00);
+            border-radius: 3px 3px 0 0;
+            min-height: 4px;
+            transition: height 0.8s ease-out;
+        }
+
+        .chart-col .month-label {
+            font-size: 9px;
+            color: #9ca3af;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        /* === REALITY CHECK === */
+        .reality-section {
+            margin: 0 16px 16px;
+            background: #f0fdf4;
+            border-radius: 14px;
+            padding: 16px 18px;
+        }
+
+        .reality-section h4 {
+            font-size: 0.9rem;
+            color: #166534;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .reality-section ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .reality-section li {
+            position: relative;
+            padding: 6px 0 6px 20px;
+            font-size: 0.78rem;
+            color: #374151;
+            line-height: 1.5;
+        }
+
+        .reality-section li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #22c55e;
+            font-weight: 700;
+        }
+
+        /* === CTA BUTTONS === */
+        .cta-section {
+            padding: 0 16px 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn-download {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #ff6b00;
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-whatsapp {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background: #25d366;
+            color: white;
+            border: none;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 12px;
+            cursor: pointer;
+            text-decoration: none;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .btn-whatsapp svg {
+            width: 20px;
+            height: 20px;
+            fill: white;
+        }
+
+        .btn-reset {
+            background: transparent;
+            color: #9ca3af;
+            border: 1.5px solid #e5e7eb;
+            padding: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        /* Simple animations */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .data-row,
+        .savings-card,
+        .impact-card,
+        .danger-card,
+        .chart-section {
+            animation: fadeInUp 0.4s ease-out both;
+        }
+
+        .savings-card:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .savings-card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .savings-card:nth-child(3) {
+            animation-delay: 0.3s;
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- HEADER -->
+    <div class="results-header">
+        <h2>📊 Análisis Completado</h2>
+        <p>Resultados basados en tu boleta eléctrica</p>
+    </div>
+
+    <!-- INFO BANNER -->
+    <div class="info-pill">
+        <strong>💡</strong> Cálculos basados en el alza tarifaria del 61% (CNE 2026) con cobertura solar del 85%.
+    </div>
+
+    <!-- DATA ROWS -->
+    <div class="data-rows">
+        <div class="data-row">
+            <span class="label">N° Cliente</span>
+            <span class="value">1234567-K</span>
+        </div>
+        <div class="data-row">
+            <span class="label">Consumo Mensual</span>
+            <span class="value">450 kWh</span>
+        </div>
+        <div class="data-row">
+            <span class="label">Tarifa Actual</span>
+            <span class="value">$180 /kWh</span>
+        </div>
+    </div>
+
+    <!-- IMPACT CARD -->
+    <div class="impact-card">
+        <h3>⚡ Impacto del Alza 61%</h3>
+        <div class="impact-row">
+            <span class="label">Costo actual</span>
+            <span class="value" style="color: white;">$81.000</span>
+        </div>
+        <div class="impact-row">
+            <span class="label">Con alza 61%</span>
+            <span class="value" style="color: #fbbf24;">$130.410</span>
+        </div>
+        <div class="impact-row">
+            <span class="label">Aumento mensual</span>
+            <span class="value danger">+$49.410</span>
+        </div>
+    </div>
+
+    <!-- SAVINGS TIMELINE -->
+    <div class="savings-section">
+        <div class="section-title">📈 Tu Ahorro con Energía Solar</div>
+        <div class="savings-stack">
+            <div class="savings-card">
+                <span class="period">6 meses</span>
+                <span class="amount">$664.614</span>
+            </div>
+            <div class="savings-card">
+                <span class="period">1 año</span>
+                <span class="amount">$1.329.228</span>
+            </div>
+            <div class="savings-card">
+                <span class="period">3 años</span>
+                <span class="amount">$4.107.284</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DANGER CARD -->
+    <div class="danger-card">
+        <div class="danger-icon">⚠️</div>
+        <div class="danger-label">SI NO HACES NADA, PIERDES</div>
+        <div class="danger-amount">$7.187.390</div>
+        <div class="danger-note">en los próximos 5 años (sin solar)</div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-section">
+        <h4>📊 Ahorro Mensual Proyectado (Año 1)</h4>
+        <div class="chart-bars-container" id="chartBars">
+            <!-- JS injected -->
+        </div>
+    </div>
+
+    <!-- REALITY CHECK -->
+    <div class="reality-section">
+        <h4>✅ ¿Qué tan real es este ahorro?</h4>
+        <ul>
+            <li><strong>Muy real.</strong> Basado en el alza del 61% confirmada por la CNE.</li>
+            <li><strong>Conservador.</strong> Asumimos solo 85% de cobertura. Muchos llegan a 90-95%.</li>
+            <li><strong>Sin alzas futuras.</strong> Tu ahorro real podría ser mayor.</li>
+            <li><strong>25 años de garantía</strong> en paneles solares.</li>
+        </ul>
+    </div>
+
+    <!-- CTAs -->
+    <div class="cta-section">
+        <button class="btn-download">📥 Descargar PDF</button>
+        <a class="btn-whatsapp" href="#">
+            <svg viewBox="0 0 24 24">
+                <path
+                    d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
+            </svg>
+            Agendar Cotización
+        </a>
+        <button class="btn-reset">🔄 Analizar otra boleta</button>
+    </div>
+
+    <script>
+        // Simulate chart
+        const factors = [1.35, 1.25, 1.10, 0.90, 0.70, 0.60, 0.65, 0.80, 1.00, 1.15, 1.25, 1.35];
+        const months = ['E', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D'];
+        const base = 110000;
+        const container = document.getElementById('chartBars');
+
+        factors.forEach((f, i) => {
+            const h = (f / 1.35) * 100;
+            const col = document.createElement('div');
+            col.className = 'chart-col';
+            col.innerHTML = `
+                <div class="bar" style="height: 0%"></div>
+                <div class="month-label">${months[i]}</div>
+            `;
+            container.appendChild(col);
+
+            setTimeout(() => {
+                col.querySelector('.bar').style.height = h + '%';
+            }, 200 + i * 60);
+        });
+    </script>
+</body>
+
+</html>
