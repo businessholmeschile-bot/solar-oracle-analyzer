@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Test Conexión Solar Oracle</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        #log {
+            margin-top: 20px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            height: 300px;
+            overflow-y: scroll;
+            background: #f0f0f0;
+        }
+    </style>
+</head>
+
+<body>
+    <h1 style="color: blue;">Test de Conexión - VERSIÓN 2 (LINK NUEVO)</h1>
+    <p>Este archivo prueba exclusívamente el envío de datos al script.</p>
+
+    <button class="btn" onclick="sendTest()">ENVIAR PRUEBA (PING)</button>
+
+    <div id="log">Esperando acción...</div>
+
+    <script>
+        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxwerkKDl1Goiww08D7uc4cJwlYzEbVwEFB4ZGMtZ94SrgarM-tWR3U6NrbnIzirHTF/exec';
+
+        async function sendTest() {
+            log("Iniciando prueba...");
+
+            const payload = {
+                timestamp: new Date().toISOString(),
+                email: 'test_debug@solaroracle.cl',
+                name: 'Test Setup Debug',
+                phone: '555-1234',
+                clientNumber: 'TEST-001',
+                distributor: 'CGE-TEST',
+                consumption: 123,
+                currentRate: 150,
+                currentCost: 18450,
+                estimatedSystemCost: 5000000,
+                paybackPeriod: 3.5,
+                annualSavings: 1500000,
+                projectedCost: 5000,
+                monthlyIncrease: 100,
+                monthlySavings: 15000,
+                savings6m: 90000,
+                savings5y: 900000,
+                fileName: 'test.pdf',
+                fileType: 'application/pdf',
+                fileSize: 1024,
+                userAgent: navigator.userAgent,
+                language: navigator.language,
+                timezone: 'America/Santiago',
+                screenResolution: '1920x1080',
+                referrer: 'test_page',
+                sourceUrl: window.location.href,
+                fileBase64: '', // Empty for lightweight test
+                generatedPdfBase64: '' // Empty for lightweight test
+            };
+
+            log("Enviando a (VERIFICAR FINAL): ...HTF/exec");
+            log("URL Completa: " + SCRIPT_URL);
+            log("Payload size: " + JSON.stringify(payload).length + " chars");
+
+            try {
+                const response = await fetch(SCRIPT_URL, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                log("¡ÉXITO (Aparentemente)! Respuesta recibida (Opaque).");
+                log("Verifica AHORA tu Google Sheet. Debería haber una nueva fila.");
+            } catch (error) {
+                log("❌ ERROR FATAL: " + error.message);
+                console.error(error);
+            }
+        }
+
+        function log(msg) {
+            const div = document.getElementById('log');
+            div.innerHTML += `<div>[${new Date().toLocaleTimeString()}] ${msg}</div>`;
+            div.scrollTop = div.scrollHeight;
+        }
+    </script>
+</body>
+
+</html>
