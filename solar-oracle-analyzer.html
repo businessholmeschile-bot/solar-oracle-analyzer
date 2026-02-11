@@ -2176,6 +2176,9 @@
         // --- BACKEND INTEGRATION ---
         // --- BACKEND INTEGRATION ---
         // --- HYBRID DATA SYSTEM (Supabase + Google Mailer) ---
+        // Global Session Tracker
+        window.currentLeadId = null;
+
         async function processLeadData(email, name, phone, generatedPdfBase64, isGhost = false) {
 
             // 1. SAFETY CHECKS
@@ -2209,21 +2212,48 @@
             };
 
             try {
-                // 3. SAVE TO SUPABASE (PRIMARY SOURCE OF TRUTH)
-                if (isGhost) logTerminal('📡 Syncing telemetry to Supabase DB...', 'info');
-                else logTerminal('💾 Guardando datos en base de datos segura...', 'info');
+                // 3. SAVE TO SUPABASE (Upsert Logic)
+                if (isGhost) {
+                    // CASE A: NEW GHOST VISITOR -> INSERT & SAVE ID
+                    logTerminal('📡 Syncing telemetry to Supabase DB...', 'info');
+                    const { data: insertedData, error } = await supabase
+                        .from('leads')
+                        .insert([dbPayload])
+                        .select(); // Critical to get ID back
 
-                const { error } = await supabase.from('leads').insert([dbPayload]);
+                    if (error) throw error;
 
-                if (error) throw error;
+                    if (insertedData && insertedData.length > 0) {
+                        window.currentLeadId = insertedData[0].id;
+                        console.log("Session ID Locked:", window.currentLeadId);
+                    }
+                    console.log("Ghost Lead Saved to DB");
 
-                if (!isGhost) logTerminal('✅ Datos asegurados en SolarOracle Cloud.', 'success');
-                else console.log("Ghost Lead Saved to DB");
+                } else {
+                    // CASE B: CONVERTING GHOST TO LEAD -> UPDATE OR INSERT
+                    logTerminal('💾 Guardando datos en base de datos segura...', 'info');
+
+                    if (window.currentLeadId) {
+                        // Update existing Ghost record
+                        const { error } = await supabase
+                            .from('leads')
+                            .update(dbPayload)
+                            .eq('id', window.currentLeadId);
+
+                        if (error) throw error;
+                        logTerminal('✅ Ficha actualizada: GHOST -> LEAD.', 'success');
+                    } else {
+                        // Fallback: No previous session, insert new
+                        const { error } = await supabase.from('leads').insert([dbPayload]);
+                        if (error) throw error;
+                        logTerminal('✅ Datos asegurados en SolarOracle Cloud.', 'success');
+                    }
+                }
 
             } catch (err) {
                 console.error("Supabase Error:", err);
                 logTerminal('⚠️ Error guardando en BD (Reintentando localmente...)', 'error');
-                // We continue to Emailer even if DB fails, to not lose the lead completely
+                // We continue to Emailer even if DB fails
             }
 
             // 4. TRIGGER EMAILER (GOOGLE APPS SCRIPT) - ONLY FOR REAL LEADS

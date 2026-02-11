@@ -78,11 +78,12 @@
             <table class="w-full text-sm text-left">
                 <thead class="text-xs text-slate-400 uppercase bg-slate-800/50">
                     <tr>
+                        <th class="px-6 py-3">Ticket ID</th>
                         <th class="px-6 py-3">Fecha</th>
-                        <th class="px-6 py-3">Tipo</th>
-                        <th class="px-6 py-3">Nombre / ID</th>
-                        <th class="px-6 py-3">Email</th>
-                        <th class="px-6 py-3">Teléfono</th>
+                        <th class="px-6 py-3">Estado</th>
+                        <th class="px-6 py-3">Cliente</th>
+                        <th class="px-6 py-3">Contacto</th>
+                        <th class="px-6 py-3">Distribuidora</th>
                         <th class="px-6 py-3 text-right">Consumo</th>
                         <th class="px-6 py-3 text-right">Ahorro Est.</th>
                     </tr>
@@ -90,7 +91,7 @@
                 <tbody id="table-body" class="divide-y divide-slate-700">
                     <!-- Rows will be injected here -->
                     <tr>
-                        <td colspan="7" class="px-6 py-8 text-center text-slate-500">Cargando datos de la nube...</td>
+                        <td colspan="8" class="px-6 py-8 text-center text-slate-500">Cargando datos de la nube...</td>
                     </tr>
                 </tbody>
             </table>
@@ -129,7 +130,7 @@
                 // 3. Render Table
                 tbody.innerHTML = '';
                 if (total === 0) {
-                    tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-slate-500">Aún no hay registros en la base de datos.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-slate-500">Aún no hay registros en la base de datos.</td></tr>`;
                     return;
                 }
 
@@ -137,15 +138,23 @@
                     const isLead = row.tipo === 'LEAD';
                     const badgeClass = isLead ? 'bg-green-900 text-green-300' : 'bg-slate-700 text-slate-300';
                     const date = new Date(row.created_at).toLocaleString('es-CL');
+                    const ticketId = row.id ? row.id.substring(0, 8).toUpperCase() : '???';
 
                     const tr = document.createElement('tr');
                     tr.className = 'hover:bg-slate-800/50 transition';
                     tr.innerHTML = `
-                        <td class="px-6 py-4 text-slate-400 whitespace-nowrap">${date}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-slate-500">#${ticketId}</td>
+                        <td class="px-6 py-4 text-slate-400 whitespace-nowrap text-xs">${date}</td>
                         <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold ${badgeClass}">${row.tipo || 'GHOST'}</span></td>
-                        <td class="px-6 py-4 font-medium text-white">${row.nombre || 'Anónimo'}</td>
-                        <td class="px-6 py-4 text-slate-400">${row.email || '-'}</td>
-                        <td class="px-6 py-4 text-slate-400">${row.telefono || '-'}</td>
+                        <td class="px-6 py-4 font-medium text-white">
+                            ${row.nombre || 'Anónimo'}
+                            <div class="text-xs text-slate-500">ID: ${row.client_number || '-'}</div>
+                        </td>
+                        <td class="px-6 py-4 text-slate-400 text-xs">
+                            ${row.email || '-'}<br>
+                            ${row.telefono || ''}
+                        </td>
+                        <td class="px-6 py-4 text-slate-300 text-xs">${row.distribuidora || 'General'}</td>
                         <td class="px-6 py-4 text-right text-amber-400 font-mono">${row.kwh_mensual || 0} kWh</td>
                         <td class="px-6 py-4 text-right text-green-400 font-mono">${row.ahorro_anual || '$0'}</td>
                     `;
