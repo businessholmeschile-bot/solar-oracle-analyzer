@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Solar Oracle Admin | Nexos Corp</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Removed Supabase SDK: using Secure Proxy -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
@@ -35,7 +35,22 @@
     </style>
 </head>
 
-<body class="p-8">
+<body class="p-8 relative">
+
+    <!-- LOGIN MODAL -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900 z-50 flex items-center justify-center">
+        <div class="bg-slate-800 p-8 rounded-xl shadow-2xl w-96 border border-slate-700">
+            <h2 class="text-xl font-bold text-white mb-6 text-center">🔐 Acceso Seguro</h2>
+            <input type="password" id="admin-pass" placeholder="Contraseña Maestra"
+                class="w-full bg-slate-700 border border-slate-600 rounded p-3 text-white mb-4 focus:outline-none focus:border-amber-500"
+                onkeydown="if(event.key==='Enter') verifyLogin()">
+            <button onclick="verifyLogin()"
+                class="w-full bg-amber-600 hover:bg-amber-500 text-white font-bold py-3 rounded transition">
+                Ingresar
+            </button>
+            <p id="login-error" class="text-red-400 text-sm mt-3 text-center hidden">Contraseña incorrecta</p>
+        </div>
+    </div>
 
     <!-- Header -->
     <div class="flex justify-between items-center mb-8">
@@ -82,6 +97,7 @@
                         <th class="px-6 py-3">Fecha</th>
                         <th class="px-6 py-3">Estado</th>
                         <th class="px-6 py-3">Cliente</th>
+                        <th class="px-6 py-3">Ubicación</th> <!-- New Column -->
                         <th class="px-6 py-3">Contacto</th>
                         <th class="px-6 py-3">Distribuidora</th>
                         <th class="px-6 py-3 text-right">Consumo</th>
@@ -99,22 +115,43 @@
     </div>
 
     <script>
-        // --- SUPABASE CONFIG ---
-        const SB_URL = 'https://zqwkwnywndkwyzzggorf.supabase.co';
-        const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inpxd2t3bnl3bmRrd3l6emdnb3JmIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzA3NjE3MjUsImV4cCI6MjA4NjMzNzcyNX0._Gxg6pdJTIAbFG5hAg-r4LeYx8w7FwUIEXQkJt8WFWI';
-        const supabase = window.supabase.createClient(SB_URL, SB_KEY);
+        // --- SECURE PROXY CONFIG ---
+        const PROXY_URL = 'https://zqwkwnywndkwyzzggorf.supabase.co/functions/v1/save-lead';
+        let AUTH_TOKEN = null; // We store the password here temporarily in memory
+
+        function verifyLogin() {
+            const pass = document.getElementById('admin-pass').value;
+            if (!pass) return;
+            AUTH_TOKEN = pass;
+            document.getElementById('login-modal').classList.add('hidden');
+            fetchLeads();
+        }
 
         async function fetchLeads() {
             const tbody = document.getElementById('table-body');
+            tbody.innerHTML = `<tr><td colspan="8" class="text-center py-8 text-slate-500">Autenticando y descargando datos seguros...</td></tr>`;
 
             try {
-                // 1. Fetch Data
-                const { data, error } = await supabase
-                    .from('leads')
-                    .select('*')
-                    .order('created_at', { ascending: false });
+                // 1. Fetch Data via Proxy
+                const resp = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'get-leads',
+                        payload: { password: AUTH_TOKEN }
+                    })
+                });
 
-                if (error) throw error;
+                if (resp.status === 401) {
+                    document.getElementById('login-modal').classList.remove('hidden');
+                    document.getElementById('login-error').classList.remove('hidden');
+                    throw new Error("Contraseña incorrecta");
+                }
+
+                const result = await resp.json();
+                if (!result.success) throw new Error(result.error || 'Error desconocido');
+
+                const data = result.data || [];
 
                 // 2. Update KPIs
                 const total = data.length;
@@ -140,22 +177,49 @@
                     const date = new Date(row.created_at).toLocaleString('es-CL');
                     const ticketId = row.id ? row.id.substring(0, 8).toUpperCase() : '???';
 
+                    const isWhale = (parseInt(row.kwh_mensual) || 0) > 600;
+                    const whaleClass = isWhale ? 'bg-indigo-900/40 border-l-4 border-l-indigo-500' : '';
+                    
+                    // WhatsApp Logic
+                    let waBtn = '';
+                    if (row.telefono) {
+                        const cleanPhone = row.telefono.replace(/\D/g, '');
+                        const msg = `Hola ${row.nombre}, vi en SolarOracle que tu consumo es de ${row.kwh_mensual} kWh en ${row.ubicacion || 'tu domicilio'}. Tengo una propuesta para bajar esa cuenta a $0.`;
+                        const link = `https://wa.me/569${cleanPhone}?text=${encodeURIComponent(msg)}`;
+                        waBtn = `<a href="${link}" target="_blank" class="inline-flex items-center gap-1 mt-1 px-2 py-1 bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold rounded transition">
+                                    <span>💬</span> Contactar
+                                 </a>`;
+                    }
+
                     const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-800/50 transition';
+                    tr.className = `hover:bg-slate-800/50 transition ${whaleClass}`;
                     tr.innerHTML = `
-                        <td class="px-6 py-4 font-mono text-xs text-slate-500">#${ticketId}</td>
+                        <td class="px-6 py-4 font-mono text-xs text-slate-500">
+                            #${ticketId}
+                            ${isWhale ? ' <span title="Cliente Alto Valor" class="ml-1">🐋</span>' : ''}
+                        </td>
                         <td class="px-6 py-4 text-slate-400 whitespace-nowrap text-xs">${date}</td>
-                        <td class="px-6 py-4"><span class="px-2 py-1 rounded text-xs font-bold ${badgeClass}">${row.tipo || 'GHOST'}</span></td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-1 rounded text-xs font-bold ${badgeClass}">${row.tipo || 'GHOST'}</span>
+                            ${(!isLead && (parseInt(row.kwh_mensual)||0) > 300) ? 
+                                '<div class="mt-1"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-900/50 text-amber-200 border border-amber-700/50">🔥 RECUPERABLE</span></div>' 
+                                : ''}
+                        </td>
                         <td class="px-6 py-4 font-medium text-white">
                             ${row.nombre || 'Anónimo'}
                             <div class="text-xs text-slate-500">ID: ${row.client_number || '-'}</div>
                         </td>
+                        <td class="px-6 py-4 text-slate-300 text-xs">${row.ubicacion || 'N/A'}</td>
                         <td class="px-6 py-4 text-slate-400 text-xs">
                             ${row.email || '-'}<br>
                             ${row.telefono || ''}
+                            <div class="mt-1">${waBtn}</div>
                         </td>
                         <td class="px-6 py-4 text-slate-300 text-xs">${row.distribuidora || 'General'}</td>
-                        <td class="px-6 py-4 text-right text-amber-400 font-mono">${row.kwh_mensual || 0} kWh</td>
+                        <td class="px-6 py-4 text-right text-amber-400 font-mono">
+                            ${row.kwh_mensual || 0} kWh
+                            ${isWhale ? '<div class="text-[10px] text-indigo-300 font-bold">ALTO VALOR</div>' : ''}
+                        </td>
                         <td class="px-6 py-4 text-right text-green-400 font-mono">${row.ahorro_anual || '$0'}</td>
                     `;
                     tbody.appendChild(tr);
@@ -165,12 +229,16 @@
 
             } catch (err) {
                 console.error(err);
-                tbody.innerHTML = `<tr><td colspan="7" class="px-6 py-8 text-center text-red-400">Error cargando datos: ${err.message}</td></tr>`;
+                if (err.message !== "Contraseña incorrecta") {
+                    tbody.innerHTML = `<tr><td colspan="8" class="px-6 py-8 text-center text-red-400">Error: ${err.message}</td></tr>`;
+                }
             }
         }
 
-        // Init
-        document.addEventListener('DOMContentLoaded', fetchLeads);
+        // Init - Focus password input
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('admin-pass').focus();
+        });
     </script>
 </body>
 

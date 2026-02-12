@@ -1619,159 +1619,7 @@
             padding: 0 !important;
         }
 
-        </head><body><div class="container"><div class="header"><div class="logo">☀️ SolarOracle</div><div class="subtitle">Análisis Inteligente de Consumo Eléctrico</div><div class="social-proof" id="socialProof" style="display:none"><span class="pulse-dot"></span><span id="analysisCount">0</span>boletas analizadas </div></div>< !-- UNIFIED UPLOAD ZONE --><div class="upload-container" style="margin-bottom: 30px;"><input type="file" id="fileInput" class="file-input-hidden" accept=".pdf,image/*"><input type="file" id="cameraInput" class="file-input-hidden" accept="image/*" capture="environment"><label for="fileInput" class="upload-area" id="uploadAreaLabel"><div class="upload-icon">☁️</div><div class="upload-text">Subir Boleta</div><div class="upload-hint">PDF o Imagen</div></label>< !-- Mobile/Direct Actions --><div class="upload-options"><label for="cameraInput" class="btn-camera"><span>📷</span>Tomar Foto </label></div></div>< !-- Manual Fallback Form (shown when OCR fails) --><div class="manual-fallback" id="manualFallback"><h4>📝 No pudimos leer tu boleta automáticamente</h4><p>Ingresa tus datos manualmente para recibir tu análisis:</p><div class="form-row"><select id="manualDistributor"><option value="cge">CGE</option><option value="enel">Enel</option><option value="chilquinta">Chilquinta</option><option value="saesa">Saesa / Frontel</option><option value="other">Otra</option></select><input type="number" id="manualConsumption" placeholder="Consumo kWh (ej: 350)" min="1" max="9999"></div><button onclick="submitManualData()">⚡ Generar Análisis</button></div>< !-- Progress Steps --><div class="progress-steps" id="progressSteps" style="display: none;"><div class="step-item active" id="step-1"><div class="step-circle">1</div><span class="step-label">Analizando</span></div><div class="step-item" id="step-2"><div class="step-circle">2</div><span class="step-label">Extrayendo</span></div><div class="step-item" id="step-3"><div class="step-circle">3</div><span class="step-label">Verificando</span></div><div class="step-item" id="step-4"><div class="step-circle">4</div><span class="step-label">Generando</span></div></div>< !-- STORIES LOADER (Replaces Progress Bar) --><div class="processing-section" id="processingSection" style="display: none;"><div class="stories-container"><div class="story-icon" id="storyIcon">📡</div><div class="story-text" id="storyText">Conectando con SolarOracle Cloud...</div><div class="story-subtext" id="storySubtext">Esto tomará unos segundos</div>< !-- Hidden Progress for logic --><div class="progress-bar-container" style="display:none"><div class="progress-bar" id="progressBar">0%</div></div></div></div>< !-- Smart File Preview --><div class="file-preview-container" id="filePreview"><div class="file-preview-icon">📄</div><div class="file-preview-info"><div class="file-preview-name" id="previewName">boleta_octubre.pdf</div><div class="file-preview-size" id="previewSize">1.2 MB</div></div></div><div class="terminal" id="terminal"><div class="terminal-header"><div class="terminal-controls"><div class="control-dot dot-red"></div><div class="control-dot dot-yellow"></div><div class="control-dot dot-green"></div></div><div class="terminal-title">SOLAR_ORACLE_V4.2.exe</div></div><div class="terminal-body" id="terminalBody"><div class="terminal-line">>Sistema iniciado... Esperando archivo.</div></div></div></div>< !-- Verification Modal removed (dead code) -->
-    <div class="results-section" id="resultsSection" style="display: none;">
-        
-        <!-- Header Green -->
-        <div style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); padding: 40px 20px 60px 20px; border-radius: 0 0 40px 40px; text-align: center; color: white; margin: -20px -20px 20px -20px;">
-            <div style="font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 12px; border-radius: 20px; margin-bottom: 10px;">ANÁLISIS COMPLETADO</div>
-            <h2 style="font-size: 28px; font-weight: 700; margin-bottom: 8px;">Tu Potencial Solar ☀️</h2>
-            <p style="opacity: 0.9; font-size: 14px;">Basado en tu boleta <span id="distributorName">detectada</span></p>
-        </div>
-
-        <!-- Metric Cards Overlay -->
-        <div class="container" style="margin-top: -50px; padding: 0 10px; position:relative; z-index:10; margin-bottom: 20px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <!-- Saving Card -->
-                <div class="glass-card" style="padding: 15px; text-align: center; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Ahorro 1er Año</div>
-                    <div style="font-size: 20px; font-weight: 800; color: #10b981;" id="savings1y">$-</div>
-                    <div style="font-size: 9px; color: #10b981; background: #ecfdf5; padding: 2px 6px; border-radius: 10px; display: inline-block; margin-top: 5px;">Recomendado</div>
-                </div>
-                <!-- Loss Card -->
-                <div class="glass-card" style="padding: 15px; text-align: center; border-bottom: 3px solid #f43f5e; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Pérdida 5 Años</div>
-                    <div style="font-size: 20px; font-weight: 800; color: #f43f5e;" id="savings5y">$-</div>
-                    <div style="font-size: 9px; color: #9f1239; margin-top: 5px;">Si no haces nada</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Main Content -->
-        <div class="container" style="padding: 0 10px;">
-
-            <!-- Battery Opportunity (Phase 2) -->
-            <div id="batteryCard" class="glass-card" style="overflow: hidden; margin-bottom: 20px; display:none; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <div style="background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); padding: 15px; color: white; display: flex; align-items: center; gap: 10px;">
-                    <div style="font-size: 24px;">🔋</div>
-                    <div>
-                        <div style="font-weight: 700; font-size: 14px;">Oportunidad de Batería</div>
-                        <div style="font-size: 11px; opacity: 0.9;">Maximiza tu ahorro nocturno</div>
-                    </div>
-                </div>
-                <div style="padding: 15px;">
-                    <p style="font-size: 13px; color: #334155; margin-bottom: 10px;">
-                        Estás perdiendo <strong style="color: #ef4444;" id="batteryLossAmount">$-</strong> mensuales al regalar energía a la red.
-                    </p>
-                    <div style="font-size: 11px; color: #64748b; background: #f1f5f9; padding: 10px; border-radius: 8px;">
-                        💡 <strong>Consejo:</strong> Una batería inteligente podría guardar esa energía.
-                    </div>
-                </div>
-            </div>
-
-            <!-- Details List -->
-            <h3 style="font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; padding-left: 5px;">
-                <span style="width: 4px; height: 16px; background: #10b981; border-radius: 2px;"></span>
-                Detalles del Suministro
-            </h3>
-            
-            <div class="glass-card" style="padding: 0 20px; margin-bottom: 25px; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <div style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
-                    <span style="color: #64748b; font-size: 13px;">Cliente N°</span>
-                    <span style="font-weight: 600; color: #1e293b; font-size: 13px;" id="clientNumber">-</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
-                    <span style="color: #64748b; font-size: 13px;">Consumo Mes</span>
-                    <span style="font-weight: 600; color: #1e293b; font-size: 13px;" id="consumption">- kWh</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
-                    <span style="color: #64748b; font-size: 13px;">Tarifa Detectada</span>
-                    <span style="font-weight: 600; color: #1e293b; font-size: 13px;" id="currentRate">$-</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 15px 0;">
-                    <span style="color: #64748b; font-size: 13px;">Ubicación</span>
-                    <span style="font-weight: 600; color: #1e293b; font-size: 13px;" id="locationField">-</span>
-                </div>
-            </div>
-
-            <!-- TE4 Roadmap -->
-            <div class="roadmap-section" style="margin-bottom: 25px;">
-                <h3 style="font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 15px; padding-left: 5px;">Camino a la Independencia 🚀</h3>
-                <div class="glass-card" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                     <!-- Step 1 -->
-                     <div style="text-align: center; opacity: 0.5;">
-                         <div style="font-size: 18px; margin-bottom: 5px;">📝</div>
-                         <div style="font-size: 9px; font-weight: 700;">Firma</div>
-                     </div>
-                     <div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;"></div>
-                     <!-- Step 2 -->
-                     <div style="text-align: center; opacity: 0.5;">
-                         <div style="font-size: 18px; margin-bottom: 5px;">🔌</div>
-                         <div style="font-size: 9px; font-weight: 700;">Solicitud</div>
-                     </div>
-                     <div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;"></div>
-                     <!-- Step 3 (Active) -->
-                     <div style="text-align: center;">
-                         <div style="width: 28px; height: 28px; background: #ecfdf5; border: 2px solid #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; margin: 0 auto 5px;">📜</div>
-                         <div style="font-size: 9px; font-weight: 700; color: #10b981;">TE4 (SEC)</div>
-                     </div>
-                     <div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;"></div>
-                     <!-- Step 4 -->
-                     <div style="text-align: center; opacity: 0.5;">
-                         <div style="font-size: 18px; margin-bottom: 5px;">⚡</div>
-                         <div style="font-size: 9px; font-weight: 700;">Medidor</div>
-                     </div>
-                </div>
-            </div>
-
-            <!-- CTA Actions -->
-            <div style="display: flex; gap: 10px; flex-direction: column; margin-bottom: 40px;">
-                <button id="downloadPdfButton" style="width: 100%; padding: 18px; border: none; border-radius: 16px; background: #10b981; color: white; font-weight: 700; font-size: 16px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;">
-                    <span>📥</span> Descargar Informe PDF
-                </button>
-                <div style="text-align:center;">
-                    <a href="#" id="whatsappCta" target="_blank" style="color: #64748b; font-size: 14px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;">
-                        <span>💬</span> ¿Dudas? Hablar con experto
-                    </a>
-                </div>
-                <button id="resetButton" style="width: 100%; padding: 15px; border: none; border-radius: 16px; background: transparent; color: #94a3b8; font-weight: 600; margin-top: 10px; cursor: pointer;">
-                    Analizar otra boleta
-                </button>
-            </div>
-
-            <div style="text-align: center; margin-bottom: 40px; font-size: 11px; color: #cbd5e1;">
-                SolarOracle Intelligence v4.2
-            </div>
-
-        </div>
-    </div>
-
-<div class="modal-overlay" id="emailModal">
-    <div class="modal-content" style="border-radius: 20px; font-family: 'Outfit', sans-serif;">
-        <button class="modal-close" id="closeModal">✕</button>
-        <div class="success-message" id="successMessage">✓ ¡Email guardado! Descargando...</div>
-        <h2 class="modal-title" style="color: #1e293b;">📧 Recibe tu Análisis</h2>
-        <p class="modal-subtitle">Ingresa tu email para descargar el análisis completo en PDF</p>
-        <form class="email-form" id="emailForm">
-            <div class="form-group">
-                <label class="form-label" for="userEmail">Email</label>
-                <input type="email" id="userEmail" class="form-input" placeholder="tu@email.com" required style="border-radius: 12px; padding: 12px;">
-                <span class="error-message" id="emailError">Email inválido</span>
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="userName">Nombre (opcional)</label>
-                <input type="text" id="userName" class="form-input" placeholder="Tu nombre" style="border-radius: 12px; padding: 12px;">
-            </div>
-            <div class="form-group">
-                <label class="form-label" for="userPhone">Teléfono (opcional)</label>
-                <input type="tel" id="userPhone" class="form-input" placeholder="+56 9 1234 5678" style="border-radius: 12px; padding: 12px;">
-            </div>
-            <button type="button" class="download-button" id="submitEmail" onclick="handleDownload(event)" style="border-radius: 12px; background: #10b981; font-weight: 700;">DESCARGAR PDF</button>
-        </form>
-    </div>
-</div>
-
-</div><script>console.log("SolarOracle Script Loaded"); // Debugging: Check if script runs at all
+        </head><body><div class="container"><div class="header"><div class="logo">☀️ SolarOracle</div><div class="subtitle">Análisis Inteligente de Consumo Eléctrico</div><div class="social-proof" id="socialProof" style="display:none"><span class="pulse-dot"></span><span id="analysisCount">0</span>boletas analizadas </div></div>< !-- UNIFIED UPLOAD ZONE --><div class="upload-container" style="margin-bottom: 30px;"><input type="file" id="fileInput" class="file-input-hidden" accept=".pdf,image/*"><input type="file" id="cameraInput" class="file-input-hidden" accept="image/*" capture="environment"><label for="fileInput" class="upload-area" id="uploadAreaLabel"><div class="upload-icon">☁️</div><div class="upload-text">Subir Boleta</div><div class="upload-hint">PDF o Imagen</div></label>< !-- Mobile/Direct Actions --><div class="upload-options"><label for="cameraInput" class="btn-camera"><span>📷</span>Tomar Foto </label></div></div>< !-- Manual Fallback Form (shown when OCR fails) --><div class="manual-fallback" id="manualFallback"><h4>📝 No pudimos leer tu boleta automáticamente</h4><p>Ingresa tus datos manualmente para recibir tu análisis:</p><div class="form-row"><select id="manualDistributor"><option value="cge">CGE</option><option value="enel">Enel</option><option value="chilquinta">Chilquinta</option><option value="saesa">Saesa / Frontel</option><option value="other">Otra</option></select><input type="number" id="manualConsumption" placeholder="Consumo kWh (ej: 350)" min="1" max="9999"></div><button onclick="submitManualData()">⚡ Generar Análisis</button></div>< !-- Progress Steps --><div class="progress-steps" id="progressSteps" style="display: none;"><div class="step-item active" id="step-1"><div class="step-circle">1</div><span class="step-label">Analizando</span></div><div class="step-item" id="step-2"><div class="step-circle">2</div><span class="step-label">Extrayendo</span></div><div class="step-item" id="step-3"><div class="step-circle">3</div><span class="step-label">Verificando</span></div><div class="step-item" id="step-4"><div class="step-circle">4</div><span class="step-label">Generando</span></div></div>< !-- STORIES LOADER (Replaces Progress Bar) --><div class="processing-section" id="processingSection" style="display: none;"><div class="stories-container"><div class="story-icon" id="storyIcon">📡</div><div class="story-text" id="storyText">Conectando con SolarOracle Cloud...</div><div class="story-subtext" id="storySubtext">Esto tomará unos segundos</div>< !-- Hidden Progress for logic --><div class="progress-bar-container" style="display:none"><div class="progress-bar" id="progressBar">0%</div></div></div></div>< !-- Smart File Preview --><div class="file-preview-container" id="filePreview"><div class="file-preview-icon">📄</div><div class="file-preview-info"><div class="file-preview-name" id="previewName">boleta_octubre.pdf</div><div class="file-preview-size" id="previewSize">1.2 MB</div></div></div><div class="terminal" id="terminal"><div class="terminal-header"><div class="terminal-controls"><div class="control-dot dot-red"></div><div class="control-dot dot-yellow"></div><div class="control-dot dot-green"></div></div><div class="terminal-title">SOLAR_ORACLE_V4.2.exe</div></div><div class="terminal-body" id="terminalBody"><div class="terminal-line">>Sistema iniciado... Esperando archivo.</div></div></div></div>< !-- Verification Modal removed (dead code) --><div class="results-section" id="resultsSection" style="display: none;">< !-- Header Green --><div style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); padding: 40px 20px 60px 20px; border-radius: 0 0 40px 40px; text-align: center; color: white; margin: -20px -20px 20px -20px;"><div style="font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 12px; border-radius: 20px; margin-bottom: 10px;">ANÁLISIS COMPLETADO</div><h2 style="font-size: 28px; font-weight: 700; margin-bottom: 8px;">Tu Potencial Solar ☀️</h2><p style="opacity: 0.9; font-size: 14px;">Basado en tu boleta <span id="distributorName">detectada</span></p></div>< !-- Metric Cards Overlay --><div class="container" style="margin-top: -50px; padding: 0 10px; position:relative; z-index:10; margin-bottom: 20px;"><div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">< !-- Saving Card --><div class="glass-card" style="padding: 15px; text-align: center; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);"><div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Ahorro 1er Año</div><div style="font-size: 20px; font-weight: 800; color: #10b981;" id="savings1y">$-</div><div style="font-size: 9px; color: #10b981; background: #ecfdf5; padding: 2px 6px; border-radius: 10px; display: inline-block; margin-top: 5px;">Recomendado</div></div>< !-- Loss Card --><div class="glass-card" style="padding: 15px; text-align: center; border-bottom: 3px solid #f43f5e; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);"><div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">Pérdida 5 Años</div><div style="font-size: 20px; font-weight: 800; color: #f43f5e;" id="savings5y">$-</div><div style="font-size: 9px; color: #9f1239; margin-top: 5px;">Si no haces nada</div></div></div></div>< !-- Main Content --><div class="container" style="padding: 0 10px;">< !-- Battery Opportunity (Phase 2) --><div id="batteryCard" class="glass-card" style="overflow: hidden; margin-bottom: 20px; display:none; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);"><div style="background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); padding: 15px; color: white; display: flex; align-items: center; gap: 10px;"><div style="font-size: 24px;">🔋</div><div><div style="font-weight: 700; font-size: 14px;">Oportunidad de Batería</div><div style="font-size: 11px; opacity: 0.9;">Maximiza tu ahorro nocturno</div></div></div><div style="padding: 15px;"><p style="font-size: 13px; color: #334155; margin-bottom: 10px;">Estás perdiendo <strong style="color: #ef4444;" id="batteryLossAmount">$-</strong>mensuales al regalar energía a la red. </p><div style="font-size: 11px; color: #64748b; background: #f1f5f9; padding: 10px; border-radius: 8px;">💡 <strong>Consejo:</strong>Una batería inteligente podría guardar esa energía. </div></div></div>< !-- Details List --><h3 style="font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; padding-left: 5px;"><span style="width: 4px; height: 16px; background: #10b981; border-radius: 2px;"></span>Detalles del Suministro </h3><div class="glass-card" style="padding: 0 20px; margin-bottom: 25px; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);"><div style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;"><span style="color: #64748b; font-size: 13px;">Cliente N°</span><span style="font-weight: 600; color: #1e293b; font-size: 13px;" id="clientNumber">-</span></div><div style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;"><span style="color: #64748b; font-size: 13px;">Consumo Mes</span><span style="font-weight: 600; color: #1e293b; font-size: 13px;" id="consumption">- kWh</span></div><div style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;"><span style="color: #64748b; font-size: 13px;">Tarifa Detectada</span><span style="font-weight: 600; color: #1e293b; font-size: 13px;" id="currentRate">$-</span></div><div style="display: flex; justify-content: space-between; padding: 15px 0;"><span style="color: #64748b; font-size: 13px;">Ubicación</span><span style="font-weight: 600; color: #1e293b; font-size: 13px;" id="locationField">-</span></div></div>< !-- TE4 Roadmap --><div class="roadmap-section" style="margin-bottom: 25px;"><h3 style="font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 15px; padding-left: 5px;">Camino a la Independencia 🚀</h3><div class="glass-card" style="padding: 15px; display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">< !-- Step 1 --><div style="text-align: center; opacity: 0.5;"><div style="font-size: 18px; margin-bottom: 5px;">📝</div><div style="font-size: 9px; font-weight: 700;">Firma</div></div><div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;"></div>< !-- Step 2 --><div style="text-align: center; opacity: 0.5;"><div style="font-size: 18px; margin-bottom: 5px;">🔌</div><div style="font-size: 9px; font-weight: 700;">Solicitud</div></div><div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;"></div>< !-- Step 3 (Active) --><div style="text-align: center;"><div style="width: 28px; height: 28px; background: #ecfdf5; border: 2px solid #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; margin: 0 auto 5px;">📜</div><div style="font-size: 9px; font-weight: 700; color: #10b981;">TE4 (SEC)</div></div><div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;"></div>< !-- Step 4 --><div style="text-align: center; opacity: 0.5;"><div style="font-size: 18px; margin-bottom: 5px;">⚡</div><div style="font-size: 9px; font-weight: 700;">Medidor</div></div></div></div>< !-- CTA Actions --><div style="display: flex; gap: 10px; flex-direction: column; margin-bottom: 40px;"><button id="downloadPdfButton" style="width: 100%; padding: 18px; border: none; border-radius: 16px; background: #10b981; color: white; font-weight: 700; font-size: 16px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;"><span>📥</span>Descargar Informe PDF </button><div style="text-align:center;"><a href="#" id="whatsappCta" target="_blank" style="color: #64748b; font-size: 14px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;"><span>💬</span>¿Dudas? Hablar con experto </a></div><button id="resetButton" style="width: 100%; padding: 15px; border: none; border-radius: 16px; background: transparent; color: #94a3b8; font-weight: 600; margin-top: 10px; cursor: pointer;">Analizar otra boleta </button></div><div style="text-align: center; margin-bottom: 40px; font-size: 11px; color: #cbd5e1;">SolarOracle Intelligence v4.2 </div></div></div><div class="modal-overlay" id="emailModal"><div class="modal-content" style="border-radius: 20px; font-family: 'Outfit', sans-serif;"><button class="modal-close" id="closeModal">✕</button><div class="success-message" id="successMessage">✓ ¡Email guardado ! Descargando...</div><h2 class="modal-title" style="color: #1e293b;">📧 Recibe tu Análisis</h2><p class="modal-subtitle">Ingresa tu email para descargar el análisis completo en PDF</p><form class="email-form" id="emailForm"><div class="form-group"><label class="form-label" for="userEmail">Email</label><input type="email" id="userEmail" class="form-input" placeholder="tu@email.com" required style="border-radius: 12px; padding: 12px;"><span class="error-message" id="emailError">Email inválido</span></div><div class="form-group"><label class="form-label" for="userName">Nombre (opcional)</label><input type="text" id="userName" class="form-input" placeholder="Tu nombre" style="border-radius: 12px; padding: 12px;"></div><div class="form-group"><label class="form-label" for="userPhone">Teléfono (opcional)</label><input type="tel" id="userPhone" class="form-input" placeholder="+56 9 1234 5678" style="border-radius: 12px; padding: 12px;"></div><button type="button" class="download-button" id="submitEmail" onclick="handleDownload(event)" style="border-radius: 12px; background: #10b981; font-weight: 700;">DESCARGAR PDF</button></form></div></div></div><script>console.log("SolarOracle Script Loaded"); // Debugging: Check if script runs at all
 
         // GLOBAL STATE
         let ELEMENTS= {}
@@ -2470,11 +2318,11 @@
             if (whatsappCta) {
 
                 const msg=`Hola,
-                acabo de analizar mi boleta eléctrica con SolarOracle. Mi consumo es $ {
+                vengo de SolarOracle.cl. Acabo de analizar mi boleta con consumo de $ {
                     data.consumption
                 }
 
-                kWh y me gustaría una cotización solar. ¿Pueden ayudarme?`;
+                kWh y me gustaría una cotización solar.`;
                 whatsappCta.href=`https: //wa.me/56955228008?text=${encodeURIComponent(msg)}`;
             }
 
