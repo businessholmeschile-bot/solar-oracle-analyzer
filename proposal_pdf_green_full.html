@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta PDF Completa - Diseño Verde</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #525252;
+            padding: 40px;
+        }
+
+        /* A4 Page Simulation */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            /* Allow expansion for mockup viewing */
+            background: white;
+            margin: 0 auto;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            padding-bottom: 50px;
+        }
+
+        .header-curve {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 280px;
+            background: linear-gradient(135deg, #10b981 0%, #047857 100%);
+            border-bottom-right-radius: 50% 40px;
+            border-bottom-left-radius: 50% 40px;
+            z-index: 0;
+        }
+
+        .section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #1e293b;
+            border-left: 4px solid #10b981;
+            padding-left: 10px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .data-table th {
+            text-align: left;
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .data-table td {
+            padding: 10px 0;
+            border-bottom: 1px solid #f1f5f9;
+            color: #334155;
+            font-size: 0.9rem;
+        }
+
+        .data-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .highlight-box {
+            background: #ecfdf5;
+            border: 1px solid #a7f3d0;
+            border-radius: 12px;
+            padding: 15px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="a4-page">
+        <!-- Header Background -->
+        <div class="header-curve"></div>
+
+        <!-- Header Content -->
+        <div class="relative z-10 px-12 pt-12 pb-8 flex justify-between items-start text-white">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <div
+                        class="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-emerald-700 font-bold text-2xl shadow-lg">
+                        S</div>
+                    <div>
+                        <span class="font-bold text-3xl tracking-tight block leading-none">SolarOracle</span>
+                        <span class="text-xs text-emerald-200 font-medium tracking-widest uppercase">Intelligence
+                            System</span>
+                    </div>
+                </div>
+            </div>
+            <div class="text-right">
+                <div class="inline-block bg-white/10 backdrop-blur-md border border-white/20 rounded-lg px-4 py-2">
+                    <h1 class="text-xl font-bold">Estudio de Factibilidad</h1>
+                    <p class="text-emerald-100 text-xs text-right">ID: #PROP-2026-882</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Client Info & Date -->
+        <div class="relative z-10 px-12 mb-10 text-white flex justify-between items-end">
+            <div>
+                <p class="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-1">Cliente</p>
+                <h2 class="text-3xl font-bold">Juan Pérez</h2>
+                <p class="text-emerald-100 opacity-90 text-sm">Av. Libertador 1234, Maipú, RM</p>
+            </div>
+            <div class="text-right">
+                <p class="text-emerald-200 text-xs font-bold uppercase tracking-wider mb-1">Fecha Emisión</p>
+                <p class="font-medium">12 Febrero, 2026</p>
+            </div>
+        </div>
+
+        <!-- Content Grid -->
+        <div class="px-12 grid grid-cols-2 gap-10">
+
+            <!-- LEFT COLUMN -->
+            <div class="space-y-8">
+
+                <!-- 1. DIAGNOSTICO -->
+                <section>
+                    <h3 class="section-title">1. Diagnóstico Actual</h3>
+                    <div class="bg-slate-50 rounded-2xl p-5 border border-slate-100">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm text-slate-500">Gasto Mensual Promedio</span>
+                            <span class="text-lg font-bold text-slate-800">$125.000</span>
+                        </div>
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-sm text-slate-500">Tarifa Eléctrica</span>
+                            <span class="text-sm font-bold text-slate-700 bg-slate-200 px-2 py-0.5 rounded">BT1</span>
+                        </div>
+                        <div class="mt-4 pt-4 border-t border-slate-200">
+                            <div class="text-xs text-rose-500 font-bold uppercase mb-1">Proyección a 25 Años (Sin Solar)
+                            </div>
+                            <div class="text-3xl font-bold text-rose-600">$45.000.000</div>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-tight">Calculado con una inflación
+                                energética anual estimada del 3.5%.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- 2. SOLUCION TECNICA -->
+                <section>
+                    <h3 class="section-title">2. Solución Técnica</h3>
+                    <div class="highlight-box space-y-4 relative overflow-hidden">
+
+                        <!-- Hero Image Interleaved -->
+                        <div class="w-full h-32 rounded-xl overflow-hidden mb-4 relative shadow-sm">
+                            <img src="solar-panel-report.jpg" class="w-full h-full object-cover">
+                            <div
+                                class="absolute inset-0 bg-gradient-to-t from-emerald-900/60 to-transparent flex items-end p-3">
+                                <span class="text-white text-xs font-bold uppercase tracking-wider">Visualización
+                                    Preliminar</span>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-4">
+                            <div
+                                class="w-12 h-12 rounded-full bg-white flex items-center justify-center text-xl shadow-sm">
+                                ☀️</div>
+                            <div>
+                                <div class="text-2xl font-bold text-emerald-800">5.2 kWp</div>
+                                <div class="text-xs text-emerald-600 font-bold uppercase">Potencia Instalada</div>
+                            </div>
+                        </div>
+
+                        <table class="w-full text-sm">
+                            <tr class="border-b border-emerald-200/50">
+                                <td class="py-2 text-emerald-800/70">Paneles</td>
+                                <td class="py-2 font-bold text-emerald-900 text-right">10x Monocristalinos Tier-1</td>
+                            </tr>
+                            <tr class="border-b border-emerald-200/50">
+                                <td class="py-2 text-emerald-800/70">Inversor</td>
+                                <td class="py-2 font-bold text-emerald-900 text-right">Huawei SUN2000-5KTL</td>
+                            </tr>
+                            <tr class="border-b border-emerald-200/50">
+                                <td class="py-2 text-emerald-800/70">Generación Anual</td>
+                                <td class="py-2 font-bold text-emerald-900 text-right">7.800 kWh</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 text-emerald-800/70">Superficie Necesaria</td>
+                                <td class="py-2 font-bold text-emerald-900 text-right">~28 m²</td>
+                            </tr>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 3. MEDIO AMBIENTE -->
+                <section>
+                    <h3 class="section-title">3. Impacto Ambiental</h3>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div class="bg-indigo-50 rounded-xl p-4 text-center border border-indigo-100">
+                            <div class="text-2xl mb-1">🌳</div>
+                            <div class="font-bold text-indigo-900 text-lg">145</div>
+                            <div class="text-[10px] text-indigo-400 uppercase font-bold">Árboles Plantados</div>
+                        </div>
+                        <div class="bg-sky-50 rounded-xl p-4 text-center border border-sky-100">
+                            <div class="text-2xl mb-1">☁️</div>
+                            <div class="font-bold text-sky-900 text-lg">4.2 Ton</div>
+                            <div class="text-[10px] text-sky-400 uppercase font-bold">CO2 Evitado/Año</div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+
+            <!-- RIGHT COLUMN -->
+            <div class="space-y-8">
+
+                <!-- 4. ANALISIS FINANCIERO -->
+                <section>
+                    <h3 class="section-title">4. Análisis Financiero</h3>
+
+                    <div class="bg-white rounded-2xl shadow-lg border border-slate-100 p-6 relative overflow-hidden">
+                        <div
+                            class="absolute top-0 right-0 w-32 h-32 bg-emerald-100 rounded-full -mr-16 -mt-16 opacity-30">
+                        </div>
+
+                        <div class="mb-6">
+                            <p class="text-sm text-slate-500 font-medium mb-1">Ahorro Estimado (25 Años)</p>
+                            <div class="text-4xl font-extrabold text-emerald-600 tracking-tight">+$42.500.000</div>
+                        </div>
+
+                        <table class="w-full data-table">
+                            <thead>
+                                <tr>
+                                    <th>Concepto</th>
+                                    <th class="text-right">Valor</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Ahorro Primer Año</td>
+                                    <td class="text-right font-bold text-emerald-600">$1.500.000</td>
+                                </tr>
+                                <tr>
+                                    <td>Ahorro Acumulado (10 Años)</td>
+                                    <td class="text-right font-bold text-emerald-600">$18.200.000</td>
+                                </tr>
+                                <tr>
+                                    <td>Retorno de Inversión (Payback)</td>
+                                    <td class="text-right font-bold text-slate-800">3.2 Años</td>
+                                </tr>
+                                <tr>
+                                    <td>TIR del Proyecto</td>
+                                    <td class="text-right font-bold text-slate-800">28.5%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- 5. GRAFICO DE BARRAS (MOCKUP) -->
+                <section>
+                    <h3 class="section-title">5. Flujo de Caja Acumulado</h3>
+                    <div class="bg-slate-50 rounded-2xl p-6 border border-slate-100 h-64 flex items-end gap-2 relative">
+                        <!-- Y-Axis Grid -->
+                        <div
+                            class="absolute inset-0 flex flex-col justify-between py-6 px-6 pointer-events-none opacity-10">
+                            <div class="w-full h-px bg-slate-900"></div>
+                            <div class="w-full h-px bg-slate-900"></div>
+                            <div class="w-full h-px bg-slate-900"></div>
+                            <div class="w-full h-px bg-slate-900"></div>
+                            <div class="w-full h-px bg-slate-900"></div>
+                        </div>
+
+                        <!-- Bar 1 (Year 0 - Investment) -->
+                        <div class="w-1/6 bg-rose-400 rounded-t-sm h-[15%] relative group">
+                            <div class="absolute -bottom-6 w-full text-center text-[10px] text-slate-400">Inversión
+                            </div>
+                        </div>
+                        <!-- Bar 2 (Year 3 - Break Even) -->
+                        <div class="w-1/6 bg-emerald-300 rounded-t-sm h-[20%] relative">
+                            <div
+                                class="absolute -bottom-6 w-full text-center text-[10px] text-slate-400 font-bold text-emerald-600">
+                                Payback</div>
+                        </div>
+                        <!-- Bar 3 (Year 5) -->
+                        <div class="w-1/6 bg-emerald-400 rounded-t-sm h-[35%] relative">
+                            <div class="absolute -bottom-6 w-full text-center text-[10px] text-slate-400">Año 5</div>
+                        </div>
+                        <!-- Bar 4 (Year 10) -->
+                        <div class="w-1/6 bg-emerald-500 rounded-t-sm h-[55%] relative">
+                            <div class="absolute -bottom-6 w-full text-center text-[10px] text-slate-400">Año 10</div>
+                        </div>
+                        <!-- Bar 5 (Year 20) -->
+                        <div class="w-1/6 bg-emerald-600 rounded-t-sm h-[80%] relative">
+                            <div class="absolute -bottom-6 w-full text-center text-[10px] text-slate-400">Año 20</div>
+                        </div>
+                        <!-- Bar 6 (Year 25) -->
+                        <div class="w-1/6 bg-emerald-700 rounded-t-sm h-[100%] relative">
+                            <div class="absolute -top-5 w-full text-center text-[10px] font-bold text-emerald-700">$45M
+                            </div>
+                            <div class="absolute -bottom-6 w-full text-center text-[10px] text-slate-400">Año 25</div>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </div>
+
+        <!-- Next Steps / Footer -->
+        <div class="mt-12 mx-12 border-t border-slate-100 pt-8 pb-4 text-center">
+            <h4 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Próximos Pasos</h4>
+            <div class="flex justify-center gap-10 opacity-70 mb-8">
+                <div class="flex items-center gap-2">
+                    <span
+                        class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">1</span>
+                    <span class="text-sm">Visita Técnica</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span
+                        class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">2</span>
+                    <span class="text-sm">Firma de Contrato</span>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span
+                        class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-xs font-bold">3</span>
+                    <span class="text-sm">Instalación y TE4</span>
+                </div>
+            </div>
+
+            <div class="text-xs text-slate-300">
+                SolarOracle Inc. | www.solaroracle.cl | contacto@solaroracle.cl | +56 9 1234 5678 <br>
+                Este documento es una simulación basada en datos históricos y satelitales. Valores finales sujetos a
+                visita técnica.
+            </div>
+        </div>
+
+    </div>
+
+</body>
+
+</html>

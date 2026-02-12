@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solar Oracle V2 | Control Center</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #f0fdf4;
+            /* Mint-50 */
+            color: #334155;
+        }
+
+        /* Glass / Card Effect */
+        .glass-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+            border: 1px solid #f1f5f9;
+        }
+
+        /* Badge Styles */
+        .badge-ghost {
+            background-color: #f1f5f9;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+        }
+
+        .badge-lead {
+            background-color: #ecfdf5;
+            color: #059669;
+            border: 1px solid #a7f3d0;
+        }
+
+        .whale-badge {
+            background: linear-gradient(135deg, #4338ca 0%, #312e81 100%);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 8px;
+            font-size: 0.65rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            box-shadow: 0 2px 5px rgba(67, 56, 202, 0.3);
+            font-weight: 700;
+        }
+
+        .recuperable-badge {
+            background: #fffbeb;
+            color: #b45309;
+            border: 1px solid #fcd34d;
+            font-size: 0.65rem;
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        .whatsapp-btn {
+            background-color: #dcfce7;
+            color: #15803d;
+            border: 1px solid #86efac;
+            transition: all 0.2s;
+        }
+
+        .whatsapp-btn:hover {
+            background-color: #22c55e;
+            color: white;
+            border-color: #16a34a;
+        }
+
+        /* Checkbox Custom Style */
+        .custom-checkbox {
+            width: 18px;
+            height: 18px;
+            border-radius: 6px;
+            border: 2px solid #cbd5e1;
+            appearance: none;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .custom-checkbox:checked {
+            background-color: #10b981;
+            border-color: #10b981;
+        }
+
+        .custom-checkbox:checked::after {
+            content: '✓';
+            color: white;
+            font-size: 12px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-weight: bold;
+        }
+    </style>
+</head>
+
+<body class="p-8 max-w-[1600px] mx-auto min-h-screen relative">
+
+    <!-- LOGIN MODAL (V2 Style) -->
+    <div id="login-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-sm z-50 flex items-center justify-center">
+        <div class="bg-white p-8 rounded-3xl shadow-2xl w-96 border border-slate-200 text-center">
+            <div
+                class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z">
+                    </path>
+                </svg>
+            </div>
+            <h2 class="text-2xl font-bold text-slate-800 mb-2">Acceso Seguro</h2>
+            <p class="text-slate-400 text-sm mb-6">SolarOracle Admin V2</p>
+
+            <input type="password" id="admin-pass" placeholder="Ingresa tu contraseña"
+                class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-slate-700 mb-4 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition"
+                onkeydown="if(event.key==='Enter') verifyLogin()">
+
+            <button onclick="verifyLogin()"
+                class="w-full bg-emerald-500 hover:bg-emerald-600 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-200">
+                Entrar
+            </button>
+            <p id="login-error" class="text-rose-500 text-sm mt-4 hidden font-medium bg-rose-50 py-2 rounded-lg">
+                Contraseña incorrecta</p>
+        </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="flex justify-between items-center mb-10">
+        <div class="flex items-center gap-4">
+            <div
+                class="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-emerald-200">
+                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-2xl font-bold text-slate-800 tracking-tight">SolarOracle <span
+                        class="text-emerald-500">Admin</span></h1>
+                <p class="text-sm text-slate-400 font-medium" id="last-updated">Cargando...</p>
+            </div>
+        </div>
+
+        <div class="flex gap-3">
+            <button onclick="fetchLeads()"
+                class="px-5 py-2.5 bg-white border border-slate-200 hover:border-emerald-300 hover:text-emerald-600 rounded-xl text-sm font-semibold text-slate-500 transition shadow-sm flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15">
+                    </path>
+                </svg>
+                Actualizar
+            </button>
+            <div class="flex items-center gap-2 px-4 py-2 bg-white rounded-xl border border-slate-200 shadow-sm">
+                <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
+                <span class="text-xs font-medium text-slate-500">Sistema Activo</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- KPI Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <!-- Card 1 -->
+        <div class="glass-card p-6 relative overflow-hidden group hover:border-emerald-200 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg class="w-16 h-16 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z">
+                    </path>
+                </svg>
+            </div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Total Registros</p>
+            <div class="text-3xl font-bold text-slate-800" id="kpi-total">0</div>
+            <div class="mt-2 text-xs font-medium text-slate-400">Total histórico</div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="glass-card p-6 relative overflow-hidden group hover:border-emerald-200 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg class="w-16 h-16 text-emerald-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Leads Reales</p>
+            <div class="text-3xl font-bold text-emerald-600" id="kpi-leads">0</div>
+            <div class="mt-2 text-xs font-medium text-slate-400">Datos completados</div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="glass-card p-6 relative overflow-hidden group hover:border-emerald-200 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg class="w-16 h-16 text-indigo-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd"
+                        d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 00-1-1H3zm6 6a1 1 0 100 2 1 1 0 000-2z"
+                        clip-rule="evenodd"></path>
+                </svg>
+            </div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Ghosts (Abandonos)</p>
+            <div class="text-3xl font-bold text-slate-500" id="kpi-ghosts">0</div>
+            <div class="mt-2 flex items-center text-xs font-medium text-amber-500">
+                <span class="bg-amber-100 border border-amber-200 px-1.5 py-0.5 rounded mr-1">🔥 Oportunidad</span>
+                <span>Recuperación</span>
+            </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="glass-card p-6 relative overflow-hidden group hover:border-emerald-200 transition-colors">
+            <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                <svg class="w-16 h-16 text-amber-500" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                        d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z">
+                    </path>
+                </svg>
+            </div>
+            <p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Conversión</p>
+            <div class="text-3xl font-bold text-amber-500" id="kpi-rate">0%</div>
+            <div class="mt-2 text-xs font-medium text-slate-400">Total</div>
+        </div>
+    </div>
+
+    <!-- Bulk Actions Floating Bar (Hidden by default) -->
+    <div id="bulk-actions"
+        class="fixed bottom-8 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-2xl flex items-center gap-6 z-40 hidden transition-all duration-300">
+        <span class="text-sm font-semibold"><span id="selected-count">0</span> seleccionados</span>
+        <div class="h-6 w-px bg-slate-600"></div>
+        <button onclick="sendBulkEmail()" class="flex items-center gap-2 hover:text-emerald-400 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
+                </path>
+            </svg>
+            <span class="text-sm font-bold">Enviar Email de Rescate</span>
+        </button>
+    </div>
+
+    <!-- Main Table Container -->
+    <div class="glass-card overflow-hidden">
+        <!-- Table Header Control -->
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-white">
+            <div>
+                <h3 class="font-bold text-lg text-slate-800">Base de Datos de Factibilidad</h3>
+                <p class="text-xs text-slate-400 mt-1">Gestión centralizada de solicitudes</p>
+            </div>
+            <div class="flex gap-3">
+                <div class="relative">
+                    <input type="text" placeholder="Buscar..."
+                        class="pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/20 w-64 transition">
+                    <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor"
+                        viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                </div>
+            </div>
+        </div>
+
+        <!-- Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead class="bg-slate-50/80 border-b border-slate-100">
+                    <tr>
+                        <th class="px-6 py-4 w-10">
+                            <input type="checkbox" class="custom-checkbox" onchange="toggleAll(this)">
+                        </th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Ticket ID</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Fecha</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Estado</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Cliente</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Ubicación</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Contacto</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider">Distribuidora
+                        </th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">
+                            Consumo</th>
+                        <th class="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-wider text-right">
+                            Ahorro Est.</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body" class="divide-y divide-slate-50 bg-white">
+                    <tr>
+                        <td colspan="10" class="px-6 py-12 text-center text-slate-400">
+                            <div class="animate-pulse">Cargando base de datos segura...</div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // --- LOGIC: SECURE PROXY ---
+        const PROXY_URL = 'https://zqwkwnywndkwyzzggorf.supabase.co/functions/v1/save-lead';
+        let AUTH_TOKEN = null;
+        let CURRENT_DATA = [];
+
+        function verifyLogin() {
+            const pass = document.getElementById('admin-pass').value;
+            if (!pass) return;
+            AUTH_TOKEN = pass;
+
+            // Show loading state on button
+            const btn = document.querySelector('#login-modal button');
+            const originalText = btn.innerText;
+            btn.innerText = 'Verificando...';
+
+            fetchLeads().catch(() => {
+                btn.innerText = originalText;
+            });
+        }
+
+        async function fetchLeads() {
+            try {
+                // 1. Fetch Data
+                const resp = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        action: 'get-leads',
+                        payload: { password: AUTH_TOKEN }
+                    })
+                });
+
+                if (resp.status === 401) {
+                    document.getElementById('login-modal').classList.remove('hidden');
+                    document.getElementById('login-error').classList.remove('hidden');
+                    throw new Error("Contraseña incorrecta");
+                }
+
+                document.getElementById('login-modal').classList.add('hidden');
+
+                const result = await resp.json();
+                if (!result.success) throw new Error(result.error || 'Error desconocido');
+
+                const data = result.data || [];
+                CURRENT_DATA = data; // Store for filtering/actions
+
+                // 2. Update KPIs
+                const total = data.length;
+                const leads = data.filter(r => r.tipo === 'LEAD').length;
+                const ghosts = total - leads;
+                const rate = total > 0 ? ((leads / total) * 100).toFixed(1) : 0;
+
+                document.getElementById('kpi-total').innerText = total;
+                document.getElementById('kpi-leads').innerText = leads;
+                document.getElementById('kpi-ghosts').innerText = ghosts;
+                document.getElementById('kpi-rate').innerText = rate + '%';
+
+                document.getElementById('last-updated').innerText = 'Actualizado: ' + new Date().toLocaleTimeString();
+
+                // 3. Render Table
+                renderTable(data);
+
+            } catch (err) {
+                console.error(err);
+                if (err.message !== "Contraseña incorrecta") {
+                    alert('Error cargando datos: ' + err.message);
+                }
+            }
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="10" class="px-6 py-12 text-center text-slate-400">Sin registros aún.</td></tr>`;
+                return;
+            }
+
+            data.forEach(row => {
+                // Formatting
+                const isLead = row.tipo === 'LEAD';
+                // Mint Styles for Badges
+                const badgeClass = isLead ? 'badge-lead' : 'badge-ghost';
+                const date = new Date(row.created_at).toLocaleString('es-CL', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+                const ticketId = row.id ? row.id.substring(0, 8).toUpperCase() : '???';
+
+                // Logic: Whale
+                const isWhale = (parseInt(row.kwh_mensual) || 0) > 600;
+                // Logic: Recoverable Ghost
+                const isRecoverable = !isLead && ((parseInt(row.kwh_mensual) || 0) > 300);
+
+                // Logic: WhatsApp
+                let waBtn = '<span class="text-xs text-slate-300 italic">--</span>';
+                if (row.telefono) {
+                    const cleanPhone = row.telefono.replace(/\D/g, '');
+                    const msg = `Hola ${row.nombre}, vi en SolarOracle que tu consumo es de ${row.kwh_mensual} kWh en ${row.ubicacion || 'tu domicilio'}. Tengo una propuesta para bajar esa cuenta a $0.`;
+                    const link = `https://wa.me/569${cleanPhone}?text=${encodeURIComponent(msg)}`;
+                    waBtn = `<a href="${link}" target="_blank" class="whatsapp-btn px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 shadow-sm inline-flex">
+                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                                Chat
+                            </a>`;
+                }
+
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition duration-150 group';
+
+                // Construct Row HTML
+                tr.innerHTML = `
+                    <td class="px-6 py-4">
+                        <input type="checkbox" class="custom-checkbox row-select" 
+                               value="${row.email || ''}" 
+                               data-id="${row.id}"
+                               onchange="updateBulkUI()">
+                    </td>
+                    <td class="px-6 py-4">
+                        <span class="font-mono text-xs font-semibold text-slate-500">#${ticketId}</span>
+                        ${isWhale ? '<div class="mt-1"><span class="whale-badge">🐋 WHALE</span></div>' : ''}
+                    </td>
+                    <td class="px-6 py-4 text-xs text-slate-500 font-medium">${date}</td>
+                    <td class="px-6 py-4">
+                         <span class="${badgeClass} px-2.5 py-1 rounded-lg text-xs font-bold">${row.tipo || 'GHOST'}</span>
+                    </td>
+                    <td class="px-6 py-4">
+                        <div class="font-bold text-slate-700 text-sm">${row.nombre || 'Anónimo'}</div>
+                        <div class="text-xs text-slate-400">ID: ${row.client_number || '-'}</div>
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-600 font-medium">${row.ubicacion || 'N/A'}</td>
+                    <td class="px-6 py-4">
+                        <div class="text-xs text-slate-500 mb-1">${row.email || ''}</div>
+                        ${waBtn}
+                    </td>
+                    <td class="px-6 py-4 text-sm text-slate-600">${row.distribuidora || 'General'}</td>
+                    <td class="px-6 py-4 text-right">
+                        <div class="font-bold text-slate-700 text-sm">${row.kwh_mensual || 0} kWh</div>
+                        ${isWhale ? '<div class="text-[10px] text-indigo-400 font-semibold">ALTO VALOR</div>' : ''}
+                        ${isRecoverable ? '<span class="recuperable-badge inline-block mt-1">🔥 RECUPERABLE</span>' : ''}
+                    </td>
+                    <td class="px-6 py-4 text-right font-mono text-sm font-bold text-emerald-600">${row.ahorro_anual || '$0'}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        // --- EMAIL STUDIO (BULK ACTIONS) ---
+        function toggleAll(source) {
+            const checkboxes = document.querySelectorAll('.row-select');
+            checkboxes.forEach(cb => cb.checked = source.checked);
+            updateBulkUI();
+        }
+
+        function updateBulkUI() {
+            const selected = document.querySelectorAll('.row-select:checked');
+            const bar = document.getElementById('bulk-actions');
+            const countLabel = document.getElementById('selected-count');
+
+            if (selected.length > 0) {
+                bar.classList.remove('hidden');
+                countLabel.innerText = selected.length;
+            } else {
+                bar.classList.add('hidden');
+            }
+        }
+
+        function sendBulkEmail() {
+            const selected = document.querySelectorAll('.row-select:checked');
+            if (selected.length === 0) return;
+
+            const emails = Array.from(selected)
+                .map(cb => cb.value)
+                .filter(email => email && email.includes('@'));
+
+            if (emails.length === 0) {
+                alert("Ninguno de los seleccionados tiene email válido.");
+                return;
+            }
+
+            const subject = encodeURIComponent("Oportunidad SolarOracle: Tu estudio está listo");
+            const body = encodeURIComponent("Hola,\n\nVi tu simulación en SolarOracle y quería contarte que detectamos una oportunidad de ahorro.\n\n¿Te gustaría agendar una llamada breve?\n\nSaludos,\nEquipo SolarOracle");
+
+            // mailto limit is often around 2000 chars. 
+            // Better to copy to clipboard for bulk, or use BCC.
+            if (emails.length > 10) {
+                // Too many for mailto usually, offer copy
+                const list = emails.join('; ');
+                navigator.clipboard.writeText(list).then(() => {
+                    alert(`¡${emails.length} correos copiados al portapapeles!\n\nPégalos en CCO (BCC) en tu gestor de correos.`);
+                });
+            } else {
+                // Small batch -> Direct Launch
+                const bcc = emails.join(',');
+                window.location.href = `mailto:?bcc=${bcc}&subject=${subject}&body=${body}`;
+            }
+        }
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('admin-pass').focus();
+        });
+
+    </script>
+</body>
+
+</html>
