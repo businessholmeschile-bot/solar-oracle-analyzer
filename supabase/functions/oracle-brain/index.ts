@@ -26,11 +26,14 @@ const SEARCH_QUERIES = [
     "empresa solar Concepción Chile",
     "ingeniería solar fotovoltaica Chile",
     "instalador certificado SEC paneles solares",
-    "empresa energía renovable Chile PYME",
+    "empresa energía renovable PYME B2B Chile",
+    "se busca vendedor paneles solares chile",
+    "oferta de empleo asesor comercial energia solar chile",
+    "buscamos ingeniero comercial ventas energia solar"
 ]
 
-const B2B_KEYWORDS = ['EPC', 'ingeniería', 'cotizar', 'instalación', 'fotovoltaico', 'SEC', 'net billing', 'PMGD', 'ERNC', 'paneles solares', 'energía solar']
-const HIGH_VALUE_KEYWORDS = ['EPC', 'ingeniería', 'PMGD', 'SEC', 'net billing']
+const B2B_KEYWORDS = ['EPC', 'ingeniería', 'cotizar', 'instalación', 'fotovoltaico', 'SEC', 'net billing', 'PMGD', 'ERNC', 'paneles solares', 'energía solar', 'vendedor', 'asesor comercial', 'empleo', 'buscamos']
+const HIGH_VALUE_KEYWORDS = ['EPC', 'ingeniería', 'PMGD', 'SEC', 'net billing', 'se busca vendedor', 'oferta de empleo']
 
 // ============================================================
 // MAIN HANDLER
@@ -86,13 +89,33 @@ Deno.serve(async (req) => {
                     totalLeadsFound++
                     const lead = await analyzeWebsite(result, query, GEMINI_API_KEY)
                     if (!lead) continue
+                    // Normalizar URL (quitar slash final, http/https o www) para mejor deduplicación local antes del upsert
+                    const rawUrl = lead.website || '';
+                    const normalizedUrl = rawUrl.replace(/^https?:\/\//, '').replace(/^www\./, '').replace(/\/$/, '').toLowerCase();
+                    lead.website = normalizedUrl;
 
-                    // Guardar sin duplicados (upsert por website)
-                    const { error: upsertError } = await supabase
+                    // Requerimos que al menos envíe algo de email o instagram o fono para que sea un lead
+                    const hasContact = lead.email_contacto || lead.telefono || lead.instagram;
+                    if(!hasContact) continue;
+
+                    // Si ya existe en la DB un "like" de esta URL podemos ignorarlo. 
+                    const { data: existing } = await supabase
                         .from('potential_b2b_leads')
-                        .upsert(lead, { onConflict: 'website', ignoreDuplicates: false })
+                        .select('id')
+                        .ilike('website', `%${normalizedUrl}%`)
+                        .limit(1);
 
-                    if (!upsertError) totalLeadsNew++
+                    if (existing && existing.length > 0) {
+                        continue; // Ya existe, lo saltamos
+                    }
+
+                    // Guardar nuevo lead
+                    const { error: insertError } = await supabase
+                        .from('potential_b2b_leads')
+                        .insert([lead]);
+
+                    if (!insertError) totalLeadsNew++;
+
                 }
 
                 // Pequeña pausa entre queries para no sobrecargar APIs
@@ -257,33 +280,64 @@ async function analyzeWebsite(
     sourceQuery: string,
     geminiApiKey: string
 ): Promise<Record<string, unknown> | null> {
-    if (!result.url || result.url.includes('youtube.com') || result.url.includes('facebook.com')) {
+    if (!result.url || result.url.includes('youtube.com') || result.url.includes('facebook.com') || result.url.includes('linkedin.com')) {
         return null
     }
 
-    // Calcular score rápido basado en snippet (sin llamar a Gemini para ahorrar tokens)
-    const text = `${result.title} ${result.snippet}`.toLowerCase()
-    const foundKeywords = B2B_KEYWORDS.filter(kw => text.includes(kw.toLowerCase()))
-    const highValueCount = HIGH_VALUE_KEYWORDS.filter(kw => text.includes(kw.toLowerCase())).length
+    // 1. Calcular score rápido basado en snippet
+    const textSnippet = `${result.title} ${result.snippet}`.toLowerCase()
+    const foundKeywords = B2B_KEYWORDS.filter(kw => textSnippet.includes(kw.toLowerCase()))
+    const highValueCount = HIGH_VALUE_KEYWORDS.filter(kw => textSnippet.includes(kw.toLowerCase())).length
 
-    // Score base
-    let score = foundKeywords.length * 10
-    score += highValueCount * 15
-    if (result.url.includes('.cl')) score += 10 // Dominio chileno
-    if (text.includes('instagram') || text.includes('contacto')) score += 5
-    score = Math.min(score, 100)
+    let initialScore = foundKeywords.length * 10
+    initialScore += highValueCount * 15
+    if (result.url.includes('.cl')) initialScore += 10
+    
+    // Si el snippet es irrelevante, no perdemos tiempo visitando la web
+    if (initialScore < 15) return null
 
-    // Si el score es muy bajo, descartar sin gastar tokens de Gemini
-    if (score < 20) return null
+    console.log(`[OracleBrain] Deep Scan -> Visitando: ${result.url}`)
 
-    // Usar Gemini para enriquecer datos si hay API key
-    let enrichedData: Record<string, unknown> = {}
-    if (geminiApiKey && score >= 40) {
+    // 2. FETCH WEBSITE CONTENT (DEEP SCAN)
+    let websiteText = ""
+    try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 8000) // 8s timeout
+
+        const resp = await fetch(result.url, { 
+            signal: controller.signal,
+            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; SolarOracleBot/2.0; +https://solaroracle.cl)' }
+        })
+        clearTimeout(timeoutId)
+
+        if (resp.ok) {
+            const html = await resp.text()
+            // Limpiar HTML y extraer solo texto relevante
+            websiteText = html
+                .replace(/<script\b[^>]*>([\s\S]*?)<\/script>/gim, "")
+                .replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gim, "")
+                .replace(/<[^>]*>/g, " ")
+                .replace(/\s+/g, " ")
+                .slice(0, 5000) // Tomamos los primeros 5000 caracteres
+        }
+    } catch (e) {
+        console.warn(`[OracleBrain] No se pudo leer ${result.url}: ${e.message}`)
+    }
+
+    // 3. ENRICH WITH GEMINI (Using Snippet + Website Text)
+    let enrichedData: Record<string, any> = {}
+    if (geminiApiKey) {
         try {
-            enrichedData = await enrichWithGemini(result, geminiApiKey)
+            enrichedData = await enrichWithGemini(result, websiteText, geminiApiKey)
         } catch (e) {
             console.warn('[OracleBrain] Gemini enrich error:', e)
         }
+    }
+
+    // Si Gemini dice que el score es bajo tras ver la web, descartamos
+    if ((enrichedData.score || initialScore) < 40) {
+        console.log(`[OracleBrain] Lead descartado (${enrichedData.score || initialScore}): ${result.url}`)
+        return null
     }
 
     return {
@@ -292,13 +346,14 @@ async function analyzeWebsite(
         instagram: enrichedData.instagram || null,
         email_contacto: enrichedData.email || null,
         telefono: enrichedData.telefono || null,
-        ciudad: enrichedData.ciudad || null,
+        ciudad: enrichedData.ciudad || enrichedData.comuna || null,
         region: enrichedData.region || null,
-        score: enrichedData.score || score,
-        score_razon: enrichedData.score_razon || `Keywords: ${foundKeywords.join(', ')}`,
+        score: enrichedData.score || initialScore,
+        score_razon: enrichedData.score_razon || `Snippet Match: ${foundKeywords.join(', ')}`,
         keywords_found: foundKeywords,
         estado: 'Nuevo',
         fuente_busqueda: sourceQuery,
+        detectado_en: new Date().toISOString()
     }
 }
 
@@ -307,26 +362,38 @@ async function analyzeWebsite(
 // ============================================================
 async function enrichWithGemini(
     result: { title: string, url: string, snippet: string },
+    websiteText: string,
     apiKey: string
-): Promise<Record<string, unknown>> {
+): Promise<Record<string, any>> {
     const prompt = `
-    Analiza este resultado de búsqueda de una empresa de energía solar en Chile.
-    Título: "${result.title}"
-    URL: "${result.url}"
-    Descripción: "${result.snippet}"
+    Analiza este prospecto B2B para SolarOracle (Chile).
+    Buscamos empresas instaladoras de paneles solares (EPC) o ingeniería fotovoltaica.
     
-    Extrae y devuelve SOLO un JSON con estos campos:
+    INFORMACIÓN DE GOOGLE:
+    Título: "${result.title}"
+    Snippet: "${result.snippet}"
+    URL: "${result.url}"
+    
+    TEXTO EXTRAÍDO DE LA WEB:
+    "${websiteText.slice(0, 3000)}"
+    
+    TAREA:
+    1. Identifica si es una EMPRESA INSTALADORA real en Chile. (Descarta si es solo un diario, universidad o blog).
+    2. Extrae: Nombre limpio, Ciudad/Comuna, Región, Instagram (@handle), Email de contacto y Teléfono.
+    3. Asigna un SCORE (0-100) según potencial B2B para venderle software solar.
+    
+    Devuelve SOLO un JSON objeto:
     {
-        "nombre_empresa": "nombre limpio de la empresa",
-        "ciudad": "ciudad principal (o null)",
-        "region": "región de Chile (o null)",
-        "instagram": "handle de instagram si se menciona (o null)",
-        "email": "email de contacto si se menciona (o null)",
-        "telefono": "teléfono si se menciona (o null)",
-        "score": número del 0 al 100 indicando qué tan buen lead B2B es para venderle un SaaS de análisis de boletas eléctricas,
-        "score_razon": "explicación breve del score en español"
+        "nombre_empresa": "Ej: Solar Energy SpA",
+        "ciudad": "Ciudad/Comuna",
+        "region": "Región de Chile",
+        "instagram": "handle o URL",
+        "email": "ej@empresa.cl",
+        "telefono": "+569...",
+        "score": número 0-100,
+        "score_razon": "Porque..."
     }
-    Responde SOLO el JSON, sin markdown.
+    No uses markdown.
     `
 
     const resp = await fetch(
@@ -336,7 +403,7 @@ async function enrichWithGemini(
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [{ parts: [{ text: prompt }] }],
-                generationConfig: { temperature: 0.2, response_mime_type: 'application/json' }
+                generationConfig: { temperature: 0.1, response_mime_type: 'application/json' }
             })
         }
     )

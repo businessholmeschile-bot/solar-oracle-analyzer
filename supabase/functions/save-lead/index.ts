@@ -189,6 +189,34 @@ Deno.serve(async (req) => {
     };
 
             // ────────────────────────────────────────────────────────────────
+            // ACTION: CHATBOT B2B SDR LEAD (P9)
+            // ────────────────────────────────────────────────────────────────
+            if (action === 'chatbot-lead') {
+                const { kW, email, company } = payload;
+                if(!company || !email) throw new Error('Faltan datos en el payload');
+
+                console.log(`[Oracle SDR] Nuevo Lead desde Chatbot: ${company}`);
+
+                const lead = {
+                    nombre_empresa: company,
+                    email_contacto: email,
+                    estado: 'Nuevo',
+                    score: 95,
+                    score_razon: `Lead Calificado por Chatbot SDR. Nivel: ${kW} kW/mes.`,
+                    fuente_busqueda: 'Inbound SDR Chatbot',
+                    detectado_en: new Date().toISOString()
+                };
+
+                const { data, error } = await supabase.from('potential_b2b_leads').insert([lead]).select();
+                if (error) throw error;
+
+                // Enviar mail a admin notificando (opcional, reutilizando RESEND si existe)
+                // Usamos la misma lógica o log si no hay resend list.
+                
+                return new Response(JSON.stringify({ success: true, data }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+            }
+
+            // ────────────────────────────────────────────────────────────────
             // ACTION: ENRICH LEAD (DEEP SCAN)
             // ────────────────────────────────────────────────────────────────
             if (action === 'enrich-lead') {
@@ -247,58 +275,74 @@ Deno.serve(async (req) => {
                         const keywords = ['huawei', 'sungrow', 'fronius', 'sma', 'victron', 'goodwe', 'trina', 'longi', 'jinko', 'canadian'];
                         enrichment.stack = keywords.filter(k => lowerHtml.includes(k)).map(k => k.charAt(0).toUpperCase() + k.slice(1));
 
-                        // 3. Analyze Business Type
-                        if (lowerHtml.includes('distribuidor') || lowerHtml.includes('mayorista') || lowerHtml.includes('venta de equipos')) {
-                            enrichment.type = 'Distribuidor / Mayorista';
-                        } else if (lowerHtml.includes('instalación') || lowerHtml.includes('proyectos') || lowerHtml.includes('llave en mano')) {
-                            enrichment.type = 'Instalador EPC';
-                        }
-
-                        // 4. Analyze Size (Heuristic)
-                        if (lowerHtml.includes('mw instalados') || lowerHtml.includes('grandes proyectos') || lowerHtml.includes('plantas solares')) {
-                            enrichment.size = 'Empresa Grande / Utility';
-                        }
-
-                        // 5. Social Links
+                        // Parse links & contact info from text before passing to Gemini
                         if (html.includes('linkedin.com')) enrichment.social.linkedin = 'Detectado';
                         if (html.includes('instagram.com')) enrichment.social.instagram = 'Detectado';
-
-                        // 6. Contact Scraping (Advanced)
-                        const emails = html.match(/[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}/g);
                         
-                        // Extract phones with context (approximate lines)
+                        const emails = html.match(/[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}/g);
                         const phoneRegex = /(?:\+?56)?(?:\s?9)\s?\d{4}\s?\d{4}/g;
                         const phoneMatches = [...cleanText.matchAll(phoneRegex)];
-                        
                         const detectedPhones: { number: string; context: string }[] = [];
                         
                         phoneMatches.forEach(match => {
-                            // Trim context around the match (e.g. 30 chars before and after)
                             const start = Math.max(0, match.index! - 40);
                             const end = Math.min(cleanText.length, match.index! + match[0].length + 40);
-                            let context = cleanText.substring(start, end).trim();
-                            // Clean context
-                            context = context.replace(match[0], '').replace(/\s+/g, ' ').trim();
+                            let context = cleanText.substring(start, end).replace(match[0], '').replace(/\s+/g, ' ').trim();
                             if (context.length > 50) context = context.substring(0, 50) + '...';
-                            
-                            // avoid duplicates
                             if (!detectedPhones.find(p => p.number === match[0])) {
                                 detectedPhones.push({ number: match[0], context: context });
                             }
                         });
 
-
-                        // Pick most frequent or first unique
                         const uniqueEmails = [...new Set(emails || [])].filter(e => !e.includes('.png') && !e.includes('.jpg') && !e.includes('.js') && e.length < 50);
 
                         if (uniqueEmails.length > 0 || detectedPhones.length > 0) {
-                             enrichment.contact_suggestion = { 
-                                 email: uniqueEmails[0], 
-                                 phones: detectedPhones 
-                            };
+                             enrichment.contact_suggestion = { email: uniqueEmails[0], phones: detectedPhones };
                         }
 
-                        enrichment.ai_summary = `Análisis completado. Se detectaron ${detectedPhones.length} teléfonos y ${uniqueEmails.length} emails.`;
+                        // -> GEMINI INTEGRATION FOR P2 & P3
+                        const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY") ?? "";
+                        if (GEMINI_API_KEY && cleanText.length > 100) {
+                            const prompt = `Analiza el siguiente texto extraído de la web corporativa de una empresa de energía solar en Chile.
+Texto: """${cleanText.substring(0, 15000)}"""
+
+Genera un JSON estricto con la siguiente estructura:
+{
+  "type": "Clasifica en: Distribuidor / Mayorista, Instalador EPC, u Otro",
+  "size": "Clasifica en: Pyme o Empresa Grande / Utility",
+  "ai_summary": "Resumen muy breve (10 palabras max) de su especialidad.",
+  "competitor_profile": "Radiografía de negocio B2B: Evalúa su perfil comercial, cliente objetivo, posibles debilidades de eficiencia operativa y tecnologías que usan. (Máx 4 líneas).",
+  "outreach_draft": "Redacta un DM o correo ultra-personalizado como 'Drew de SolarOracle'. Elogia su trabajo o tecnologías si las mencionan (ej. Paneles Longi, Inversores Huawei, etc.). Conéctalo con el dolor de 'perder tiempo cotizando clientes o perder leads B2C' o 'errores en cálculos Tarifarios' y ofréceles nuestro sistema SaaS para acelerar y automatizar ventas de sistemas fotovoltaicos. Debe ser muy humano, profesional, y listo para ser enviado."
+}`;
+
+                            try {
+                                const geminiResp = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({
+                                        contents: [{ parts: [{ text: prompt }] }],
+                                        generationConfig: { response_mime_type: "application/json" }
+                                    })
+                                });
+                                
+                                const geminiResult = await geminiResp.json();
+                                const textResponse = geminiResult.candidates?.[0]?.content?.parts?.[0]?.text;
+                                
+                                if (textResponse) {
+                                    const aiData = JSON.parse(textResponse);
+                                    enrichment.type = aiData.type || enrichment.type;
+                                    enrichment.size = aiData.size || enrichment.size;
+                                    enrichment.ai_summary = aiData.ai_summary || enrichment.ai_summary;
+                                    (enrichment as any).competitor_profile = aiData.competitor_profile || "";
+                                    (enrichment as any).outreach_draft = aiData.outreach_draft || "";
+                                }
+                            } catch (e) {
+                                console.log('Gemini Deep Scan error:', e);
+                                enrichment.ai_summary = `Análisis completado (Error en IA). Se detectaron ${detectedPhones.length} teléfonos y ${uniqueEmails.length} emails.`;
+                            }
+                        } else {
+                            enrichment.ai_summary = `Análisis simple completado. Se detectaron ${detectedPhones.length} teléfonos y ${uniqueEmails.length} emails.`;
+                        }
                     } else {
                         enrichment.status = 'error';
                         enrichment.ai_summary = 'No se pudo acceder al sitio web (Error HTTP).';
@@ -312,7 +356,7 @@ Deno.serve(async (req) => {
 
                 // 6. Save to Database
                 const { error: updateAppsError } = await supabase
-                    .from('leads')
+                    .from('potential_b2b_leads')
                     .update({ enrichment_data: enrichment })
                     .eq('id', id);
 
@@ -559,9 +603,9 @@ Deno.serve(async (req) => {
             if (!['solar2026', 'solaroracle', 'solar2025'].includes(normalizedPass)) {
                 return new Response(JSON.stringify({ success: false, error: 'Unauthorized' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
             }
-            const { data, error } = await supabase.from('potential_b2b_leads').select('*').order('score', { ascending: false }).limit(200)
+            const { data, error, count } = await supabase.from('potential_b2b_leads').select('*', { count: 'exact' }).order('detectado_en', { ascending: false }).limit(1000)
             if (error) throw error
-            return new Response(JSON.stringify({ success: true, data }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
+            return new Response(JSON.stringify({ success: true, count, data }), { headers: { ...corsHeaders, 'Content-Type': 'application/json' } })
         }
 
         // --- ACTION: GET DISTRIBUTORS INTEL ---

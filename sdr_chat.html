@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarOracle - Asistente B2B</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Outfit', sans-serif; background-color: transparent; }
+        .typing-indicator span {
+            display: inline-block;
+            width: 4px; height: 4px;
+            background-color: #8b5cf6;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite ease-in-out both;
+        }
+        .typing-indicator span:nth-child(1) { animation-delay: -0.32s; }
+        .typing-indicator span:nth-child(2) { animation-delay: -0.16s; }
+        @keyframes bounce {
+            0%, 80%, 100% { transform: scale(0); }
+            40% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="p-4 h-screen flex flex-col justify-end">
+    
+    <!-- Widget Container -->
+    <div id="chat-widget" class="bg-white w-full max-w-sm ml-auto rounded-3xl shadow-2xl border border-slate-100 overflow-hidden flex flex-col h-[500px] max-h-[80vh] transition-all transform origin-bottom-right">
+        
+        <!-- Header -->
+        <div class="bg-gradient-to-r from-violet-600 to-indigo-600 p-4 text-white flex items-center gap-3">
+            <div class="relative">
+                <div class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-xl shadow-inner backdrop-blur-sm">🤖</div>
+                <div class="absolute bottom-0 right-0 w-3 h-3 bg-emerald-400 border-2 border-indigo-600 rounded-full"></div>
+            </div>
+            <div>
+                <h3 class="font-black leading-tight">SolarOracle SDR</h3>
+                <p class="text-[10px] text-violet-200 uppercase tracking-widest font-bold">En línea</p>
+            </div>
+        </div>
+
+        <!-- Chat Area -->
+        <div id="chat-messages" class="flex-1 p-4 overflow-y-auto bg-slate-50 space-y-4">
+            
+            <!-- Bot Message -->
+            <div class="flex items-end gap-2">
+                <div class="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-[10px] flex-shrink-0">🤖</div>
+                <div class="bg-white p-3 rounded-2xl rounded-bl-sm border border-slate-100 shadow-sm text-sm text-slate-700 max-w-[85%]">
+                    ¡Hola! Soy el asistente de <b>SolarOracle</b> 👋.<br><br>Ayudamos a instaladores solares en Chile a automatizar sus cotizaciones y diseños. ¿Cuántos kW están instalando aprox. al mes?
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-3 bg-white border-t border-slate-100 flex gap-2 items-center">
+            <input type="text" id="chat-input" placeholder="Escribe tu respuesta..." class="flex-1 bg-slate-50 border border-slate-200 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 text-slate-700 transition" onkeypress="handleEnter(event)">
+            <button onclick="sendMessage()" class="w-10 h-10 rounded-full bg-violet-600 text-white flex items-center justify-center hover:bg-violet-700 transition shadow-md shadow-violet-200 flex-shrink-0">
+                <svg class="w-4 h-4 translate-x-[-1px] translate-y-[1px]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        const msgs = document.getElementById('chat-messages');
+        const input = document.getElementById('chat-input');
+        
+        let step = 0;
+        let leadData = { kW: '', email: '', company: '' };
+
+        function handleEnter(e) {
+            if(e.key === 'Enter') sendMessage();
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => { msgs.scrollTop = msgs.scrollHeight; }, 50);
+        }
+
+        function appendUserMessage(text) {
+            msgs.innerHTML += `
+            <div class="flex items-end justify-end gap-2 animate-fade-in">
+                <div class="bg-violet-600 text-white p-3 rounded-2xl rounded-br-sm shadow-md text-sm max-w-[85%]">
+                    ${text}
+                </div>
+            </div>`;
+            scrollToBottom();
+        }
+
+        function appendBotMessage(text) {
+            msgs.innerHTML += `
+            <div class="flex items-end gap-2 animate-fade-in mt-4">
+                <div class="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-[10px] flex-shrink-0">🤖</div>
+                <div class="bg-white p-3 rounded-2xl rounded-bl-sm border border-slate-100 shadow-sm text-sm text-slate-700 max-w-[85%] leading-relaxed">
+                    ${text}
+                </div>
+            </div>`;
+            scrollToBottom();
+        }
+
+        function showTyping() {
+            const id = 'typing-' + Date.now();
+            msgs.innerHTML += `
+            <div id="${id}" class="flex items-end gap-2 mt-4 animate-fade-in">
+                <div class="w-6 h-6 rounded-full bg-violet-100 flex items-center justify-center text-[10px] flex-shrink-0">🤖</div>
+                <div class="bg-white px-3 py-4 rounded-2xl rounded-bl-sm border border-slate-100 shadow-sm">
+                    <div class="typing-indicator flex gap-1"><span></span><span></span><span></span></div>
+                </div>
+            </div>`;
+            scrollToBottom();
+            return id;
+        }
+
+        function sendMessage() {
+            const text = input.value.trim();
+            if(!text) return;
+            
+            appendUserMessage(text);
+            input.value = '';
+            input.disabled = true;
+
+            const typingId = showTyping();
+
+            setTimeout(() => {
+                document.getElementById(typingId).remove();
+                input.disabled = false;
+                input.focus();
+
+                if (step === 0) {
+                    leadData.kW = text;
+                    appendBotMessage(`¡Excelente nivel! 💪 Cotizar manualmente esos proyectos debe tomarles mucho tiempo y HH.<br><br>Si pudiéramos reducir ese tiempo a <b>segundos</b> y generar propuestas hermosas en 1 clic... ¿A qué <b>email</b> te gustaría que enviemos el acceso a nuestra plataforma?`);
+                    step++;
+                } else if (step === 1) {
+                    leadData.email = text;
+                    appendBotMessage(`Anotado 📝. Por último, ¿cómo se llama su <b>empresa instaladora</b> para configurar su cuenta base?`);
+                    step++;
+                } else if (step === 2) {
+                    leadData.company = text;
+                    appendBotMessage(`¡Listo! 🚀 He enviado la info a Drew, el creador de SolarOracle. <br><br>Se pondrá en contacto pronto para mostrarles la magia con ${leadData.company}. ¡Que tengan excelente día de instalaciones! ☀️`);
+                    
+                    // Here we would trigger an API call to save to Supabase
+                    fetch('https://zqwkwnywndkwyzzggorf.supabase.co/functions/v1/save-lead', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            action: 'chatbot-lead',
+                            payload: leadData
+                        })
+                    }).catch(e => console.error(e));
+
+                    step++;
+                    input.placeholder = "Chat finalizado.";
+                    input.disabled = true;
+                }
+            }, 1200 + Math.random() * 800);
+        }
+    </script>
+</body>
+</html>
