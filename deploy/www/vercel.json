@@ -1,0 +1,16 @@
+{
+    "cleanUrls": true,
+    "redirects": [
+        {
+            "source": "/admin/matrix",
+            "destination": "/admin#matrix",
+            "permanent": false
+        }
+    ],
+    "rewrites": [
+        {
+            "source": "/admin",
+            "destination": "/admin.html"
+        }
+    ]
+}

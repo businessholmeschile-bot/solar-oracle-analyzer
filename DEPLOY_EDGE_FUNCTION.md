@@ -1,21 +1,35 @@
-# Deploy: Supabase Edge Function `save-lead`
+# Guía Paso a Paso: Deploy en Supabase
 
-## Requisitos
-- [Supabase CLI](https://supabase.com/docs/guides/cli) instalado
-- Login a Supabase: `supabase login`
+Para que el sistema funcione y guarde los datos, debes subir la "Edge Function" a Supabase.
+Sigue estos pasos en tu terminal (dentro de la carpeta del proyecto):
 
-## Pasos
-
-### 1. Vincular el proyecto
+## 1. Login en Supabase
+Esto abrirá tu navegador para confirmar tu cuenta.
 ```bash
-cd "/Users/drew/Desktop/Proyecto Solar Oracle"
-supabase link --project-ref zqwkwnywndkwyzzggorf
+npx supabase login
 ```
 
-### 2. Deploy la función
+## 2. Vincular el Proyecto
+Conecta tu carpeta local con tu proyecto en la nube.
 ```bash
-supabase functions deploy save-lead --project-ref zqwkwnywndkwyzzggorf
+npx supabase link --project-ref zqwkwnywndkwyzzggorf
 ```
+*(Si te pide contraseña de base de datos y no la sabes, puedes intentar omitirla o resetearla en el panel de Supabase. Para deployar funciones a veces no es estricta).*
+
+## 3. Subir la Función (Deploy)
+Esto sube el código que protege tus claves.
+```bash
+npx supabase functions deploy save-lead --project-ref zqwkwnywndkwyzzggorf
+```
+
+## 4. Verificar
+Prueba que todo funcione:
+```bash
+curl -X POST https://zqwkwnywndkwyzzggorf.supabase.co/functions/v1/save-lead \
+  -H "Content-Type: application/json" \
+  -d '{"action": "count-leads"}'
+```
+Deberías ver una respuesta como: `{"success":true,"count":...}`
 
 ### 3. Verificar
 ```bash

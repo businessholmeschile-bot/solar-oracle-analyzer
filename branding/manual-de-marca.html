@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manual de Marca | SolarOracle.cl ☀️🧠</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800&family=Outfit:wght@300;400;600&display=swap"
+        rel="stylesheet">
+    <style>
+        :root {
+            --deep-blue: #0F172A;
+            --solar-gold: #FACC15;
+            --emerald-tech: #10B981;
+            --platinum-grey: #F1F5F9;
+            --slate-800: #1E293B;
+            --slate-700: #334155;
+            --slate-400: #94A3B8;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--deep-blue);
+            color: var(--platinum-grey);
+            font-family: 'Outfit', sans-serif;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+
+        h1,
+        h2,
+        h3,
+        h4 {
+            font-family: 'Inter', sans-serif;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 0 2rem;
+        }
+
+        /* Hero Section */
+        header {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            background: radial-gradient(circle at center, #1E293B 0%, #0F172A 100%);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: relative;
+        }
+
+        header::before {
+            content: '';
+            position: absolute;
+            top: 20%;
+            left: 50%;
+            width: 400px;
+            height: 400px;
+            background: var(--solar-gold);
+            filter: blur(150px);
+            opacity: 0.1;
+            transform: translate(-50%, -50%);
+            z-index: 0;
+        }
+
+        header .logo-container {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            z-index: 1;
+        }
+
+        header h1 {
+            font-size: 4.5rem;
+            text-transform: uppercase;
+            line-height: 1;
+            margin-bottom: 0.5rem;
+            background: linear-gradient(to bottom, #FFFFFF, var(--slate-400));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            z-index: 1;
+        }
+
+        header p.subtitle {
+            font-size: 1.5rem;
+            color: var(--solar-gold);
+            font-weight: 600;
+            margin-bottom: 2rem;
+            z-index: 1;
+        }
+
+        header .badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border: 1px solid var(--solar-gold);
+            color: var(--solar-gold);
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            z-index: 1;
+        }
+
+        /* Sections */
+        section {
+            padding: 8rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .section-number {
+            font-size: 0.8rem;
+            color: var(--solar-gold);
+            font-weight: 800;
+            margin-bottom: 1rem;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+        }
+
+        h2.section-title {
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        h3 {
+            font-size: 1.75rem;
+            margin: 2.5rem 0 1.5rem 0;
+            color: white;
+            border-left: 4px solid var(--solar-gold);
+            padding-left: 1.5rem;
+        }
+
+        p {
+            font-size: 1.15rem;
+            color: var(--slate-400);
+            margin-bottom: 1.5rem;
+        }
+
+        strong {
+            color: white;
+            font-weight: 600;
+        }
+
+        ul {
+            list-style: none;
+            margin-bottom: 2rem;
+        }
+
+        ul li {
+            position: relative;
+            padding-left: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+            color: var(--slate-400);
+        }
+
+        ul li::before {
+            content: '→';
+            position: absolute;
+            left: 0;
+            color: var(--solar-gold);
+            font-weight: bold;
+        }
+
+        blockquote {
+            background: rgba(250, 204, 21, 0.05);
+            border-right: 2px solid var(--solar-gold);
+            padding: 3rem;
+            font-size: 1.5rem;
+            font-weight: 600;
+            font-style: italic;
+            color: white;
+            margin: 4rem 0;
+            text-align: center;
+            position: relative;
+        }
+
+        /* Color Cards */
+        .color-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1.5rem;
+            margin-top: 2rem;
+        }
+
+        .color-card {
+            border-radius: 1rem;
+            overflow: hidden;
+            background: var(--slate-800);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .color-swatch {
+            height: 120px;
+            width: 100%;
+        }
+
+        .color-info {
+            padding: 1.5rem;
+        }
+
+        .color-info .name {
+            font-weight: 700;
+            display: block;
+            margin-bottom: 0.25rem;
+        }
+
+        .color-info .hex {
+            font-family: monospace;
+            color: var(--slate-400);
+            font-size: 0.9rem;
+        }
+
+        /* Icon Grid */
+        .icon-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .icon-card {
+            background: rgba(255, 255, 255, 0.02);
+            padding: 2rem;
+            border-radius: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .icon-card-title {
+            color: white;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        /* Manifest Box */
+        .manifest-box {
+            background: linear-gradient(135deg, rgba(15, 23, 42, 1) 0%, rgba(30, 41, 59, 1) 100%);
+            border: 1px solid var(--solar-gold);
+            padding: 4rem;
+            margin: 4rem 0;
+            border-radius: 0.5rem;
+            position: relative;
+        }
+
+        .manifest-box::after {
+            content: '"';
+            position: absolute;
+            top: 20px;
+            right: 40px;
+            font-size: 8rem;
+            color: var(--solar-gold);
+            opacity: 0.1;
+            font-family: serif;
+        }
+
+        /* Implementation Checklist */
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .check-box {
+            width: 24px;
+            height: 24px;
+            border: 2px solid var(--solar-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            flex-shrink: 0;
+        }
+
+        .check-box::after {
+            content: '✓';
+            color: var(--solar-gold);
+            font-weight: 900;
+        }
+
+        /* Footer */
+        footer {
+            padding: 4rem 0;
+            text-align: center;
+            background: #070B14;
+            color: var(--slate-400);
+            font-size: 0.9rem;
+        }
+
+        /* Utils */
+        .highlight {
+            color: var(--solar-gold);
+        }
+
+        .text-emerald {
+            color: var(--emerald-tech);
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo-container">
+            <img src="../isotipo_solaroracle_v3.png" alt="SolarOracle" style="width: 80px; height: 80px; object-fit: contain;">
+        </div>
+        <div class="badge">Edición Elite 2026</div>
+        <h1>SolarOracle.cl</h1>
+        <p class="subtitle">Manual de Marca Integral v1.0</p>
+        <p style="text-transform: uppercase; letter-spacing: 0.2rem; font-size: 0.8rem;">SaaS B2B para Instaladores
+            Solares</p>
+    </header>
+
+    <div class="container">
+
+        <!-- SECTION 1 -->
+        <section id="fundamentos">
+            <span class="section-number">01</span>
+            <h2 class="section-title">Fundamentos Estratégicos</h2>
+
+            <h3>1.1 Propósito</h3>
+            <p>SolarOracle existe para <strong>erradicar la fricción financiera</strong> en la adopción de energía
+                solar. Nuestra razón de ser no es técnica, es transformacional: convertimos un proceso artesanal de
+                ingeniería en un activo financiero líquido e instantáneo.</p>
+            <ul>
+                <li><strong>Impacto estructural:</strong> Creamos un estándar de velocidad que obliga a la industria a
+                    profesionalizarse.</li>
+                <li><strong>La crisis como catalizador:</strong> Transformamos el alza tarifaria (61%) en el principal
+                    motor de ROI.</li>
+                <li><strong>Energía como Activo:</strong> Somos el puente entre el techo y el balance financiero.</li>
+            </ul>
+
+            <h3>1.2 Visión</h3>
+            <p>Establecer el <strong>Sistema Operativo de Cotización Energética</strong> estándar para Latinoamérica.
+            </p>
+
+            <h3>1.3 Misión</h3>
+            <p>Permitir que cada instalador solar cotice en segundos, con precisión matemática y ventaja competitiva.
+            </p>
+
+            <h3>1.4 Valores Corporativos</h3>
+            <div class="icon-grid">
+                <div class="icon-card">
+                    <span class="icon-card-title highlight">Exactitud Algorítmica</span>
+                    <p>La data es nuestra única ley. Calculamos con error < 0.1%.</p>
+                </div>
+                <div class="icon-card">
+                    <span class="icon-card-title highlight">Velocidad Extrema</span>
+                    <p>El tiempo es el mayor enemigo del cierre. Si es rápido, es SolarOracle.</p>
+                </div>
+                <div class="icon-card">
+                    <span class="icon-card-title highlight">Transparencia Radical</span>
+                    <p>El ROI no es una promesa, es una proyección matemática honesta.</p>
+                </div>
+                <div class="icon-card">
+                    <span class="icon-card-title highlight">Fricción Cero</span>
+                    <p>La tecnología es invisible. Si requiere capacitación, hemos fallado.</p>
+                </div>
+            </div>
+
+            <h3>1.5 Propuesta de Valor Única</h3>
+            <blockquote>
+                "Mientras su competencia calcula en Excel, usted ya cerró el trato. SolarOracle: La ventaja competitiva
+                de 5 segundos."
+            </blockquote>
+        </section>
+
+        <!-- SECTION 2 -->
+        <section id="posicionamiento">
+            <span class="section-number">02</span>
+            <h2 class="section-title">Posicionamiento</h2>
+
+            <h3>2.1 Público Objetivo (ICP)</h3>
+            <p><strong>Dueños y Gerentes</strong> de empresas instaladoras (C-Level). Profesionales saturados por la
+                demanda pero frenados por cuellos de botella técnicos. Sufren por la pérdida de proyectos industriales
+                por falta de respuesta rápida.</p>
+
+            <h3>2.2 Arquetipos de Marca</h3>
+            <div class="icon-grid">
+                <div class="icon-card">
+                    <span class="icon-card-title">El Sabio</span>
+                    <p>Autoridad técnica basada en data masiva. Visionario y objetivo.</p>
+                </div>
+                <div class="icon-card">
+                    <span class="icon-card-title">El Gobernante</span>
+                    <p>Control energético y financiero total en una sola mano.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 3 -->
+        <section id="verbal">
+            <span class="section-number">03</span>
+            <h2 class="section-title">Identidad Verbal</h2>
+
+            <h3>3.1 Personalidad</h3>
+            <p>Un <strong>Socio Financiero Senior</strong>. Preciso, directo, conocedor de la regulación chilena y
+                profundamente visionario. Impecable y robusto.</p>
+
+            <h3>3.2 Tono</h3>
+            <p>Directo, cifrado y ejecitvo. Sin adjetivos vacíos. Hablamos de ROI y riesgo tarifario.</p>
+
+            <h3>3.3 Claims Principales</h3>
+            <p class="highlight" style="font-size: 2rem; font-weight: 800;">"Presupuestos Solares en 5 Segundos.
+                Precisión IA en Tiempo Real."</p>
+            <ul>
+                <li>"El primero que cotiza, gana."</li>
+                <li>"No vendemos paneles. Vendemos ventaja competitiva."</li>
+                <li>"Transforme la crisis de tarifas en su mayor argumento de venta."</li>
+            </ul>
+
+            <div class="manifest-box">
+                <h3 style="border: none; padding: 0; margin-top: 0; margin-bottom: 2rem;">Manifiesto SolarOracle</h3>
+                <p style="color: white; font-style: italic; line-height: 2;">
+                    En un mundo que sube sus tarifas, la lentitud es un costo oculto que su empresa ya no puede
+                    permitirse. La ingeniería del pasado se hacía en escritorios y tardaba días. La ingeniería del 2026
+                    se hace en la palma de la mano y tarda segundos. <br><br>
+                    No estamos aquí para reemplazar al ingeniero; estamos aquí para darle el poder de una
+                    supercomputadora en el momento más crítico de la venta: el inicio. Porque en el mercado solar, el
+                    futuro no pertenece al más grande, sino al más rápido. <br><br>
+                    <strong>Somos SolarOracle. El oráculo de su libertad energética.</strong>
+                </p>
+            </div>
+        </section>
+
+        <!-- SECTION 4 -->
+        <section id="visual">
+            <span class="section-number">04</span>
+            <h2 class="section-title">Identidad Visual</h2>
+
+            <h3>4.2 Paleta de Colores</h3>
+            <div class="color-grid">
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #0F172A;"></div>
+                    <div class="color-info">
+                        <span class="name">Deep Space Blue</span>
+                        <span class="hex">#0F172A</span>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #FACC15;"></div>
+                    <div class="color-info">
+                        <span class="name">Solar Gold</span>
+                        <span class="hex">#FACC15</span>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #10B981;"></div>
+                    <div class="color-info">
+                        <span class="name">Emerald Tech</span>
+                        <span class="hex">#10B981</span>
+                    </div>
+                </div>
+                <div class="color-card">
+                    <div class="color-swatch" style="background: #F1F5F9;"></div>
+                    <div class="color-info">
+                        <span class="name" style="color:white">Platinum Grey</span>
+                        <span class="hex">#F1F5F9</span>
+                    </div>
+                </div>
+            </div>
+
+            <h3>4.3 Tipografía</h3>
+            <div class="icon-grid">
+                <div class="icon-card">
+                    <span style="font-family: 'Inter'; font-weight: 800; font-size: 3rem; color: white;">Inter</span>
+                    <p>Titulares de alta autoridad. Impacto geométrico y legibilidad 2026.</p>
+                </div>
+                <div class="icon-card">
+                    <span style="font-family: 'Outfit'; font-weight: 400; font-size: 3rem; color: white;">Outfit</span>
+                    <p>Cuerpo de texto fluido, humano y tecnológico.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 5-7 -->
+        <section id="roadmap">
+            <span class="section-number">05-07</span>
+            <h2 class="section-title">Futuro & Experiencia</h2>
+
+            <h3>La Diferenciación</h3>
+            <div class="icon-grid">
+                <div class="icon-card">
+                    <span class="icon-card-title highlight">Grid Oracle</span>
+                    <p>Predicción de alzas de VAD automáticas.</p>
+                </div>
+                <div class="icon-card">
+                    <span class="icon-card-title highlight">Solar Map</span>
+                    <p>Detección de sombras por IA Vision.</p>
+                </div>
+                <div class="icon-card">
+                    <span class="icon-card-title highlight">Oracle Payments</span>
+                    <p>Financiamiento pre-aprobado in-app.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SECTION 8 -->
+        <section id="implementacion">
+            <span class="section-number">08</span>
+            <h2 class="section-title">Guía de Implementación</h2>
+
+            <div class="manifest-box" style="padding: 2rem;">
+                <div class="checklist-item">
+                    <div class="check-box"></div>
+                    <p style="margin: 0; color: white;"><strong>Vendedores:</strong> Hablar siempre de flujo de caja
+                        proyectado.</p>
+                </div>
+                <div class="checklist-item">
+                    <div class="check-box"></div>
+                    <p style="margin: 0; color: white;"><strong>Marketing:</strong> Imágenes ejecutivas, no ecológicas
+                        genéricas.</p>
+                </div>
+                <div class="checklist-item">
+                    <div class="check-box"></div>
+                    <p style="margin: 0; color: white;"><strong>Desarrollo:</strong> Obsesión absoluta por el tiempo < 5
+                            segundos.</p>
+                </div>
+            </div>
+
+            <h3>Errores Críticos a Evitar</h3>
+            <ul>
+                <li>Sonar "Eco-friendly" genérico.</li>
+                <li>Usar tipografías manuscritas.</li>
+                <li><strong>Ignorar el ROI:</strong> Si no habla de dinero, no es SolarOracle.</li>
+            </ul>
+        </section>
+
+    </div>
+
+    <footer>
+        <p>© 2026 SolarOracle Intelligence. Documento de Propiedad Exclusiva.</p>
+        <p>Diseñado para la conquista del mercado fotovoltaico industrial.</p>
+    </footer>
+
+</body>
+
+</html>

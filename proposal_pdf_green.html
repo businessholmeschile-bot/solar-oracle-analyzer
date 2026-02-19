@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Propuesta PDF - Diseño Verde</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: #525252;
+            padding: 40px;
+        }
+
+        /* A4 Page Simulation */
+        .a4-page {
+            width: 210mm;
+            height: 297mm;
+            background: white;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .header-curve {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 180px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            border-bottom-right-radius: 50% 40px;
+            border-bottom-left-radius: 50% 40px;
+            z-index: 0;
+        }
+
+        .content-card {
+            background: white;
+            border: 1px solid #f1f5f9;
+            border-radius: 16px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.03);
+            padding: 20px;
+        }
+
+        .stat-box {
+            background: #f0fdf4;
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 800;
+            color: #047857;
+        }
+
+        .stat-label {
+            font-size: 0.7rem;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="a4-page">
+        <!-- Header Background -->
+        <div class="header-curve"></div>
+
+        <!-- Header Content -->
+        <div class="relative z-10 px-12 pt-12 pb-6 flex justify-between items-start text-white">
+            <div>
+                <div class="flex items-center gap-3 mb-2">
+                    <img src="logo_solaroracle_v3.png" alt="SolarOracle" style="height: 32px; width: auto;">
+                </div>
+                <p class="text-emerald-100 text-sm ml-1">Informe de Factibilidad Solar</p>
+            </div>
+            <div class="text-right">
+                <h1 class="text-3xl font-bold">Diagnóstico Energético</h1>
+                <p class="text-emerald-100 opacity-90">ID: #PROP-2026-882</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="flex-1 px-12 py-6 flex flex-col gap-6 relative z-10">
+
+            <!-- Intro User -->
+            <div class="flex justify-between items-end border-b border-slate-100 pb-4">
+                <div>
+                    <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Preparado para</p>
+                    <h2 class="text-2xl font-bold text-slate-800">Juan Pérez</h2>
+                    <p class="text-slate-500 text-sm">Av. Libertador 1234, Maipú</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-xs text-slate-400 uppercase font-bold tracking-wider mb-1">Fecha</p>
+                    <p class="text-slate-700 font-medium">12 Febrero, 2026</p>
+                </div>
+            </div>
+
+            <!-- The Problem (Red/Amber) -->
+            <div class="content-card border-l-4 border-l-amber-400">
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                    <span
+                        class="w-8 h-8 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center text-sm">⚠️</span>
+                    Tu Situación Actual
+                </h3>
+                <div class="grid grid-cols-3 gap-4">
+                    <div class="p-3 bg-slate-50 rounded-xl text-center">
+                        <div class="text-2xl font-bold text-slate-700">$125.000</div>
+                        <div class="text-[10px] uppercase text-slate-400 font-bold mt-1">Gasto Mensual Promedio</div>
+                    </div>
+                    <div class="p-3 bg-amber-50 rounded-xl text-center">
+                        <div class="text-2xl font-bold text-amber-600">$1.5M</div>
+                        <div class="text-[10px] uppercase text-amber-800/60 font-bold mt-1">Gasto Anual</div>
+                    </div>
+                    <div class="p-3 bg-rose-50 rounded-xl text-center">
+                        <div class="text-2xl font-bold text-rose-600">$9.2M</div>
+                        <div class="text-[10px] uppercase text-rose-800/60 font-bold mt-1">Pérdida en 5 años</div>
+                    </div>
+                </div>
+                <p class="text-xs text-slate-500 mt-4 italic text-center">
+                    "Actualmente estás pagando una tarifa de $210/kWh que subirá un 61% en los próximos meses."
+                </p>
+            </div>
+
+            <!-- The Solution (Green) -->
+            <div>
+                <h3 class="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2 px-2">
+                    <span
+                        class="w-8 h-8 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-sm">⚡</span>
+                    Propuesta Solar
+                </h3>
+
+                <div class="grid grid-cols-2 gap-4 mb-4">
+                    <!-- System Spec -->
+                    <div class="content-card bg-slate-900 text-white !border-slate-800">
+                        <div class="text-xs text-slate-400 uppercase font-bold mb-2">Sistema Recomendado</div>
+                        <div class="text-4xl font-bold text-emerald-400 mb-1">5.2 kWp</div>
+                        <div class="text-sm text-slate-300">10 Paneles Tier-1 Monocristalinos</div>
+                        <div class="mt-4 pt-4 border-t border-slate-800 grid grid-cols-2 gap-2">
+                            <div>
+                                <div class="text-xs text-slate-500">Inversor</div>
+                                <div class="font-bold text-sm">Huawei Sun2000</div>
+                            </div>
+                            <div>
+                                <div class="text-xs text-slate-500">Generación</div>
+                                <div class="font-bold text-sm">7.800 kWh/año</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Financial Impact -->
+                    <div class="content-card bg-emerald-50 !border-emerald-100 relative overflow-hidden">
+                        <div
+                            class="absolute top-0 right-0 w-24 h-24 bg-emerald-100 rounded-full -mr-10 -mt-10 opacity-50">
+                        </div>
+                        <div class="relative z-10">
+                            <div class="text-xs text-emerald-600 uppercase font-bold mb-2">Tu Nueva Realidad</div>
+                            <div class="mb-4">
+                                <span class="text-3xl font-bold text-emerald-700">$0</span>
+                                <span class="text-sm text-emerald-600 font-medium">/ mes en energía*</span>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-emerald-800/70">Ahorro 1er Año</span>
+                                    <span class="font-bold text-emerald-700">$1.500.000</span>
+                                </div>
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-emerald-800/70">Retorno Inversión</span>
+                                    <span class="font-bold text-emerald-700">3.2 Años</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Placeholder -->
+            <div class="content-card flex-1 flex flex-col">
+                <h3 class="text-sm font-bold text-slate-400 uppercase tracking-widest mb-4">Proyección de Ahorro
+                    Acumulado</h3>
+                <div class="flex-1 flex items-end gap-4 px-4 pb-2">
+                    <!-- Mock Bars -->
+                    <div class="w-1/5 bg-emerald-100 rounded-t-lg h-[20%] relative group">
+                        <div class="absolute -top-6 w-full text-center text-xs font-bold text-emerald-600">$1.5M</div>
+                    </div>
+                    <div class="w-1/5 bg-emerald-200 rounded-t-lg h-[40%] relative">
+                        <div class="absolute -top-6 w-full text-center text-xs font-bold text-emerald-600">$7.5M</div>
+                    </div>
+                    <div class="w-1/5 bg-emerald-300 rounded-t-lg h-[60%] relative">
+                        <div class="absolute -top-6 w-full text-center text-xs font-bold text-emerald-600">$15M</div>
+                    </div>
+                    <div class="w-1/5 bg-emerald-400 rounded-t-lg h-[80%] relative">
+                        <div class="absolute -top-6 w-full text-center text-xs font-bold text-emerald-700">$25M</div>
+                    </div>
+                    <div class="w-1/5 bg-emerald-500 rounded-t-lg h-[100%] relative">
+                        <div class="absolute -top-6 w-full text-center text-xs font-bold text-emerald-700">$40M</div>
+                    </div>
+                </div>
+                <div class="flex justify-between text-xs text-slate-400 mt-2 px-4">
+                    <span>Año 1</span>
+                    <span>Año 5</span>
+                    <span>Año 10</span>
+                    <span>Año 15</span>
+                    <span>Año 25</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <div class="bg-slate-900 text-white p-6 flex justify-between items-center text-xs z-10">
+            <div class="opacity-80">
+                <img src="logo-sin-isotipo_solaroracle_3.png" alt="SolarOracle" style="height: 12px; width: auto; margin-bottom: 4px; filter: brightness(0) invert(1);"><br>
+                Generado automáticamente por AI
+            </div>
+            <div class="text-right">
+                <span class="text-emerald-400 font-bold">www.solaroracle.cl</span><br>
+                contacto@solaroracle.cl
+            </div>
+        </div>
+    </div>
+
+</body>
+
+</html>
