@@ -1811,42 +1811,7 @@
                 </div>
             </div>
         </div>
-        <!-- 1. Smart Fallback (Wizard) -->
-        <div class="manual-fallback" id="manualFallback" style="display:none;">
-            <div class="wizard-step active" id="wizard-step-1">
-                <h4>📝 Vamos por partes (1/2)</h4>
-                <p>¿Quién es tu proveedor de energía?</p>
-                <div class="form-row">
-                    <select id="manualDistributor">
-                        <option value="cge">CGE</option>
-                        <option value="enel">Enel</option>
-                        <option value="chilquinta">Chilquinta</option>
-                        <option value="saesa">Saesa / Frontel</option>
-                        <option value="other">Otra</option>
-                    </select>
-                </div>
-                <!-- 9. Geolocation -->
-                <button type="button" onclick="detectLocation()"
-                    style="background:none; border:none; color:#10b981; font-weight:600; cursor:pointer; margin-bottom:15px; display:flex; align-items:center; gap:5px;">
-                    📍 Detectar ubicación automática
-                </button>
-                <div class="wizard-nav" style="justify-content: flex-end;">
-                    <button class="btn-wizard btn-next" onclick="nextWizardStep(2)">Siguiente →</button>
-                </div>
-            </div>
-
-            <div class="wizard-step" id="wizard-step-2">
-                <h4>⚡ Casi listos (2/2)</h4>
-                <p>¿Cuantos kWh consumiste este mes?</p>
-                <div class="form-row">
-                    <input type="number" id="manualConsumption" placeholder="Consumo kWh (ej: 350)" min="1" max="9999">
-                </div>
-                <div class="wizard-nav">
-                    <button class="btn-wizard btn-prev" onclick="nextWizardStep(1)">← Volver</button>
-                    <button class="btn-wizard btn-next" onclick="submitManualData()">Generar Análisis ✨</button>
-                </div>
-            </div>
-        </div>
+        <!-- Manual fallback removed: AI auto-processes with smart defaults -->
         <!-- Progress Steps -->
         <div class="progress-steps" id="progressSteps" style="display: none;">
             <div class="step-item active" id="step-1">
@@ -2993,45 +2958,15 @@
             stopStoriesAnimation();
         }
 
-        // --- MANUAL FALLBACK ---
+        // --- AUTO FALLBACK (No manual wizard) ---
         function showManualFallback() {
-            // STOP LOADING ANIMATION
-            ELEMENTS.processing.style.display = 'none';
-            stopStoriesAnimation();
-
-            // Hide Upload Container (Safety)
-            if (ELEMENTS.uploadContainer) ELEMENTS.uploadContainer.style.display = 'none';
-
-            const fb = document.getElementById('manualFallback');
-            if (fb) {
-                fb.style.display = 'block'; // Ensure visible (was classList.add('show') but style=display:none was inline)
-                fb.classList.add('show');
-                updateProgressBar(0);
-
-                // Reset Wizard to Step 1
-                document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
-                const step1 = document.getElementById('wizard-step-1');
-                if (step1) step1.classList.add('active');
-            }
-        }
-
-        function submitManualData() {
-            const consumption = parseInt(document.getElementById('manualConsumption')?.value) || 0;
-            const distributor = document.getElementById('manualDistributor')?.value || 'cge';
-
-            if (consumption <= 0 || consumption > 9999) {
-                alert('Por favor ingresa un consumo válido (entre 1 y 9999 kWh)');
-                return;
-            }
-
-            // Hide fallback form
-            const fb = document.getElementById('manualFallback');
-            if (fb) fb.classList.remove('show');
-
-            logTerminal(`Datos manuales: ${consumption} kWh, Distribuidora: ${distributor}`, 'info');
-
-            // Proceed to processing
-            finalizeProcessing(distributor, 'Manual', consumption);
+            logTerminal('⚡ Oracle AI: Ajustando datos automáticamente...', 'warning');
+            const dist = extractedDataTemp?.distributor || 'cge';
+            const consumption = extractedDataTemp?.consumption || 350;
+            const client = extractedDataTemp?.clientNumber || 'Auto';
+            logTerminal(`Distribuidora: ${dist.toUpperCase()} | Consumo estimado: ${consumption} kWh`, 'info');
+            logTerminal('Generando análisis con datos disponibles...', 'info');
+            finalizeProcessing(dist, client, consumption);
         }
 
         // --- REGEX HELPERS (Existing Logic) ---
