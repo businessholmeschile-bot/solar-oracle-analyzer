@@ -9,7 +9,7 @@
           "value": "app.solaroracle.cl"
         }
       ],
-      "destination": "/solar-oracle-analyzer.html"
+      "destination": "/deploy/app/index.html"
     }
   ]
 }
