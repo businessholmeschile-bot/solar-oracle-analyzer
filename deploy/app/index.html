@@ -4,3854 +4,451 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SolarOracle - Analizador de Boletas v4.3</title>
-
-    <script>
-        window.onerror = function (msg, url, line, col, error) {
-            console.error('GLOBAL ERROR:', msg, 'Line:', line, 'Error:', error);
-            // Visual feedback
-            const d = document.createElement('div');
-            d.style.position = 'fixed';
-            d.style.top = '0';
-            d.style.left = '0';
-            d.style.background = 'red';
-            d.style.color = 'white';
-            d.style.zIndex = '9999';
-            d.innerText = 'JS Error: ' + msg;
-            document.body.appendChild(d);
-        };
-    </script>
-
-    <!-- jsPDF Libraries -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
-
-    <!-- PDF.js Global Worker -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <!-- Supabase SDK removed: all DB operations go through Edge Function proxy -->
-    <script>
-        if (window.pdfjsLib) {
-            pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js';
-        } else {
-            console.warn("PDF.js not loaded");
-        }
-    </script>
-
-    <!-- Tesseract.js for Image OCR -->
-    <script src='https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js'></script>
-
-
-
+    <title>SolarOracle - Inteligencia Artificial para Instaladores Solares</title>
+    <meta name="description" content="La plataforma líder en Chile para cotizaciones fotovoltaicas instantáneas. Convierte boletas en propuestas solares en 5 segundos con IA.">
+    <!-- Open Graph / Social Media -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://solaroracle.cl/">
+    <meta property="og:title" content="SolarOracle - Inteligencia Artificial Solar">
+    <meta property="og:description" content="Cotiza proyectos solares industriales y residenciales en segundos.">
+    <meta property="og:image" content="https://solaroracle.cl/logo_solaroracle_v3.png">
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #ffffff;
-            color: #1a1a1a;
-            min-height: 100vh;
-            padding: 10px;
-            margin: 0;
+            font-family: 'Outfit', sans-serif;
         }
 
-        .container {
-            max-width: 100%;
-            width: 100%;
-            margin: 0 auto;
+        .glass {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
         }
 
-        .header {
-            text-align: center;
-            margin-bottom: 30px;
+        .hero-gradient {
+            background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%);
         }
 
-        .logo {
-            font-size: 2.2rem;
-            font-weight: 800;
-            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        .text-gradient {
+            background: linear-gradient(to right, #34d399, #10b981);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 8px;
-        }
-
-        .subtitle {
-            color: #666666;
-            font-size: 1rem;
-        }
-
-        /* Social Proof Counter */
-        .social-proof {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            margin-top: 12px;
-            padding: 8px 16px;
-            background: rgba(16, 185, 129, 0.1);
-            border-radius: 20px;
-            font-size: 0.82rem;
-            color: #047857;
-            font-weight: 600;
-            display: inline-flex;
-        }
-
-        .social-proof .pulse-dot {
-            width: 8px;
-            height: 8px;
-            background: #22c55e;
-            border-radius: 50%;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-
-            0%,
-            100% {
-                opacity: 1;
-                transform: scale(1);
-            }
-
-            50% {
-                opacity: 0.5;
-                transform: scale(0.8);
-            }
-        }
-
-        .file-input-hidden {
-            width: 0.1px;
-            height: 0.1px;
-            opacity: 0;
-            overflow: hidden;
-            position: absolute;
-            z-index: -1;
-        }
-
-        /* --- PDF SNAPSHOT STYLES (HIDDEN) --- */
-        #pdf-hidden-container {
-            position: fixed;
-            top: 0;
-            left: -9999px;
-            z-index: -9999;
-        }
-
-        .pdf-page {
-            width: 794px;
-            /* A4 at 96 DPI */
-            height: 1123px;
-            /* A4 at 96 DPI */
-            background: #020a13;
-            /* Dark Navy */
-            color: #ffffff;
-            font-family: 'Inter', sans-serif;
-            position: relative;
-            box-sizing: border-box;
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-
-        .pdf-decor-top {
-            height: 8px;
-            width: 100%;
-            background: #ff6b00;
-        }
-
-        .pdf-header {
-            padding: 40px 50px;
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            border-bottom: 1px solid #1f2937;
-        }
-
-        .pdf-brand h1 {
-            font-size: 32px;
-            font-weight: 800;
-            color: #ffffff;
-            letter-spacing: -1px;
-            margin: 0;
-            line-height: 1;
-        }
-
-        .pdf-brand span {
-            color: #ff6b00;
-        }
-
-        .pdf-brand p {
-            color: #9ca3af;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            margin-top: 5px;
-        }
-
-        .pdf-meta-item {
-            font-size: 12px;
-            color: #d1d5db;
-            margin-bottom: 6px;
-            text-align: right;
-        }
-
-        .pdf-meta-item strong {
-            color: #ff6b00;
-            margin-right: 5px;
-        }
-
-        .pdf-body {
-            padding: 40px 50px;
-            flex: 1;
-        }
-
-        .pdf-section-title {
-            font-size: 16px;
-            color: #ff6b00;
-            text-transform: uppercase;
-            font-weight: 700;
-            margin-bottom: 25px;
-            display: flex;
-            align-items: center;
-        }
-
-        .pdf-section-title::before {
-            content: '';
-            display: block;
-            width: 4px;
-            height: 16px;
-            background: #ff6b00;
-            margin-right: 10px;
-        }
-
-        .pdf-kpi-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 40px;
-        }
-
-        .pdf-kpi-card {
-            background: #0f172a;
-            border: 1px solid #1e293b;
-            border-radius: 12px;
-            padding: 20px;
-            text-align: center;
-            position: relative;
-        }
-
-        .pdf-kpi-card.highlight {
-            border-color: #ff6b00;
-            background: rgba(255, 107, 0, 0.05);
-        }
-
-        .pdf-kpi-label {
-            color: #94a3b8;
-            font-size: 10px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 8px;
-        }
-
-        .pdf-kpi-value {
-            font-size: 26px;
-            font-weight: 800;
-            color: white;
-        }
-
-        .pdf-kpi-card.highlight .pdf-kpi-value {
-            color: #ff6b00;
-        }
-
-        .pdf-charts-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-            margin-bottom: 20px;
-        }
-
-        .pdf-chart-box {
-            background: #0f172a;
-            border-radius: 12px;
-            padding: 20px;
-            border: 1px solid #1e293b;
-        }
-
-        .pdf-chart-box h4 {
-            color: #cbd5e1;
-            font-size: 12px;
-            margin-bottom: 15px;
-            text-align: center;
-        }
-
-        .pdf-footer {
-            background: #0f172a;
-            padding: 20px 50px;
-            border-top: 1px solid #1e293b;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .pdf-footer-text {
-            color: #64748b;
-            font-size: 10px;
-        }
-
-        .pdf-cta {
-            background: #ff6b00;
-            color: white;
-            padding: 8px 15px;
-            border-radius: 4px;
-            font-size: 10px;
-            font-weight: 700;
-            text-transform: uppercase;
-        }
-
-        /* --- END PDF STYLES --- */
-
-        /* --- UNIFIED UPLOAD ZONE (Glassmorphism) --- */
-        .upload-container {
-            width: 100%;
-            margin-bottom: 25px;
-        }
-
-        .upload-area {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: rgba(240, 253, 244, 0.6);
-            backdrop-filter: blur(10px);
-            border: 2px dashed #10b981;
-            border-radius: 20px;
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            min-height: 220px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-
-        .upload-area:hover,
-        .upload-area.dragover {
-            background: #ecfdf5;
-            transform: translateY(-4px);
-            box-shadow: 0 15px 30px rgba(16, 185, 129, 0.15);
-            border-color: #059669;
-        }
-
-        .upload-icon {
-            font-size: 3.5rem;
-            margin-bottom: 15px;
-            filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
-            transition: transform 0.3s ease;
-        }
-
-        .upload-area:hover .upload-icon {
-            transform: scale(1.1);
-        }
-
-        .upload-text {
-            font-size: 1.2rem;
-            font-weight: 700;
-            color: #1e293b;
-            margin-bottom: 5px;
-        }
-
-        .upload-hint {
-            font-size: 0.9rem;
-            color: #64748b;
-        }
-
-        /* Action Buttons */
-        .action-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 12px;
-            padding: 18px;
-            border-radius: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s ease;
-            border: none;
-            font-size: 1rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        .action-btn:active {
-            transform: scale(0.96);
-        }
-
-        .btn-camera {
-            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-            color: white;
-            box-shadow: 0 10px 20px rgba(16, 185, 129, 0.2);
-        }
-
-        .btn-camera:hover {
-            box-shadow: 0 15px 30px rgba(15, 23, 42, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .btn-cloud {
-            background: white;
-            color: #334155;
-            border: 1px solid #e2e8f0;
-        }
-
-        .btn-cloud:hover {
-            background: #f8fafc;
-            border-color: #94a3b8;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.05);
-        }
-
-        /* Mobile Optimization */
-        @media (max-width: 640px) {
-            .upload-container {
-                margin-bottom: 20px;
-            }
-
-            .upload-area {
-                padding: 30px 15px;
-                min-height: 160px;
-            }
-
-            .upload-icon {
-                font-size: 2.5rem;
-            }
-
-            /* === Results Section Mobile (new design is mobile-first) === */
-            .results-section {
-                padding: 0;
-                border: none;
-                box-shadow: none;
-            }
-
-            /* Buttons Mobile */
-            .cta-button {
-                padding: 14px 20px;
-                font-size: 0.95rem;
-            }
-
-            .reset-button {
-                padding: 10px 20px;
-                font-size: 0.8rem;
-            }
-
-            /* Modal Mobile */
-            .modal-content {
-                width: 95%;
-                padding: 20px 15px;
-                margin: 10px;
-            }
-
-            .modal-title {
-                font-size: 1.2rem;
-            }
-
-            /* WhatsApp CTA mobile */
-            .whatsapp-cta {
-                font-size: 1rem;
-                padding: 16px 20px;
-            }
-        }
-
-        .processing-section {
-            display: none;
-            margin-bottom: 30px;
-        }
-
-        .progress-bar-container {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            height: 40px;
-            overflow: hidden;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .progress-bar {
-            background: #10b981;
-            height: 100%;
-            width: 0%;
-            transition: width 0.3s ease;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            box-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
-        }
-
-        /* --- NEW: Smart File Preview --- */
-        .file-preview-container {
-            margin-top: 20px;
-            padding: 15px;
-            background: rgba(255, 255, 255, 0.5);
-            border-radius: 12px;
-            display: none;
-            /* Hidden by default */
-            align-items: center;
-            gap: 15px;
-            border: 1px solid rgba(255, 107, 0, 0.2);
-            animation: fadeIn 0.5s ease;
-        }
-
-        .file-preview-icon {
-            font-size: 2rem;
-            color: #ff6b00;
-        }
-
-        .file-preview-info {
-            flex: 1;
-        }
-
-        .file-preview-name {
-            font-weight: 600;
-            font-size: 0.9rem;
-            color: #1f2937;
-        }
-
-        .file-preview-size {
-            font-size: 0.8rem;
-            color: #6b7280;
-        }
-
-        /* --- NEW: Enhanced Progress Steps --- */
-        .progress-steps {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 20px;
-            position: relative;
-        }
-
-        .progress-steps::before {
-            content: '';
-            position: absolute;
-            top: 14px;
-            left: 0;
-            width: 100%;
-            height: 2px;
-            background: #e5e7eb;
-            z-index: 1;
-        }
-
-        .step-item {
-            position: relative;
-            z-index: 2;
-            text-align: center;
-            width: 25%;
-        }
-
-        .step-circle {
-            width: 30px;
-            height: 30px;
-            background: #fff;
-            border: 2px solid #e5e7eb;
-            border-radius: 50%;
-            margin: 0 auto 8px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 700;
-            color: #9ca3af;
-            transition: all 0.3s ease;
-        }
-
-        .step-item.active .step-circle {
-            border-color: #10b981;
-            background: #fff;
-            color: #10b981;
-            box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.1);
-        }
-
-        .step-item.completed .step-circle {
-            background: #10b981;
-            border-color: #10b981;
-            color: white;
-        }
-
-        .step-label {
-            font-size: 0.75rem;
-            color: #9ca3af;
-            font-weight: 500;
-            transition: color 0.3s ease;
-        }
-
-        .step-item.active .step-label,
-        .step-item.completed .step-label {
-            color: #1f2937;
-            font-weight: 700;
-        }
-
-        /* Verification modal styles removed — consolidated into email modal styles below */
-
-        /* Terminal Experience V3: Modern Minimalist Light */
-        .terminal {
-            background: rgba(255, 255, 255, 0.95);
-            /* Elegant White Glass */
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.8);
-            font-family: 'Space Mono', 'Consolas', monospace;
-            /* Modern Font */
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            height: 300px;
-            /* Reduced height to fit improvements */
-            margin-top: 25px;
-            transition: all 0.3s ease;
-        }
-
-        .terminal-header {
-            background: #f8f9fa;
-            /* Soft Grey Header */
-            padding: 14px 24px;
-            border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .terminal-title {
-            color: #666;
-            /* Elegant Dark Grey */
-            font-size: 0.75rem;
-            letter-spacing: 1.5px;
-            text-transform: uppercase;
-            font-weight: 600;
-        }
-
-        .terminal-controls {
-            display: flex;
-            gap: 8px;
-        }
-
-        .control-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            opacity: 0.7;
-        }
-
-        .dot-red {
-            background: #ff5f56;
-        }
-
-        .dot-yellow {
-            background: #ffbd2e;
-        }
-
-        .dot-green {
-            background: #27c93f;
-        }
-
-        .terminal-body {
-            padding: 24px;
-            overflow-y: auto;
-            flex: 1;
-            color: #333;
-            /* Readable Dark Text */
-            font-size: 0.9rem;
-            line-height: 1.6;
-        }
-
-        .terminal-line {
-            margin-bottom: 8px;
-            border-left: 2px solid transparent;
-            padding-left: 12px;
-            opacity: 0;
-            animation: fadeIn 0.3s ease forwards;
-            /* Slower, smoother fade */
-        }
-
-        @keyframes fadeIn {
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-
-            from {
-                opacity: 0;
-                transform: translateY(5px);
-            }
-        }
-
-        /* Elegant Status Colors */
-        .terminal-line.info {
-            border-left-color: #3b82f6;
-            color: #1e293b;
-        }
-
-        /* Blue/Dark Slate */
-        .terminal-line.success {
-            border-left-color: #10b981;
-            color: #064e3b;
-        }
-
-        /* Emerald/Dark Green */
-        .terminal-line.warning {
-            border-left-color: #f59e0b;
-            color: #78350f;
-        }
-
-        /* Amber/Brown */
-        .terminal-line.error {
-            border-left-color: #ef4444;
-            color: #7f1d1d;
-        }
-
-        /* Red/Dark Red */
-
-
-
-        /* =============================================
-           NEW MOBILE-FIRST RESULTS DESIGN
-           ============================================= */
-        .results-section {
-            display: none;
-            background: #f8f9fa;
-            border-radius: 0;
-            padding: 0;
-            border: none;
-            box-shadow: none;
-            animation: fadeInUp 0.5s ease;
-        }
-
-        @keyframes fadeInUp {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        /* Header */
-        .results-header {
-            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-            padding: 24px 20px;
-            text-align: center;
-            color: white;
-        }
-
-        .results-header h2 {
-            font-size: 1.3rem;
-            font-weight: 800;
-            margin-bottom: 6px;
-        }
-
-        .results-header p {
-            font-size: 0.8rem;
-            opacity: 0.85;
-        }
-
-        /* Info Pill */
-        .info-pill {
-            background: #eef6ff;
-            border-left: 4px solid #3b82f6;
-            margin: 16px;
-            padding: 12px 14px;
-            border-radius: 8px;
-            font-size: 0.78rem;
-            color: #1e40af;
-            line-height: 1.5;
-        }
-
-        /* Data Rows */
-        .data-rows {
-            padding: 0 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 16px;
-        }
-
-        .data-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background: white;
-            padding: 14px 16px;
-            border-radius: 10px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-        }
-
-        .data-row .label {
-            font-size: 0.82rem;
-            color: #6b7280;
-            font-weight: 500;
-        }
-
-        .data-row .value {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: #1a1a2e;
-        }
-
-        /* Impact Card (Dark) */
-        .impact-card {
-            margin: 0 16px 16px;
-            background: linear-gradient(135deg, #1a1a2e 0%, #0f172a 100%);
-            border-radius: 14px;
-            padding: 20px;
-            color: white;
-        }
-
-        .impact-card h3 {
-            font-size: 0.85rem;
-            font-weight: 600;
-            margin-bottom: 14px;
-            color: #94a3b8;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .impact-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-        }
-
-        .impact-row:last-child {
-            border: none;
-            padding-top: 12px;
-        }
-
-        .impact-row .label {
-            font-size: 0.82rem;
-            color: #94a3b8;
-        }
-
-        .impact-row .value {
-            font-size: 0.95rem;
-            font-weight: 700;
-            color: white;
-        }
-
-        .impact-row .value.danger {
-            color: #ef4444;
-            font-size: 1.1rem;
-        }
-
-        .impact-row .value.warning {
-            color: #fbbf24;
-        }
-
-
-
-        /* Battery Card (New Phase 2) */
-        .battery-card {
-            margin: 0 16px 16px;
-            background: linear-gradient(135deg, #1e3a8a 0%, #172554 100%);
-            border: 1px solid #3b82f6;
-            border-radius: 14px;
-            padding: 16px;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            color: white;
-            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
-            animation: fadeInUp 0.5s ease 0.2s both;
-        }
-
-        /* Roadmap (Phase 2) */
-        .roadmap-section {
-            margin: 20px 16px;
-            padding: 15px;
-            background: #0f172a;
-            border-radius: 12px;
-            border: 1px solid #334155;
-        }
-
-        .roadmap-section h3 {
-            color: #94a3b8;
-            font-size: 0.85rem;
-            text-align: center;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .roadmap-container {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            position: relative;
-        }
-
-        .roadmap-step {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            z-index: 2;
-            width: 60px;
-        }
-
-        .step-icon {
-            font-size: 1.5rem;
-            background: #1e293b;
-            width: 35px;
-            height: 35px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 50%;
-            border: 2px solid #475569;
-            margin-bottom: 5px;
-        }
-
-        .roadmap-step.highlight .step-icon {
-            background: #f59e0b;
-            border-color: #fbbf24;
-            color: #000;
-            box-shadow: 0 0 10px rgba(251, 191, 36, 0.4);
-        }
-
-        .step-label {
-            font-size: 0.7rem;
-            color: #64748b;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .roadmap-step.highlight .step-label {
-            color: #fbbf24;
-        }
-
-        .roadmap-line {
-            flex-grow: 1;
-            height: 2px;
-            background: #334155;
-            margin: 0 -10px;
-            margin-bottom: 15px;
-            /* Alignment fix */
-            z-index: 1;
-        }
-
-        .roadmap-note {
-            font-size: 0.7rem;
-            color: #475569;
-            text-align: center;
-            margin-top: 10px;
-            font-style: italic;
-        }
-
-        .battery-icon {
-            font-size: 2.5rem;
-            filter: drop-shadow(0 0 10px rgba(59, 130, 246, 0.5));
-        }
-
-        .battery-content h3 {
-            font-size: 0.9rem;
-            font-weight: 700;
-            color: #93c5fd;
-            margin-bottom: 4px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .battery-content p {
-            font-size: 0.9rem;
-            margin-bottom: 6px;
-            line-height: 1.4;
-        }
-
-        .battery-content p strong {
-            color: #fff;
-            font-weight: 800;
-            text-decoration: underline;
-            text-decoration-color: #ef4444;
-        }
-
-        .battery-cta {
-            font-size: 0.8rem;
-            color: #bfdbfe;
-            background: rgba(255, 255, 255, 0.1);
-            padding: 4px 8px;
-            border-radius: 6px;
-            display: inline-block;
-        }
-
-        /* Savings Section */
-        .savings-section {
-            padding: 0 16px;
-            margin-bottom: 16px;
-        }
-
-        .section-title {
-            font-size: 0.95rem;
-            font-weight: 700;
-            margin-bottom: 12px;
-            color: #1a1a2e;
-        }
-
-        .savings-stack {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .savings-card {
-            display: flex;
-            align-items: center;
-            background: white;
-            border-radius: 12px;
-            padding: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-            position: relative;
-            overflow: hidden;
-            animation: fadeInUp 0.4s ease-out both;
-        }
-
-        .savings-card::before {
-            content: '';
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            width: 4px;
-            background: #22c55e;
-        }
-
-        .savings-card:nth-child(1) {
-            animation-delay: 0.1s;
-        }
-
-        .savings-card:nth-child(2) {
-            animation-delay: 0.2s;
-        }
-
-        .savings-card:nth-child(3) {
-            animation-delay: 0.3s;
-        }
-
-        .savings-card .period {
-            min-width: 70px;
-            font-size: 0.78rem;
-            font-weight: 600;
-            color: #6b7280;
-            text-transform: uppercase;
-        }
-
-        .savings-card .amount {
-            flex: 1;
-            text-align: right;
-            font-size: 1.2rem;
-            font-weight: 800;
-            color: #16a34a;
-        }
-
-        /* Danger Card */
-        .danger-card {
-            margin: 0 16px 16px;
-            background: linear-gradient(135deg, #450a0a 0%, #1c0000 100%);
-            border: 1px solid #dc2626;
-            border-radius: 14px;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .danger-card .danger-icon {
-            font-size: 2rem;
-            margin-bottom: 8px;
-        }
-
-        .danger-card .danger-label {
-            font-size: 0.82rem;
-            color: #fca5a5;
-            font-weight: 600;
-            margin-bottom: 4px;
-        }
-
-        .danger-card .danger-amount {
-            font-size: 1.8rem;
-            font-weight: 900;
-            color: #fecaca;
-            margin-bottom: 4px;
-        }
-
-        .danger-card .danger-note {
-            font-size: 0.75rem;
-            color: #f87171;
-        }
-
-        /* Chart Section */
-        .chart-section {
-            margin: 0 16px 16px;
-            background: white;
-            border-radius: 14px;
-            padding: 16px;
-            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-        }
-
-        .chart-section h4 {
-            font-size: 0.85rem;
-            color: #6b7280;
-            margin-bottom: 12px;
-            font-weight: 600;
-        }
-
-        .chart-bars-container {
-            display: flex;
-            align-items: flex-end;
-            justify-content: space-between;
-            height: 120px;
-            gap: 3px;
-        }
-
-        .chart-col {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: flex-end;
-            flex: 1;
-            height: 100%;
-        }
-
-        .chart-col .bar {
-            width: 100%;
-            background: linear-gradient(to top, #10b981, #34d399);
-            border-radius: 3px 3px 0 0;
-            min-height: 4px;
-            transition: height 0.8s ease-out;
-        }
-
-        .chart-col .bar-label {
-            font-size: 9px;
-            color: #9ca3af;
-            margin-top: 4px;
-            font-weight: 600;
-        }
-
-        /* Reality / Trust Section */
-        .reality-section {
-            margin: 0 16px 16px;
-            background: #f0fdf4;
-            border-radius: 14px;
-            padding: 16px 18px;
-        }
-
-        .reality-section h4 {
-            font-size: 0.9rem;
-            color: #166534;
-            margin-bottom: 10px;
-            font-weight: 700;
-        }
-
-        .reality-section ul {
-            list-style: none;
-            padding: 0;
-        }
-
-        .reality-section li {
-            position: relative;
-            padding: 6px 0 6px 20px;
-            font-size: 0.78rem;
-            color: #374151;
-            line-height: 1.5;
-        }
-
-        .reality-section li::before {
-            content: '\2713';
-            position: absolute;
-            left: 0;
-            color: #22c55e;
-            font-weight: 700;
-        }
-
-        /* CTA Section */
-        .cta-section {
-            padding: 0 16px 24px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .cta-button {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 16px;
-            font-size: 1rem;
-            font-weight: 700;
-            border-radius: 12px;
-            cursor: pointer;
-            width: 100%;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            transition: all 0.3s ease;
-        }
-
-        .cta-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
-        }
-
-        .reset-button {
-            background: transparent;
-            color: #9ca3af;
-            border: 1.5px solid #e5e7eb;
-            padding: 12px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            transition: all 0.3s ease;
-        }
-
-        .reset-button:hover {
-            border-color: #10b981;
-            color: #10b981;
-        }
-
-        /* WhatsApp CTA Button */
-        .whatsapp-cta {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            background: #25D366;
-            color: white;
-            border: none;
-            padding: 18px 40px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            border-radius: 10px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 15px;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            text-decoration: none;
-        }
-
-        .whatsapp-cta:hover {
-            background: #1DA851;
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(37, 211, 102, 0.4);
-        }
-
-        .whatsapp-cta svg {
-            width: 24px;
-            height: 24px;
-            fill: white;
-        }
-
-        /* Manual Fallback Form */
-        .manual-fallback {
-            display: none;
-            background: #f0fdf4;
-            border: 2px dashed #10b981;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            text-align: center;
-        }
-
-        .manual-fallback.show {
-            display: block;
-        }
-
-        .manual-fallback h4 {
-            color: #059669;
-            margin-bottom: 10px;
-            font-size: 1rem;
-        }
-
-        .manual-fallback p {
-            color: #666;
-            font-size: 0.85rem;
-            margin-bottom: 15px;
-        }
-
-        .manual-fallback .form-row {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-
-        .manual-fallback .form-row select,
-        .manual-fallback .form-row input {
-            flex: 1;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-family: inherit;
-        }
-
-        .manual-fallback .form-row input:focus,
-        .manual-fallback .form-row select:focus {
-            outline: none;
-            border-color: #10b981;
-        }
-
-        .manual-fallback button {
-            background: #10b981;
-            color: white;
-            border: none;
-            padding: 14px 30px;
-            font-size: 1rem;
-            font-weight: 600;
-            border-radius: 8px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 5px;
-            transition: all 0.3s ease;
-        }
-
-        .manual-fallback button:hover {
-            background: #059669;
-            transform: translateY(-2px);
-        }
-
-        .info-banner {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 15px 20px;
-            border-radius: 10px;
-            margin-bottom: 25px;
-            font-size: 0.9rem;
-            color: #1565c0;
-            line-height: 1.6;
-        }
-
-        /* (Old extended styles removed — now in new design above) */
-
-        /* Modal styles */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .modal-overlay.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            padding: 40px;
-            max-width: 500px;
-            width: 90%;
-            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.3);
-            animation: slideIn 0.3s ease;
-            position: relative;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-50px);
-                opacity: 0;
-            }
-
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: transparent;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #999;
-            transition: color 0.3s ease;
-        }
-
-        .modal-close:hover {
-            color: #10b981;
-        }
-
-        .modal-title {
-            font-size: 1.8rem;
-            color: #ff6b00;
-            margin-bottom: 10px;
-            text-align: center;
-        }
-
-        .modal-subtitle {
-            color: #666;
-            text-align: center;
-            margin-bottom: 30px;
-            font-size: 0.95rem;
-        }
-
-        .email-form {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .form-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .form-label {
-            font-weight: 600;
-            color: #333;
-            font-size: 0.9rem;
-        }
-
-        .form-input {
-            padding: 15px;
-            border: 2px solid #e0e0e0;
-            border-radius: 10px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            font-family: inherit;
-        }
-
-        .form-input:focus {
-            outline: none;
-            border-color: #ff6b00;
-            box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.1);
-        }
-
-        .form-input.error {
-            border-color: #d32f2f;
-        }
-
-        .error-message {
-            color: #d32f2f;
-            font-size: 0.85rem;
-            display: none;
-        }
-
-        .error-message.show {
-            display: block;
-        }
-
-        .download-button {
-            background: #ff6b00;
-            color: white;
-            border: none;
-            padding: 18px 40px;
-            font-size: 1.1rem;
-            font-weight: 600;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-        }
-
-        .download-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 30px rgba(255, 107, 0, 0.4);
-        }
-
-        .download-button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        .privacy-note {
-            font-size: 0.75rem;
-            color: #999;
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        .success-message {
-            background: #e8f5e9;
-            border-left: 4px solid #4caf50;
-            padding: 15px 20px;
-            border-radius: 10px;
-            color: #2e7d32;
-            margin-bottom: 20px;
-            display: none;
-        }
-
-        .success-message.show {
-            display: block;
-            animation: fadeIn 0.3s ease;
-        }
-
-        /* STORIES LOADER */
-        .stories-container {
-            text-align: center;
-            padding: 20px;
-        }
-
-        .story-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-            animation: bounce 2s infinite;
-        }
-
-        @keyframes bounce {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
-        }
-
-        .story-text {
-            font-size: 1.2rem;
-            font-weight: 600;
-            color: #1e293b;
-            min-height: 1.5em;
-            transition: opacity 0.5s;
-        }
-
-        .story-subtext {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin-top: 5px;
-        }
-
-        /* CAMERA BUTTON */
-        .upload-options {
-            display: flex;
-            gap: 10px;
-            justify-content: center;
-            margin-top: 15px;
-        }
-
-        .btn-camera {
-            background: linear-gradient(135deg, #059669 0%, #10b981 100%);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(16, 185, 129, 0.2);
-        }
-
-        .btn-camera:hover {
-            background: #047857;
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(16, 185, 129, 0.3);
-        }
-
-        /* Mobile specific adjustments */
-        @media (max-width: 600px) {
-            .upload-options {
-                flex-direction: column;
-            }
-
-            .btn-camera {
-                justify-content: center;
-                padding: 15px;
-                font-size: 1.1rem;
-            }
         }
     </style>
-    <!-- Font: Outfit -->
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-        rel="stylesheet">
-    <style>
-        /* MINT GREEN THEME VARIABLES */
-        :root {
-            --mint-50: #f0fdf4;
-            --mint-100: #dcfce7;
-            --mint-500: #10b981;
-            --mint-600: #059669;
-            --mint-700: #047857;
-            --slate-800: #1e293b;
-            --slate-500: #64748b;
-        }
-
-        body {
-            font-family: 'Outfit', -apple-system, sans-serif !important;
-            background: var(--mint-50);
-        }
-
-        /* Glass Card Utility */
-        .glass-card {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-            border: 1px solid #f1f5f9;
-        }
-
-        /* Update existing container */
-        .container {
-            max-width: 800px;
-        }
-
-        /* ... Resetting some old styles ... */
-        .results-section {
-            background: transparent !important;
-            padding: 0 !important;
-        }
-
-        /* --- PHASE 11 IMPROVEMENTS CSS --- */
-
-        /* 8. Scan Animation */
-        .scan-container {
-            position: relative;
-            overflow: hidden;
-            border-radius: 20px;
-        }
-
-        .scan-laser {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 4px;
-            background: #10b981;
-            box-shadow: 0 0 15px #10b981, 0 0 30px #10b981;
-            z-index: 10;
-            animation: scanning 2s linear infinite;
-            display: none;
-        }
-
-        @keyframes scanning {
-            0% {
-                top: 0;
-                opacity: 0;
-            }
-
-            10% {
-                opacity: 1;
-            }
-
-            90% {
-                opacity: 1;
-            }
-
-            100% {
-                top: 100%;
-                opacity: 0;
-            }
-        }
-
-        .scanning .scan-laser {
-            display: block;
-        }
-
-        /* 5. Onboarding Overlay */
-        .camera-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 9999;
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            padding: 20px;
-        }
-
-        .guide-frame {
-            width: 80%;
-            height: 60%;
-            border: 2px dashed #10b981;
-            border-radius: 20px;
-            position: relative;
-            box-shadow: 0 0 0 100vmax rgba(0, 0, 0, 0.5);
-            margin-bottom: 20px;
-        }
-
-        .guide-frame::after {
-            content: "Encuadra la boleta aquí";
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: rgba(255, 255, 255, 0.5);
-            font-size: 0.9rem;
-        }
-
-        .overlay-close {
-            position: absolute;
-            top: 20px;
-            right: 20px;
-            font-size: 2rem;
-            cursor: pointer;
-            color: white;
-        }
-
-        /* 1. Smart Wizard */
-        .wizard-step {
-            display: none;
-            animation: fadeIn 0.3s ease;
-        }
-
-        .wizard-step.active {
-            display: block;
-        }
-
-        .wizard-nav {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .btn-wizard {
-            padding: 10px 20px;
-            border-radius: 8px;
-            font-weight: 600;
-            cursor: pointer;
-            border: none;
-        }
-
-        .btn-next {
-            background: #10b981;
-            color: white;
-        }
-
-        .btn-prev {
-            background: #e2e8f0;
-            color: #334155;
-        }
-
-        /* 6. Contextual WhatsApp */
-        .whatsapp-result-btn {
-            background: #25D366;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            padding: 12px;
-            border-radius: 12px;
-            margin-top: 15px;
-            font-weight: 700;
-            cursor: pointer;
-            text-decoration: none;
-            transition: transform 0.2s;
-        }
-
-        .whatsapp-result-btn:hover {
-            transform: scale(1.02);
-        }
-    </style>
-
 </head>
 
-<body>
-    <!-- 5. Onboarding Overlay -->
-    <div class="camera-overlay" id="cameraOverlay" onclick="this.style.display='none'">
-        <div class="overlay-close">&times;</div>
-        <div class="guide-frame"></div>
-        <div style="text-align: center;">
-            <h3 style="font-size: 1.5rem; margin-bottom: 10px;">📸 Tip Pro</h3>
-            <p>Asegúrate de buena luz y que se vean los gráficos de consumo.</p>
-            <div style="margin-top: 20px; font-size: 0.9rem; opacity: 0.8;">Toca cualquier parte para cerrar</div>
-        </div>
-    </div>
-    <div class="container">
-        <div class="header">
-            <div class="logo">
-                <img src="logo_solaroracle_v3.png" alt="SolarOracle" style="height: 50px; width: auto; margin: 0 auto 10px;">
-            </div>
-            <div class="subtitle">Análisis Inteligente de Consumo Eléctrico</div>
-            <div class="social-proof" id="socialProof" style="display:none"><span class="pulse-dot"></span><span
-                    id="analysisCount">0</span>boletas analizadas </div>
-        </div>
-        <!-- UNIFIED UPLOAD ZONE -->
-        <div class="upload-container" style="margin-bottom: 30px;"><input type="file" id="fileInput"
-                class="file-input-hidden" accept=".pdf,image/*"><input type="file" id="cameraInput"
-                class="file-input-hidden" accept="image/*" capture="environment"><label for="fileInput"
-                class="upload-area" id="uploadAreaLabel">
-                <div class="upload-icon">☁️</div>
-                <div class="upload-text">Subir Boleta</div>
-                <div class="upload-hint">PDF o Imagen</div>
-            </label>
-            <!-- Mobile/Direct Actions -->
-            <div class="upload-options">
-                <div class="btn-camera"
-                    onclick="document.getElementById('cameraOverlay').style.display='flex'; setTimeout(() => document.getElementById('cameraInput').click(), 2000);">
-                    <span>📷</span>Tomar Foto
+<body class="bg-slate-50 text-slate-900">
+
+    <!-- Navbar -->
+    <nav class="fixed w-full z-50 transition-all duration-300 glass border-b border-slate-200/50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-20">
+                <div class="flex items-center gap-2">
+                    <img src="logo_solaroracle_v3.png" alt="SolarOracle" class="h-10 w-auto object-contain">
                 </div>
-            </div>
-        </div>
-        <!-- Manual fallback removed: AI auto-processes with smart defaults -->
-        <!-- Progress Steps -->
-        <div class="progress-steps" id="progressSteps" style="display: none;">
-            <div class="step-item active" id="step-1">
-                <div class="step-circle">1</div><span class="step-label">Analizando</span>
-            </div>
-            <div class="step-item" id="step-2">
-                <div class="step-circle">2</div><span class="step-label">Extrayendo</span>
-            </div>
-            <div class="step-item" id="step-3">
-                <div class="step-circle">3</div><span class="step-label">Verificando</span>
-            </div>
-            <div class="step-item" id="step-4">
-                <div class="step-circle">4</div><span class="step-label">Generando</span>
-            </div>
-        </div>
-        <!-- STORIES LOADER (Replaces Progress Bar) -->
-        <div class="processing-section" id="processingSection" style="display: none;">
-            <div class="stories-container">
-                <div class="story-icon" id="storyIcon">📡</div>
-                <div class="story-text" id="storyText">Conectando con SolarOracle Cloud...</div>
-                <div class="story-subtext" id="storySubtext">Esto tomará unos segundos</div>
-                <!-- Hidden Progress for logic -->
-                <div class="progress-bar-container" style="display:none">
-                    <div class="progress-bar" id="progressBar">0%</div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#features" class="text-slate-600 hover:text-emerald-600 font-medium transition">Cómo
+                        Funciona</a>
+                    <a href="#benefits"
+                        class="text-slate-600 hover:text-emerald-600 font-medium transition">Beneficios</a>
+                    <a href="#faq" class="text-slate-600 hover:text-emerald-600 font-medium transition">Preguntas</a>
                 </div>
+                <!-- Botón de ACCIÓN PRINCIPAL (Lleva a la App) -->
+                <a href="https://app.solaroracle.cl"
+                    class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-500/20 transition transform hover:scale-105">
+                    Cotizar Gratis
+                </a>
             </div>
         </div>
-        <!-- Smart File Preview -->
-        <div class="file-preview-container" id="filePreview">
-            <div class="file-preview-icon">📄</div>
-            <div class="file-preview-info">
-                <div class="file-preview-name" id="previewName">boleta_octubre.pdf</div>
-                <div class="file-preview-size" id="previewSize">1.2 MB</div>
-            </div>
-        </div>
-        <div class="terminal" id="terminal">
-            <div class="terminal-header">
-                <div class="terminal-controls">
-                    <div class="control-dot dot-red"></div>
-                    <div class="control-dot dot-yellow"></div>
-                    <div class="control-dot dot-green"></div>
-                </div>
-                <div class="terminal-title">SOLAR_ORACLE_V4.3.exe</div>
-            </div>
-            <div class="terminal-body" id="terminalBody">
-                <div class="terminal-line">>Sistema iniciado... Esperando archivo.</div>
-            </div>
-        </div>
-    </div>
-    <!-- Verification Modal removed (dead code) -->
-    <div class="results-section" id="resultsSection" style="display: none;">
-        <!-- Header Green -->
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-gradient relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden">
+        <!-- Glow Effects -->
         <div
-            style="background: linear-gradient(135deg, #10b981 0%, #047857 100%); padding: 40px 20px 60px 20px; border-radius: 0 0 40px 40px; text-align: center; color: white; margin: -20px -20px 20px -20px;">
+            class="absolute top-0 left-1/2 w-[800px] h-[800px] bg-emerald-500/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2">
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
             <div
-                style="font-size: 12px; font-weight: 700; background: rgba(255,255,255,0.2); display: inline-block; padding: 4px 12px; border-radius: 20px; margin-bottom: 10px;">
-                ANÁLISIS COMPLETADO</div>
-            <h2 style="font-size: 28px; font-weight: 700; margin-bottom: 8px;">Tu Potencial Solar ☀️</h2>
-            <p style="opacity: 0.9; font-size: 14px;">Basado en tu boleta <span id="distributorName">detectada</span>
+                class="inline-block mb-6 px-4 py-1.5 rounded-full bg-emerald-900/50 border border-emerald-500/30 text-emerald-300 text-sm font-semibold tracking-wide">
+                ✨ Nueva IA Solar v4.5.1
+            </div>
+            <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-8 leading-tight">
+                Deja de Regalar Dinero <br>a la <span class="text-gradient">Compañía Eléctrica</span>
+            </h1>
+            <p class="text-xl text-slate-300 mb-10 max-w-2xl mx-auto leading-relaxed">
+                SolarOracle analiza tu boleta de luz en segundos y te dice exactamente cuánto ahorrarías con energía
+                solar. Sin vendedores, sin spam, 100% datos reales.
+            </p>
+            <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                <a href="https://app.solaroracle.cl/dashboard_demo.html"
+                    class="w-full sm:w-auto px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl text-lg shadow-xl shadow-emerald-500/30 transition transform hover:-translate-y-1">
+                    Probar como Usuario 👉
+                </a>
+                <a href="https://app.solaroracle.cl/dashboard_demo.html"
+                    class="text-slate-300 hover:text-white font-medium flex items-center gap-2">
+                    <span class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">🏢</span>
+                    Ver demo para Empresas
+                </a>
+            </div>
+
+            <!-- Stats -->
+            <div class="mt-16 pt-8 border-t border-white/10 grid grid-cols-2 md:grid-cols-4 gap-8 max-w-4xl mx-auto">
+                <div>
+                    <div class="text-3xl font-bold text-white">1.200+</div>
+                    <div class="text-slate-400 text-sm">Boletas Analizadas</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-white">$450M</div>
+                    <div class="text-slate-400 text-sm">Ahorro Identificado</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-white">30s</div>
+                    <div class="text-slate-400 text-sm">Tiempo de Análisis</div>
+                </div>
+                <div>
+                    <div class="text-3xl font-bold text-white">100%</div>
+                    <div class="text-slate-400 text-sm">Gratis y Seguro</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 1: ANALYZER SHOWCASE (PARA PERSONAS) -->
+    <section class="py-24 bg-white overflow-hidden">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col lg:flex-row items-center gap-16">
+                <!-- Text Content -->
+                <div class="lg:w-1/2" data-aos="fade-right">
+                    <div
+                        class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-xs font-bold uppercase tracking-wider mb-6">
+                        <span class="relative flex h-2 w-2">
+                            <span
+                                class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                        </span>
+                        Experiencia de Usuario
+                    </div>
+                    <h2 class="text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">
+                        Tu reporte solar listo en <span class="text-emerald-500">lo que dura un café</span>
+                    </h2>
+                    <p class="text-lg text-slate-600 mb-8 leading-relaxed">
+                        Diseñamos una interfaz intuitiva que elimina la fricción. Solo subes tu boleta y nuestra IA se
+                        encarga de todo el cálculo de ingeniería.
+                    </p>
+                    <div class="space-y-4">
+                        <div
+                            class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition">
+                            <div
+                                class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-2xl">
+                                📸</div>
+                            <div>
+                                <h4 class="font-bold text-slate-900">OCR de Alta Precisión</h4>
+                                <p class="text-sm text-slate-500">Detectamos automáticamente consumo y distribuidora.
+                                </p>
+                            </div>
+                        </div>
+                        <div
+                            class="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition">
+                            <div
+                                class="w-12 h-12 bg-white rounded-xl shadow-sm flex items-center justify-center text-2xl">
+                                ⚡</div>
+                            <div>
+                                <h4 class="font-bold text-slate-900">Simulación Térmica Real</h4>
+                                <p class="text-sm text-slate-500">Cruce de datos con radiación satelital local.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Mockup App UI -->
+                <div class="lg:w-1/2 relative">
+                    <div class="absolute -inset-4 bg-emerald-500/10 rounded-[3rem] blur-3xl"></div>
+                    <div
+                        class="relative mx-auto w-full max-w-[320px] bg-slate-900 rounded-[3rem] border-[8px] border-slate-800 shadow-2xl overflow-hidden aspect-[9/19.5]">
+                        <!-- App Header -->
+                        <div class="p-6 pt-12 bg-white">
+                            <div class="flex items-center justify-between mb-8">
+                                    <img src="isotipo_solaroracle_v3.png" alt="Logo" class="w-8 h-8 object-contain">
+                                <div class="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center text-xs">
+                                    🔔</div>
+                            </div>
+                            <h3 class="text-xl font-bold text-slate-800 mb-2">¡Hola, Drew! 👋</h3>
+                            <p class="text-xs text-slate-400">Analicemos tu ahorro hoy</p>
+
+                            <!-- Analyzer Card Mockup -->
+                            <div
+                                class="mt-8 p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-emerald-300 text-center">
+                                <div class="text-4xl mb-3">📄</div>
+                                <p class="text-sm font-bold text-slate-700 mb-1">Boleta_Enel.pdf</p>
+                                <p class="text-[10px] text-slate-400 mb-4">Analizando consumo histórico...</p>
+                                <div class="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                                    <div class="w-2/3 h-full bg-emerald-500"></div>
+                                </div>
+                            </div>
+
+                            <!-- Success Modal Preview -->
+                            <div class="mt-6 p-4 bg-emerald-900 rounded-2xl text-white">
+                                <p class="text-[10px] font-bold uppercase tracking-widest text-emerald-400 mb-1">Ahorro
+                                    Estimado</p>
+                                <div class="text-2xl font-bold">$48.500<span>/mo</span></div>
+                                <div
+                                    class="mt-3 flex items-center gap-2 text-[10px] font-medium bg-white/10 p-2 rounded-lg">
+                                    <span>🎯</span> Viabilidad Solar 98%
+                                </div>
+                            </div>
+                        </div>
+                        <div class="h-full bg-white"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SECTION 2: ENTERPRISE SHOWCASE (PARA EMPRESAS) -->
+    <section class="py-24 bg-slate-900 relative overflow-hidden">
+        <!-- Decoration -->
+        <div
+            class="absolute top-0 right-0 w-[600px] h-[600px] bg-emerald-500/10 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2">
+        </div>
+
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center mb-16">
+            <div
+                class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-emerald-400 text-xs font-bold uppercase tracking-wider mb-6">
+                🚀 Para Instaladores y Empresas Solar
+            </div>
+            <h2 class="text-4xl md:text-5xl font-extrabold text-white mb-6">
+                SolarOracle <span class="text-gradient">PRO</span>
+            </h2>
+            <p class="text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed">
+                Transforma tu flujo de ventas con nuestro CRM especializado. Captura leads calificados, visualiza
+                consumos reales y cierra proyectos con datos precisos.
             </p>
         </div>
-        <!-- Metric Cards Overlay -->
-        <div class="container"
-            style="margin-top: -50px; padding: 0 10px; position:relative; z-index:10; margin-bottom: 20px;">
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <!-- Saving Card -->
-                <div class="glass-card"
-                    style="padding: 15px; text-align: center; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">
-                        Ahorro 1er Año</div>
-                    <div style="font-size: 20px; font-weight: 800; color: #10b981;" id="savings1y">$-
-                    </div>
+
+        <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <!-- Dashboard Image Showcase -->
+            <div class="relative group">
+                <div
+                    class="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-blue-500 rounded-[2rem] blur opacity-25 group-hover:opacity-40 transition duration-1000">
+                </div>
+                <div class="relative bg-slate-800 rounded-[2rem] border border-white/10 shadow-2xl overflow-hidden p-2">
+                    <img src="dashboard_showcase.png" alt="SolarOracle Admin Dashboard v2" class="w-full rounded-3xl">
+                </div>
+            </div>
+
+            <!-- Dashboard Benefits Grid -->
+            <div class="grid md:grid-cols-3 gap-8 mt-16 text-left">
+                <div class="p-6 rounded-2xl bg-white/5 border border-white/10">
                     <div
-                        style="font-size: 9px; color: #10b981; background: #ecfdf5; padding: 2px 6px; border-radius: 10px; display: inline-block; margin-top: 5px;">
-                        Recomendado</div>
+                        class="w-10 h-10 bg-emerald-500/20 text-emerald-400 rounded-xl flex items-center justify-center text-xl mb-4">
+                        🐳</div>
+                    <h4 class="text-white font-bold mb-2">Detección de "Whales"</h4>
+                    <p class="text-slate-400 text-sm">Nuestro sistema identifica automáticamente los consumos más altos
+                        para priorizar tus ventas.</p>
                 </div>
-                <!-- Loss Card -->
-                <div class="glass-card"
-                    style="padding: 15px; text-align: center; border-bottom: 3px solid #f43f5e; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <div style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase;">
-                        Pérdida 5 Años</div>
-                    <div style="font-size: 20px; font-weight: 800; color: #f43f5e;" id="savings5y">
-                        $-</div>
-                    <div style="font-size: 9px; color: #9f1239; margin-top: 5px;">Si no haces nada
-                    </div>
+                <div class="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div
+                        class="w-10 h-10 bg-blue-500/20 text-blue-400 rounded-xl flex items-center justify-center text-xl mb-4">
+                        💬</div>
+                    <h4 class="text-white font-bold mb-2">WhatsApp Bridge Directo</h4>
+                    <p class="text-slate-400 text-sm">Contacta a los leads calificados con un solo clic directamente
+                        desde tu panel de control.</p>
                 </div>
+                <div class="p-6 rounded-2xl bg-white/5 border border-white/10">
+                    <div
+                        class="w-10 h-10 bg-amber-500/20 text-amber-400 rounded-xl flex items-center justify-center text-xl mb-4">
+                        📊</div>
+                    <h4 class="text-white font-bold mb-2">Embudo de Conversión</h4>
+                    <p class="text-slate-400 text-sm">Visualiza cuántos visitantes suben su boleta y se convierten en
+                        oportunidades reales.</p>
+                </div>
+            </div>
+
+            <div class="mt-16 text-center">
+                <a href="dashboard_demo.html"
+                    class="inline-flex items-center gap-3 px-8 py-4 bg-white text-slate-900 font-extrabold rounded-2xl hover:bg-slate-100 transition shadow-xl">
+                    Solicitar Demo Corporativa 🏢
+                </a>
             </div>
         </div>
-        <!-- Main Content -->
-        <div class="container" style="padding: 0 10px;">
-            <!-- Battery Opportunity (Phase 2) -->
-            <div id="batteryCard" class="glass-card"
-                style="overflow: hidden; margin-bottom: 20px; display:none; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <div
-                    style="background: linear-gradient(90deg, #3b82f6 0%, #2563eb 100%); padding: 15px; color: white; display: flex; align-items: center; gap: 10px;">
-                    <div style="font-size: 24px;">🔋</div>
-                    <div>
-                        <div style="font-weight: 700; font-size: 14px;">Oportunidad de Batería</div>
-                        <div style="font-size: 11px; opacity: 0.9;">Maximiza tu ahorro nocturno
-                        </div>
-                    </div>
-                </div>
-                <div style="padding: 15px;">
-                    <p style="font-size: 13px; color: #334155; margin-bottom: 10px;">Estás perdiendo
-                        <strong style="color: #ef4444;" id="batteryLossAmount">$-</strong>mensuales
-                        al regalar energía a la red.
-                    </p>
+    </section>
+
+    <!-- Problem/Solution -->
+    <section class="py-24 bg-white relative">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid md:grid-cols-2 gap-16 items-center">
+                <div class="relative">
                     <div
-                        style="font-size: 11px; color: #64748b; background: #f1f5f9; padding: 10px; border-radius: 8px;">
-                        💡 <strong>Consejo:</strong>Una batería inteligente podría guardar esa
-                        energía. </div>
-                </div>
-            </div>
-            <!-- Details List -->
-            <h3
-                style="font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 15px; display: flex; align-items: center; gap: 8px; padding-left: 5px;">
-                <span style="width: 4px; height: 16px; background: #10b981; border-radius: 2px;"></span>Detalles
-                del Suministro
-            </h3>
-            <div class="glass-card"
-                style="padding: 0 20px; margin-bottom: 25px; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                <div
-                    style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
-                    <span style="color: #64748b; font-size: 13px;">Cliente N°</span><span
-                        style="font-weight: 600; color: #1e293b; font-size: 13px;" id="clientNumber">-</span>
-                </div>
-                <div
-                    style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
-                    <span style="color: #64748b; font-size: 13px;">Consumo Mes</span><span
-                        style="font-weight: 600; color: #1e293b; font-size: 13px;" id="consumption">- kWh</span>
-                </div>
-                <div
-                    style="display: flex; justify-content: space-between; padding: 15px 0; border-bottom: 1px solid #f1f5f9;">
-                    <span style="color: #64748b; font-size: 13px;">Tarifa Detectada</span><span
-                        style="font-weight: 600; color: #1e293b; font-size: 13px;" id="currentRate">$-</span>
-                </div>
-                <div style="display: flex; justify-content: space-between; padding: 15px 0;">
-                    <span style="color: #64748b; font-size: 13px;">Ubicación</span><span
-                        style="font-weight: 600; color: #1e293b; font-size: 13px;" id="locationField">-</span>
-                </div>
-                <!-- 6. Share Link UI -->
-                <div id="shareLinkContainer"
-                    style="display:none; padding: 10px; background: #f8fafc; border-top: 1px solid #f1f5f9; text-align: center; border-radius: 0 0 20px 20px;">
-                    <div style="font-size: 10px; color: #64748b; margin-bottom: 5px;">Link a este estudio (ID: <span
-                            id="studyIdField">...</span>)</div>
-                    <div style="font-size: 12px; font-weight: 600; color: #10b981; word-break: break-all;"
-                        id="shareUrlField">...</div>
-                </div>
-            </div>
-            <!-- Monthly Chart Container -->
-            <div class="glass-card" style="padding: 20px; margin-bottom: 25px; background: white; border-radius: 20px;">
-                <h4 style="font-size:14px; color:#334155; margin-bottom:15px; font-weight:700;">Estacionalidad de Ahorro
-                </h4>
-                <div id="monthlyChartBars" class="chart-container"
-                    style="height: 120px; display: flex; align-items: flex-end; justify-content: space-between; padding: 0 10px;">
-                </div>
-            </div>
-            <!-- TE4 Roadmap -->
-            <div class="roadmap-section" style="margin-bottom: 25px;">
-                <h3 style="font-size: 16px; font-weight: 700; color: #334155; margin-bottom: 15px; padding-left: 5px;">
-                    Camino a la Independencia 🚀</h3>
-                <div class="glass-card"
-                    style="padding: 15px; display: flex; justify-content: space-between; align-items: center; background: white; border-radius: 20px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);">
-                    <!-- Step 1 -->
-                    <div style="text-align: center; opacity: 0.5;">
-                        <div style="font-size: 18px; margin-bottom: 5px;">📝</div>
-                        <div style="font-size: 9px; font-weight: 700;">Firma</div>
+                        class="absolute inset-0 bg-gradient-to-tr from-emerald-100 to-transparent rounded-3xl transform rotate-3">
                     </div>
-                    <div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;">
-                    </div>
-                    <!-- Step 2 -->
-                    <div style="text-align: center; opacity: 0.5;">
-                        <div style="font-size: 18px; margin-bottom: 5px;">🔌</div>
-                        <div style="font-size: 9px; font-weight: 700;">Solicitud
-                        </div>
-                    </div>
-                    <div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;">
-                    </div>
-                    <!-- Step 3 (Active) -->
-                    <div style="text-align: center;">
-                        <div
-                            style="width: 28px; height: 28px; background: #ecfdf5; border: 2px solid #10b981; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; margin: 0 auto 5px;">
-                            📜</div>
-                        <div style="font-size: 9px; font-weight: 700; color: #10b981;">
-                            TE4 (SEC)</div>
-                    </div>
-                    <div style="flex:1; height: 2px; background: #e2e8f0; margin: 0 8px;">
-                    </div>
-                    <!-- Step 4 -->
-                    <div style="text-align: center; opacity: 0.5;">
-                        <div style="font-size: 18px; margin-bottom: 5px;">⚡
-                        </div>
-                        <div style="font-size: 9px; font-weight: 700;">
-                            Medidor</div>
-                    </div>
+                    <img src="https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?auto=format&fit=crop&q=80&w=800"
+                        alt="Factura de luz cara"
+                        class="relative rounded-3xl shadow-2xl transform -rotate-2 hover:rotate-0 transition duration-500">
                 </div>
-            </div>
-            <!-- CTA Actions -->
-            <div style="display: flex; gap: 10px; flex-direction: column; margin-bottom: 40px;">
-                <button id="downloadPdfButton"
-                    style="width: 100%; padding: 18px; border: none; border-radius: 16px; background: #10b981; color: white; font-weight: 700; font-size: 16px; box-shadow: 0 10px 20px rgba(16, 185, 129, 0.3); display: flex; align-items: center; justify-content: center; gap: 10px; cursor: pointer;"><span>📥</span>Descargar
-                    Informe PDF </button>
-                <div style="text-align:center;"><a href="#" id="whatsappCta" target="_blank"
-                        style="color: #64748b; font-size: 14px; text-decoration: none; font-weight: 500; display: inline-flex; align-items: center; gap: 5px;"><span>💬</span>¿Dudas?
-                        Hablar con experto </a></div><button id="resetButton"
-                    style="width: 100%; padding: 15px; border: none; border-radius: 16px; background: transparent; color: #94a3b8; font-weight: 600; margin-top: 10px; cursor: pointer;">Analizar
-                    otra boleta </button>
-            </div>
-            <div style="text-align: center; margin-bottom: 40px; font-size: 11px; color: #cbd5e1;">
-                SolarOracle Intelligence v4.3 </div>
-        </div>
-    </div>
-    <div class="modal-overlay" id="emailModal">
-        <div class="modal-content" style="border-radius: 20px; font-family: 'Outfit', sans-serif;"><button
-                class="modal-close" id="closeModal">✕</button>
-            <div class="success-message" id="successMessage">✓ ¡Email guardado ! Descargando...</div>
-            <h2 class="modal-title" style="color: #1e293b;">📧 Recibe tu Análisis</h2>
-            <p class="modal-subtitle">Ingresa tu email para descargar el análisis completo en PDF</p>
-            <form class="email-form" id="emailForm">
-                <div class="form-group"><label class="form-label" for="userEmail">Email</label><input type="email"
-                        id="userEmail" class="form-input" placeholder="tu@email.com" required
-                        style="border-radius: 12px; padding: 12px;"><span class="error-message" id="emailError">Email
-                        inválido</span></div>
-                <div class="form-group"><label class="form-label" for="userName">Nombre (opcional)</label><input
-                        type="text" id="userName" class="form-input" placeholder="Tu nombre"
-                        style="border-radius: 12px; padding: 12px;"></div>
-                <div class="form-group"><label class="form-label" for="userPhone">Teléfono (opcional)</label><input
-                        type="tel" id="userPhone" class="form-input" placeholder="+56 9 1234 5678"
-                        style="border-radius: 12px; padding: 12px;"></div><button type="button" class="download-button"
-                    id="submitEmail" onclick="handleDownload(event)"
-                    style="border-radius: 12px; background: #10b981; font-weight: 700;">DESCARGAR PDF</button>
-            </form>
-        </div>
-    </div>
-    </div>
-    <script>console.log("SolarOracle Script Loaded"); // Debugging: Check if script runs at all
-
-        // GLOBAL STATE
-        let ELEMENTS = {}
-
-            ;
-        let selectedFile = null;
-        window.analysisData = null; // Ensure this is global
-
-        let extractedDataTemp = {}
-
-            ;
-        let isProcessing = false;
-        let verificationResults = null;
-
-        // --- BACKEND CONFIG (Secure Proxy) ---
-        // No credentials exposed. All DB writes go through the Edge Function.
-        const PROXY_URL = 'https://zqwkwnywndkwyzzggorf.supabase.co/functions/v1/save-lead';
-
-        // --- INITIALIZATION ---
-        document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-
-            // Populate Global ELEMENTS
-            ELEMENTS = {
-                uploadContainer: document.querySelector('.upload-container'), // New: Wrapper
-                uploadArea: document.getElementById('uploadAreaLabel'),
-                fileInput: document.getElementById('fileInput'),
-                processing: document.getElementById('processingSection'),
-                progressBar: document.getElementById('progressBar'),
-                terminal: document.getElementById('terminal'),
-                terminalBody: document.getElementById('terminalBody'), // New Body
-                results: document.getElementById('resultsSection'),
-                resetBtn: document.getElementById('resetButton'),
-                emailModal: document.getElementById('emailModal'),
-                closeModal: document.getElementById('closeModal'),
-                emailForm: document.getElementById('emailForm'),
-                userEmail: document.getElementById('userEmail'),
-                userName: document.getElementById('userName'),
-                userPhone: document.getElementById('userPhone'),
-                downloadBtn: document.getElementById('downloadPdfButton'),
-                successMsg: document.getElementById('successMessage'),
-                submitBtn: document.getElementById('submitEmail'),
-
-                // --- NEW ELEMENTS ---
-                filePreview: document.getElementById('filePreview'),
-                previewName: document.getElementById('previewName'),
-                previewSize: document.getElementById('previewSize'),
-                progressSteps: document.getElementById('progressSteps'),
-                verificationModal: document.getElementById('verificationModal'),
-                verifyDistributor: document.getElementById('verifyDistributor'),
-                verifyClientNumber: document.getElementById('verifyClientNumber'),
-                verifyConsumption: document.getElementById('verifyConsumption')
-            }
-
-                ;
-
-            console.log("SolarOracle Initialized. Ready to rock.");
-
-            // --- GHOST TRACKING (Non-blocking) ---
-            setTimeout(() => {
-                try {
-                    if (typeof logGhostLead === 'function') logGhostLead();
-                }
-
-                catch (e) {
-                    console.warn("Ghost Lead Error:", e);
-                }
-            }
-
-                , 500);
-
-            // --- SOCIAL PROOF COUNTER (Non-blocking) ---
-            setTimeout(async () => {
-                try {
-                    const proofEl = document.getElementById('socialProof');
-                    const countEl = document.getElementById('analysisCount');
-                    if (!proofEl || !countEl) return;
-
-                    let count = 500; // baseline fallback
-
-                    try {
-                        const resp = await fetch(PROXY_URL, {
-
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json'
-                            }
-
-                            ,
-                            body: JSON.stringify({
-                                action: 'count-leads'
-                            })
-                        });
-                        const result = await resp.json();
-
-                        if (result.success && result.count != null) {
-                            count = Math.max(result.count, 500);
-                        }
-                    }
-
-                    catch (e) {
-                        /* use fallback */
-                    }
-
-                    // Round to nice number: 1247 → "1.200+"
-                    const rounded = Math.floor(count / 50) * 50;
-                    countEl.textContent = rounded.toLocaleString('es-CL') + '+';
-                    proofEl.style.display = 'inline-flex';
-                }
-
-                catch (e) {
-                    console.warn('Social proof counter error:', e);
-                }
-            }
-
-                , 1000);
-
-            // --- EVENT LISTENERS ---
-            // --- EVENT LISTENERS ---
-            const uploadLabel = document.getElementById('uploadAreaLabel');
-
-            if (uploadLabel) {
-
-                // Drag & Drop
-                uploadLabel.addEventListener('dragover', (e) => {
-                    e.preventDefault();
-                    uploadLabel.classList.add('dragover');
-                });
-
-                uploadLabel.addEventListener('dragleave', () => {
-                    uploadLabel.classList.remove('dragover');
-                });
-
-                uploadLabel.addEventListener('drop', (e) => {
-                    e.preventDefault();
-                    uploadLabel.classList.remove('dragover');
-
-                    if (e.dataTransfer.files.length) {
-                        handleFile(e.dataTransfer.files[0]);
-                    }
-                });
-
-                // ROBUST CLICK HANDLER (Fix for mobile/hidden input issues)
-                uploadLabel.addEventListener('click', (e) => {
-                    e.preventDefault(); // Stop default "label for" behavior to prevent double-open
-                    // Prevent recursive clicks if label triggers input naturally
-                    if (e.target.tagName === 'INPUT') return;
-
-                    const fileInput = document.getElementById('fileInput');
-
-                    if (fileInput) {
-                        // Small delay to ensure UI feedback
-                        setTimeout(() => fileInput.click(), 50);
-                    }
-                });
-            }
-
-            // Evento CHANGE para el input de archivo (General)
-            const fileInputEl = document.getElementById('fileInput');
-
-            if (fileInputEl) {
-                fileInputEl.addEventListener('change', (e) => {
-                    console.log("File Input Changed:", e.target.files); // Debug
-
-                    if (e.target.files && e.target.files.length > 0) {
-                        handleFile(e.target.files[0]);
-                    }
-                });
-            }
-
-            else {
-                console.error("CRITICAL: fileInput element not found in DOM");
-            }
-
-            // Evento CHANGE para Camera Input
-            const cameraInputEl = document.getElementById('cameraInput');
-
-            if (cameraInputEl) {
-                cameraInputEl.addEventListener('change', (e) => {
-                    if (e.target.files && e.target.files.length > 0) {
-                        handleFile(e.target.files[0]);
-                    }
-                });
-            }
-
-            if (ELEMENTS.resetBtn) ELEMENTS.resetBtn.addEventListener('click', resetApp);
-
-            // Modal Events
-            if (ELEMENTS.downloadBtn) ELEMENTS.downloadBtn.addEventListener('click', () => {
-                if (ELEMENTS.emailModal) ELEMENTS.emailModal.classList.add('active');
-            });
-
-            if (ELEMENTS.closeModal) ELEMENTS.closeModal.addEventListener('click', () => {
-                if (ELEMENTS.emailModal) ELEMENTS.emailModal.classList.remove('active');
-            });
-
-            // Close modal on outside click
-            if (ELEMENTS.emailModal) {
-                ELEMENTS.emailModal.addEventListener('click', (e) => {
-                    if (e.target === ELEMENTS.emailModal) {
-                        ELEMENTS.emailModal.classList.remove('active');
-                    }
-                });
-            }
-
-            // PDF Download: use click event (more reliable than form submit in iframes)
-            if (ELEMENTS.submitBtn) {
-                ELEMENTS.submitBtn.addEventListener('click', handleDownload);
-                console.log('PDF Download handler attached to submitBtn');
-            }
-
-            else {
-                console.error('CRITICAL: submitBtn (submitEmail) not found!');
-            }
-
-            // Also keep form submit as fallback
-            if (ELEMENTS.emailForm) {
-                ELEMENTS.emailForm.addEventListener('submit', handleDownload);
-                console.log('PDF Download handler attached to emailForm');
-            }
-
-            // --- LOAD FROM ID (Persistent Links) ---
-            if (urlParams.has('id')) {
-                const studyId = urlParams.get('id');
-                loadStudyFromID(studyId);
-            }
-
-            if (urlParams.get('test') === 'true' && !urlParams.has('id')) {
-                console.log("TEST MODE: Triggering flow...");
-                setTimeout(() => {
-                    handleFile(new File(["dummy"], "test_invoice.pdf", { type: "application/pdf" }));
-                }, 1000);
-            }
-        });
-
-        async function loadStudyFromID(id) {
-            logTerminal(`🔍 Recuperando estudio ${id.slice(0, 8)}...`, 'info');
-            ELEMENTS.uploadContainer.style.display = 'none';
-            ELEMENTS.processing.style.display = 'block';
-            startStoriesAnimation();
-
-            try {
-                const resp = await fetch(PROXY_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ action: 'get-lead', payload: { id } })
-                });
-                const result = await resp.json();
-                if (!result.success) throw new Error(result.error);
-
-                const data = JSON.parse(result.data.analysis_data);
-                window.analysisData = data;
-                window.currentLeadId = id;
-
-                stopStoriesAnimation();
-                showResultsV2();
-                updateShareLink(id);
-                logTerminal('✅ Estudio recuperado correctamente.', 'success');
-            } catch (e) {
-                console.error("Load Error:", e);
-                logTerminal('❌ No se encontró el estudio o el link caducó.', 'error');
-                stopStoriesAnimation();
-                setTimeout(resetApp, 3000);
-            }
-        }
-
-        // --- LOGIC FUNCTIONS ---
-
-        // --- NEW: Handle File & Preview ---
-        async function handleFile(file) {
-            if (!file) return;
-            console.log("Procesando archivo:", file.name);
-
-            // 7. Client-Side Compression
-            try {
-                file = await compressImage(file);
-            } catch (e) {
-                console.warn("Compression failed, using original", e);
-            }
-
-            selectedFile = file;
-
-            // 1. Show Preview
-            showFilePreview(file);
-
-            // 2. UI Updates: Hide ENTIRE upload container (Label + Camera Btn)
-            if (ELEMENTS.uploadContainer) ELEMENTS.uploadContainer.style.display = 'none';
-            else if (ELEMENTS.uploadArea) ELEMENTS.uploadArea.style.display = 'none'; // Fallback
-
-            if (ELEMENTS.processing) ELEMENTS.processing.style.display = 'block';
-
-            // 8. Scan Animation Trigger
-            const scanContainer = document.querySelector('.scan-container'); // You might need to add this class to the processing container or image preview
-            if (scanContainer) scanContainer.classList.add('scanning');
-
-            // Hide old steps if they exist
-            const steps = document.getElementById('progressSteps');
-            if (steps) steps.style.display = 'none';
-
-            startStoriesAnimation(); // START STORIES
-            logTerminal('Iniciando análisis del archivo: ' + file.name);
-
-            // 3. Start Extraction (Stops at Modal)
-            recognizeFile(file);
-        }
-
-        function logTerminal(msg, type = 'normal') {
-            const date = new Date().toLocaleTimeString();
-            const div = document.createElement('div');
-            div.className = `terminal-line ${type}`;
-            div.innerHTML = `<span style="opacity:0.5">[${date}]</span> ${msg}`;
-            const target = ELEMENTS.terminalBody || ELEMENTS.terminal;
-
-            if (target) {
-                target.appendChild(div);
-                target.scrollTop = target.scrollHeight;
-            }
-        }
-
-        function showFilePreview(file) {
-            ELEMENTS.filePreview.style.display = 'flex';
-            ELEMENTS.previewName.textContent = file.name;
-            ELEMENTS.previewSize.textContent = (file.size / 1024 / 1024).toFixed(2) + ' MB';
-        }
-
-        function updateProgressStep(stepNumber) {
-
-            // Reset all
-            document.querySelectorAll('.step-item').forEach(item => {
-                item.classList.remove('active', 'completed');
-            });
-
-            // Set state
-            for (let i = 1; i <= 4; i++) {
-                const item = document.getElementById(`step-${i}`);
-
-                if (i < stepNumber) {
-                    item.classList.add('completed');
-                }
-
-                else if (i === stepNumber) {
-                    item.classList.add('active');
-                }
-            }
-        }
-
-        // --- OCR & EXTRACTION ---
-        // --- OCR & EXTRACTION (POWERED BY GEMINI AI) ---
-        async function recognizeFile(file) {
-            // --- TEST MODE CHECK ---
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('test') === 'true') {
-                logTerminal("TEST MODE ACTIVATED: Skipping AI...", 'warning');
-                updateProgressStep(2);
-                updateProgressBar(50);
-                extractedDataTemp = { distributor: 'cge', clientNumber: '9999999-K', consumption: 450 };
-                setTimeout(() => finalizeProcessing('cge', '9999999-K', 450), 1000);
-                return;
-            }
-
-            updateProgressStep(2); // Step 2: Extrayendo
-            updateProgressBar(20);
-            logTerminal("Conectando con Google Gemini AI...", 'info');
-
-            try {
-                // 1. Convert File to Base64 (Image or PDF)
-                let base64String = "";
-                
-                // If PDF, we need to rasterize the first page to image for Gemini Flash to "see" it easily
-                // or we can send PDF base64 if Gemini supports it (it does, but image is safer for "Vision" tasks sometimes)
-                // For simplicity/speed with our current libraries, let's use the Image if it is one, 
-                // or if it is PDF, use pdf.js to render page 1 to an image.
-                
-                if (file.type === "application/pdf") {
-                     logTerminal("Renderizando PDF para Vision AI...", 'info');
-                     base64String = await renderPdfToImageBase64(file);
-                } else {
-                     base64String = await fileToBase64(file);
-                }
-
-                if (!base64String) throw new Error("Could not process file format");
-
-                updateProgressBar(40);
-                logTerminal("Enviando a Neural Cloud (Edge Latam)...", 'info');
-
-                // 2. Send to Edge Function (analyze-bill)
-                const resp = await fetch(PROXY_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        action: 'analyze-bill', 
-                        payload: { 
-                            imageBase64: base64String,
-                            mimeType: 'image/jpeg' // We always send JPEG from our rasterizer or file
-                        } 
-                    })
-                });
-
-                const result = await resp.json();
-
-                if (!result.success) {
-                    throw new Error(result.error || "AI Response Failed");
-                }
-
-                const aiData = result.data;
-                logTerminal("✅ Análisis AI Completado.", 'success');
-                updateProgressBar(80);
-
-                // 3. Map AI Data
-                // Sanitize distributor
-                let dist = (aiData.distributor || '').toLowerCase();
-                let cleanDist = 'default';
-                if (dist.includes('cge')) cleanDist = 'cge';
-                if (dist.includes('enel')) cleanDist = 'enel';
-                if (dist.includes('chilquinta')) cleanDist = 'chilquinta';
-                if (dist.includes('saesa') || dist.includes('frontel')) cleanDist = 'saesa';
-
-                extractedDataTemp = {
-                    distributor: cleanDist,
-                    clientNumber: aiData.clientNumber || '',
-                    consumption: aiData.consumption || 0,
-                    location: aiData.address || ''
-                };
-
-                // Store Location
-                if (extractedDataTemp.location) {
-                    window.detectedLocation = extractedDataTemp.location;
-                     logTerminal(`Ubicación: ${extractedDataTemp.location}`, 'info');
-                } else {
-                     logTerminal(`Ubicación: No detectada (Usando Global)`, 'warning');
-                }
-                
-                logTerminal(`Consumo Detectado: ${extractedDataTemp.consumption} kWh`, 'success');
-
-                // 4. Validate and Finish
-                if (!extractedDataTemp.consumption || extractedDataTemp.consumption === 0) {
-                     logTerminal('⚠️ Confianza baja en lectura.', 'warning');
-                     showManualFallback();
-                     return;
-                }
-
-                finalizeProcessing(extractedDataTemp.distributor, extractedDataTemp.clientNumber, extractedDataTemp.consumption);
-
-            } catch (err) {
-                console.error("AI Error:", err);
-                logTerminal("Error en conexión AI: " + err.message, 'error');
-                logTerminal("Cambiando a modo manual...", 'warning');
-                showManualFallback();
-            }
-        }
-
-        // --- HELPER: File to Base64 ---
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = () => {
-                    // Start after "data:image/jpeg;base64,"
-                    const res = reader.result;
-                    resolve(res.split(',')[1]); 
-                };
-                reader.onerror = error => reject(error);
-            });
-        }
-
-        // --- HELPER: PDF Page 1 to Image Base64 ---
-        async function renderPdfToImageBase64(file) {
-            const arrayBuffer = await file.arrayBuffer();
-            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-            const page = await pdf.getPage(1);
-            
-            const viewport = page.getViewport({ scale: 2.0 }); // High res
-            const canvas = document.createElement('canvas');
-            const context = canvas.getContext('2d');
-            canvas.height = viewport.height;
-            canvas.width = viewport.width;
-
-            await page.render({ canvasContext: context, viewport: viewport }).promise;
-            // Return raw base64 string (no header)
-            return canvas.toDataURL('image/jpeg', 0.8).split(',')[1];
-        }
-
-        // --- SOLAR ENGINE CORE (Re-implemented) ---
-        class SolarEngine {
-            static PROJECTIONS = {
-                TARIFF_HIKE: 1.15 // 15% projected increase
-            };
-
-            static calculate(consumption, distributor, location) {
-                // 1. Rates (Approximate CLP/kWh 2025)
-                const RATES = {
-                    'cge': 135,
-                    'enel': 142,
-                    'chilquinta': 138,
-                    'saesa': 150,
-                    'default': 140
-                };
-                const baseRate = RATES[distributor] || RATES['default'];
-
-                // 2. Solar Sizing
-                // Chile Avg Yield: ~1400-1600 kWh/kWp/year
-                const YIELD = 1500;
-                const annualConsumption = consumption * 12;
-                const targetGeneration = annualConsumption; // 100% offset goal
-
-                const systemSizekW = targetGeneration / YIELD;
-                const panelPowerW = 550;
-                const panels = Math.ceil((systemSizekW * 1000) / panelPowerW);
-                const actualSizekW = (panels * panelPowerW) / 1000;
-                const annualGeneration = actualSizekW * YIELD;
-
-                // 3. Financials
-                // Net Billing: Injection valued at ~60-70% of retail rate
-                const selfConsumptionRatio = 0.4; // 40% self-consumed directly
-                const injectionRatio = 0.6; // 60% injected
-
-                const savingsDirect = (annualGeneration * selfConsumptionRatio * baseRate) / 12;
-                const savingsInjection = (annualGeneration * injectionRatio * (baseRate * 0.7)) / 12; // 30% markdown for injection
-
-                const totalMonthlyBenefit = savingsDirect + savingsInjection;
-                const annualBenefit = totalMonthlyBenefit * 12;
-
-                // Battery Logic
-                const moneyLostToInjection = (annualGeneration * injectionRatio * (baseRate * 0.3)) / 12;
-                const recommendBattery = moneyLostToInjection > 15000; // If losing >15k/mo on injection, recommend battery
-
-                return {
-                    baseRate,
-                    systemSizekW: parseFloat(actualSizekW.toFixed(2)),
-                    panels,
-                    annualGeneration: Math.round(annualGeneration),
-
-                    // Monthly Values
-                    totalMonthlyBenefit: Math.round(totalMonthlyBenefit),
-                    savingsDirect: Math.round(savingsDirect),
-                    savingsInjection: Math.round(savingsInjection),
-
-                    // Annual Values
-                    annualBenefit: Math.round(annualBenefit),
-
-                    // Battery
-                    moneyLostToInjection: Math.round(moneyLostToInjection),
-                    recommendBattery,
-
-                    isHighProfit: baseRate > 145
-                };
-            }
-        }
-
-        async function extractTextFromPDF(file) {
-            const arrayBuffer = await file.arrayBuffer();
-
-            const pdf = await pdfjsLib.getDocument({
-                data: arrayBuffer
-            }).promise;
-            let text = "";
-
-            // Limit pages for speed
-            const maxPages = Math.min(pdf.numPages, 3);
-
-            for (let i = 1; i <= maxPages; i++) {
-                const page = await pdf.getPage(i);
-                const content = await page.getTextContent();
-                const strings = content.items.map(item => item.str);
-                text += strings.join(" ") + "\n";
-            }
-            return text;
-        }
-
-        // --- PHASE 11 JS IMPROVEMENTS ---
-
-        // 9. Geolocation
-        function detectLocation() {
-            const btn = document.querySelector('button[onclick="detectLocation()"]');
-            if (btn) btn.innerHTML = "⏳ Detectando...";
-
-            if ("geolocation" in navigator) {
-                navigator.geolocation.getCurrentPosition(async (position) => {
-                    const lat = position.coords.latitude;
-                    const lon = position.coords.longitude;
-
-                    // Mock Reverse Geocoding (In prod use Google Maps API or OpenStreetMap)
-                    // Here we just map rough coordinates to distributors for demo
-                    console.log("Location:", lat, lon);
-
-                    let region = "Metropolitana";
-                    let distributor = "enel";
-
-                    // Simple logic for demo purposes
-                    if (lat < -33.6) { distributor = "cge"; region = "O'Higgins"; }
-                    if (lat < -36.0) { distributor = "saesa"; region = "Sur"; }
-
-                    document.getElementById('manualDistributor').value = distributor;
-
-                    if (btn) btn.innerHTML = `✅ Ubicación: ${region}`;
-                    window.detectedLocation = region;
-
-                    // Auto-advance if found
-                    setTimeout(() => nextWizardStep(2), 800);
-
-                }, (error) => {
-                    console.error("Geo Error:", error);
-                    if (btn) btn.innerHTML = "❌ Permiso denegado";
-                    alert("No pudimos detectar tu ubicación. Por favor selecciona tu distribuidora manualmente.");
-                });
-            } else {
-                if (btn) btn.innerHTML = "❌ No soportado";
-            }
-        }
-
-        // 1. Smart Wizard Logic
-        function nextWizardStep(step) {
-            document.querySelectorAll('.wizard-step').forEach(el => el.classList.remove('active'));
-            document.getElementById(`wizard-step-${step}`).classList.add('active');
-        }
-
-        // 7. Client-Side Compression
-        async function compressImage(file) {
-            if (file.type === 'application/pdf') return file; // Skip PDF
-            if (file.size < 1024 * 1024) return file; // Skip small images (<1MB)
-
-            return new Promise((resolve) => {
-                const reader = new FileReader();
-                reader.readAsDataURL(file);
-                reader.onload = (event) => {
-                    const img = new Image();
-                    img.src = event.target.result;
-                    img.onload = () => {
-                        const canvas = document.createElement('canvas');
-                        const ctx = canvas.getContext('2d');
-
-                        // Scale down to max 1500px width/height
-                        const maxDim = 1500;
-                        let width = img.width;
-                        let height = img.height;
-
-                        if (width > height) {
-                            if (width > maxDim) {
-                                height *= maxDim / width;
-                                width = maxDim;
-                            }
-                        } else {
-                            if (height > maxDim) {
-                                width *= maxDim / height;
-                                height = maxDim;
-                            }
-                        }
-
-                        canvas.width = width;
-                        canvas.height = height;
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        canvas.toBlob((blob) => {
-                            console.log(`Compressed: ${(file.size / 1024 / 1024).toFixed(2)}MB -> ${(blob.size / 1024 / 1024).toFixed(2)}MB`);
-                            resolve(new File([blob], file.name, { type: 'image/jpeg', lastModified: Date.now() }));
-                        }, 'image/jpeg', 0.7); // 70% quality
-                    };
-                };
-            });
-        }
-
-        // 10. Dashboard Lite (URL Params)
-        function checkUrlParams() {
-            const params = new URLSearchParams(window.location.search);
-            const consumption = params.get('consumption');
-            const distributor = params.get('distributor');
-
-            if (consumption && distributor) {
-                console.log("Dashboard Lite Activated from URL");
-                // Simulate file processing delay for effect, then show results
-                ELEMENTS.uploadArea.style.display = 'none';
-                ELEMENTS.processing.style.display = 'block';
-                startStoriesAnimation();
-
-                setTimeout(() => {
-                    finalizeProcessing(distributor, 'URL-GUEST', parseInt(consumption));
-                }, 2000);
-            }
-        }
-
-        // Call on load
-        window.addEventListener('load', checkUrlParams);
-
-        async function extractTextFromImage(file) {
-            const worker = await Tesseract.createWorker('spa');
-            const ret = await worker.recognize(file);
-            await worker.terminate();
-            return ret.data.text;
-        }
-
-        // --- NEW: Verification Logic ---
-        function openVerificationModal() {
-            updateProgressStep(3); // Step 3: Verificando
-            updateProgressBar(75);
-            logTerminal("Esperando verificación de usuario...", 'warning');
-
-            // Populate fields
-            ELEMENTS.verifyDistributor.value = extractedDataTemp.distributor;
-            ELEMENTS.verifyClientNumber.value = extractedDataTemp.clientNumber;
-            ELEMENTS.verifyConsumption.value = extractedDataTemp.consumption;
-
-            // Show Modal
-            ELEMENTS.verificationModal.style.display = 'flex';
-        }
-
-        function confirmVerification() {
-            // Get verified data
-            const finalDistributor = ELEMENTS.verifyDistributor.value;
-            const finalClient = ELEMENTS.verifyClientNumber.value.trim();
-            const finalConsumption = parseInt(ELEMENTS.verifyConsumption.value) || 0;
-
-            if (!finalClient || finalConsumption <= 0) {
-                alert("Por favor ingresa un número de cliente y consumo válidos.");
-                return;
-            }
-
-            // Hide Modal
-            ELEMENTS.verificationModal.style.display = 'none';
-
-            // Proceed
-            finalizeProcessing(finalDistributor, finalClient, finalConsumption);
-        }
-
-        function cancelVerification() {
-            if (confirm("¿Estás seguro de cancelar el análisis?")) {
-                ELEMENTS.verificationModal.style.display = 'none';
-                resetApp();
-            }
-        }
-
-        // --- FINAL PROCESSING ---
-        async function finalizeProcessing(distributor, clientNumber, consumption) {
-            try {
-                logTerminal("⚙️ Iniciando cálculos finales...", 'info');
-                updateProgressStep(4);
-                updateProgressBar(85);
-
-                // --- SOLAR CALCULATIONS ---
-                window.detectedDistributor = distributor;
-                const DISTRIBUTOR_NAMES = {
-                    'cge': 'CGE Distribución',
-                    'enel': 'Enel Distribución',
-                    'chilquinta': 'Chilquinta Energía',
-                    'saesa': 'SAESA / Frontel',
-                    'default': 'Distribuidora General'
-                };
-                const distributorName = DISTRIBUTOR_NAMES[distributor] || DISTRIBUTOR_NAMES['default'];
-
-                const engineResult = SolarEngine.calculate(consumption, distributor, window.detectedLocation);
-
-                window.analysisData = {
-                    distributor: distributor,
-                    distributorName: distributorName,
-                    clientNumber: clientNumber,
-                    consumption: consumption,
-                    location: window.detectedLocation || 'No detectada',
-                    currentRate: engineResult.baseRate,
-                    currentCost: consumption * engineResult.baseRate,
-                    projectedCost: Math.round((consumption * engineResult.baseRate) * SolarEngine.PROJECTIONS.TARIFF_HIKE),
-                    monthlyIncrease: Math.round(((consumption * engineResult.baseRate) * SolarEngine.PROJECTIONS.TARIFF_HIKE) - (consumption * engineResult.baseRate)),
-                    solarSavings: engineResult.totalMonthlyBenefit,
-                    savingsDirect: engineResult.savingsDirect,
-                    savingsInjection: engineResult.savingsInjection,
-                    annualSavings: engineResult.annualBenefit,
-                    savings6m: Math.round(engineResult.annualBenefit / 2),
-                    savings1y: engineResult.annualBenefit,
-                    savings3y: Math.round(engineResult.annualBenefit * 3 * 1.05),
-                    savings5y: Math.round(engineResult.annualBenefit * 5 * 1.10),
-                    systemSizekW: engineResult.systemSizekW,
-                    panels: engineResult.panels,
-                    annualEnergy: engineResult.annualGeneration,
-                    area: Math.round(engineResult.panels * 2.2),
-                    estimatedSystemCost: Math.round(engineResult.systemSizekW * 1000 * 650),
-                    monthlySavings: engineResult.totalMonthlyBenefit,
-                    isHighProfit: engineResult.isHighProfit,
-                    moneyLostToInjection: engineResult.moneyLostToInjection,
-                    recommendBattery: engineResult.recommendBattery
-                };
-
-                // CRITICAL: Stop animation BEFORE showing results
-                stopStoriesAnimation();
-                updateProgressBar(100);
-
-                logTerminal("✅ Análisis completo. Renderizando resultados...", 'success');
-                showResultsV2();
-
-                processLeadData(null, null, null, null, true).then(res => {
-                    if (res && res.id) {
-                        window.currentLeadId = res.id;
-                        updateShareLink(res.id);
-                        logTerminal(`📡 Sesión Iniciada: Log ID ${res.id.slice(0, 8)}`, 'success');
-                    }
-                }).catch(e => console.warn('Supabase Ghost Sync failed:', e));
-
-            } catch (err) {
-                console.error("Finalize Error:", err);
-                logTerminal("❌ Error en cálculos: " + err.message, 'error');
-                stopStoriesAnimation();
-                showManualFallback();
-            }
-        }
-
-        function updateShareLink(id) {
-            const container = document.getElementById('shareLinkContainer');
-            const idField = document.getElementById('studyIdField');
-            const urlField = document.getElementById('shareUrlField');
-
-            if (container && idField && urlField) {
-                const url = window.location.origin + window.location.pathname + '?id=' + id;
-                idField.innerText = id.slice(0, 8);
-                urlField.innerText = url;
-                container.style.display = 'block';
-            }
-        }
-
-        function showResultsV2() {
-            const data = window.analysisData;
-            if (!data) return;
-
-            // Hide processing UI
-            ELEMENTS.processing.style.display = 'none';
-            ELEMENTS.filePreview.style.display = 'none';
-            ELEMENTS.progressSteps.style.display = 'none';
-
-            const setEl = (id, val) => {
-                const el = document.getElementById(id);
-                if (el) el.textContent = val;
-            };
-
-            setEl('clientNumber', data.clientNumber || '-');
-            setEl('locationField', data.location || 'Chile (General)');
-            setEl('consumption', data.consumption + ' kWh');
-            setEl('currentRate', formatCurrency(data.currentRate) + ' /kWh');
-            setEl('savings1y', formatCurrency(data.savings1y));
-            setEl('savings5y', formatCurrency(data.savings5y));
-            if (document.getElementById('distributorName')) document.getElementById('distributorName').innerText = data.distributorName;
-
-            // Battery
-            const battCard = document.getElementById('batteryCard');
-            if (battCard) {
-                if (data.recommendBattery) {
-                    battCard.style.display = 'block';
-                    setEl('batteryLossAmount', formatCurrency(data.moneyLostToInjection));
-                } else {
-                    battCard.style.display = 'none';
-                }
-            }
-
-            // High Profit Alert
-            const infoPill = document.querySelector('.info-pill');
-            if (infoPill) {
-                if (data.isHighProfit) {
-                    infoPill.innerHTML = `<strong>🔥 ALTA RENTABILIDAD DETECTADA</strong><br>Tu zona (${data.location}) tiene tarifas sobre el promedio.`;
-                    infoPill.style.display = 'block';
-                } else {
-                    infoPill.style.display = 'none';
-                }
-            }
-
-            renderMonthlyChart(data.monthlySavings);
-
-            // Show Section
-            ELEMENTS.results.style.display = 'block';
-            window.scrollTo({ top: ELEMENTS.results.offsetTop - 20, behavior: 'smooth' });
-
-            logTerminal(`Sistema recomendado: ${data.systemSizekW} kWp (${data.panels} paneles)`, 'info');
-        }
-
-        // --- UTILS ---
-        function updateProgressBar(percent) {
-            if (ELEMENTS.progressBar) {
-                ELEMENTS.progressBar.style.width = percent + '%';
-                ELEMENTS.progressBar.textContent = percent + '%';
-            }
-        }
-
-
-
-        function resetApp() {
-            isProcessing = false;
-            selectedFile = null;
-
-            extractedDataTemp = {};
-
-            ELEMENTS.fileInput.value = '';
-            ELEMENTS.filePreview.style.display = 'none';
-            ELEMENTS.processing.style.display = 'none';
-            ELEMENTS.progressSteps.style.display = 'none';
-            ELEMENTS.results.style.display = 'none';
-
-            // Restore Upload Container
-            if (ELEMENTS.uploadContainer) ELEMENTS.uploadContainer.style.display = 'block';
-            else if (ELEMENTS.uploadArea) ELEMENTS.uploadArea.style.display = 'block';
-
-            const termTarget = ELEMENTS.terminalBody || ELEMENTS.terminal;
-            if (termTarget) termTarget.innerHTML = '<div class="terminal-line">> Sistema reiniciado.</div>';
-            updateProgressBar(0);
-
-            // Hide manual fallback if visible
-            const manualForm = document.getElementById('manualFallback');
-            if (manualForm) manualForm.classList.remove('show');
-            if (manualForm) manualForm.style.display = 'none'; // Ensure hidden
-
-            // Stop scanning animation
-            const scanContainer = document.querySelector('.scan-container');
-            if (scanContainer) scanContainer.classList.remove('scanning');
-
-            stopStoriesAnimation();
-        }
-
-        // --- AUTO FALLBACK (No manual wizard) ---
-        function showManualFallback() {
-            logTerminal('⚡ Oracle AI: Ajustando datos automáticamente...', 'warning');
-            const dist = extractedDataTemp?.distributor || 'cge';
-            const consumption = extractedDataTemp?.consumption || 350;
-            const client = extractedDataTemp?.clientNumber || 'Auto';
-            logTerminal(`Distribuidora: ${dist.toUpperCase()} | Consumo estimado: ${consumption} kWh`, 'info');
-            logTerminal('Generando análisis con datos disponibles...', 'info');
-            finalizeProcessing(dist, client, consumption);
-        }
-
-        // --- REGEX HELPERS (Existing Logic) ---
-        function detectDistributor(text) {
-            const lower = text.toLowerCase();
-
-            // Explicit Names
-            if (lower.includes("cge")) return "cge";
-            if (lower.includes("enel")) return "enel";
-            if (lower.includes("chilquinta")) return "chilquinta";
-            if (lower.includes("saesa") || lower.includes("frontel") || lower.includes("luz osorno")) return "saesa";
-
-            // Fallback: Company Legal Names / RUTs / Keywords
-            if (lower.includes("distribucion") && lower.includes("general")) return "cge"; // Generic guess
-            if (lower.includes("grupo saesa")) return "saesa";
-            if (lower.includes("compania general de electricidad")) return "cge";
-
-            return null;
-        }
-
-        function extractDataFromText(text, distributor) {
-            let clientNumber = null;
-            let consumption = null;
-
-            // --- PATTERNS ---
-            const patterns = {
-                cge: {
-                    client: /Nº\s*Cliente[:\s]*(\d{7}-[\dkK])/i,
-                    consumption: /Consumo\s*Facturado[:\s]*(\d+)\s*kWh/i,
-                }
-
-                ,
-                enel: {
-                    client: /Nº\s*Cliente[:\s]*(\d+-\d)/i,
-                    consumption: /Total\s*mes[:\s]*(\d+)\s*kWh/i
-                }
-
-                ,
-                chilquinta: {
-                    client: /Número\s*de\s*Cliente[:\s]*(\d+-\d)/i,
-                    consumption: /Consumo\s*del\s*mes[:\s]*(\d+)/i
-                }
-
-                ,
-                saesa: {
-                    client: /Servicio\s*Nº[:\s]*(\d+)/i,
-                    consumption: /Consumo\s*[:\s]*(\d+)\s*kWh/i
-                }
-            }
-
-                ;
-
-            // Generic fallback
-            const genericClient = /(\d{6,8}-[\dkK])/;
-
-            const genericConsump = /(\d{2,4})\s*kWh/;
-
-            if (distributor && patterns[distributor]) {
-                const p = patterns[distributor];
-                const cMatch = text.match(p.client);
-                const kMatch = text.match(p.consumption);
-                if (cMatch) clientNumber = cMatch[1];
-                if (kMatch) consumption = parseInt(kMatch[1]);
-            }
-
-            // Fallback strategy
-            if (!clientNumber) {
-                const m = text.match(genericClient);
-                if (m) clientNumber = m[1];
-            }
-
-            if (!consumption) {
-                const m = text.match(genericConsump);
-                if (m) consumption = parseInt(m[1]);
-            }
-
-            // --- LOCATION EXTRACTION ---
-            const location = detectLocationFromText(text);
-
-            return {
-                clientNumber,
-                consumption,
-                location
-            }
-
-                ;
-        }
-
-        // --- NEW: Solar Engine & Logic ---
-        // (Old SolarEngine object removed to fix duplicate declaration error)
-
-        function detectLocationFromText(text) {
-            const t = text.toLowerCase();
-            const comunas = ['valparaíso',
-                'valparaiso',
-                'viña del mar',
-                'quilpué',
-                'villa alemana',
-                'concón',
-                'concon',
-                'curacaví',
-                'curacavi',
-                'algarrobo',
-                'cartagena',
-                'casablanca',
-                'san antonio',
-                'santiago',
-                'las condes',
-                'vitacura',
-                'lo barnechea',
-                'providencia',
-                'ñuñoa',
-                'la reina',
-                'colina',
-                'lampa',
-                'tiltil',
-                'til til',
-                'rancagua',
-                'machalí',
-                'talca',
-                'curicó',
-                'chillán',
-                'chillan',
-                'cobquecura',
-                'concepción',
-                'concepcion',
-                'talcahuano',
-                'temuco',
-                'villarrica',
-                'pucón',
-                'valdivia',
-                'la unión',
-                'la union',
-                'osorno',
-                'puerto montt',
-                'puerto varas',
-                'frutillar',
-                'san juan de la costa',
-                'coyhaique',
-                'aysén',
-                'aysen',
-                'antofagasta',
-                'calama',
-                'copiapó',
-                'copiapo',
-                'vallenar',
-                'serena',
-                'coquimbo',
-                'ovalle'
-            ];
-
-            // 1. Look for explicit pattern "Comuna: X"
-            const comunaPattern = /Comuna[: \s]*([a-záéíóúñ\s]+)/i;
-            const m = t.match(comunaPattern);
-
-            if (m && m[1]) {
-                const val = m[1].trim().toLowerCase();
-                // Verify it's in our list or looks like a word
-                if (val.length > 3 && val.length < 30) return capitalize(val);
-            }
-
-            // 2. Scan for known keywords
-            for (let c of comunas) {
-                if (t.includes(c)) return capitalize(c);
-            }
-
-            return null; // Unknown
-        }
-
-        function capitalize(str) {
-            return str.replace(/\b\w/g, l => l.toUpperCase());
-        }
-
-        // --- HELPER FUNCTIONS (Moved to Global) ---
-        function renderMonthlyChart(baseSavings) {
-            const chartContainer = document.getElementById('monthlyChartBars');
-            if (!chartContainer) return;
-            chartContainer.innerHTML = '';
-
-            const factors = [{
-                m: 'E', f: 1.35
-            }
-
-                ,
-            {
-                m: 'F', f: 1.25
-            }
-
-                ,
-            {
-                m: 'M', f: 1.10
-            }
-
-                ,
-            {
-                m: 'A', f: 0.90
-            }
-
-                ,
-            {
-                m: 'M', f: 0.70
-            }
-
-                ,
-            {
-                m: 'J', f: 0.60
-            }
-
-                ,
-            {
-                m: 'J', f: 0.65
-            }
-
-                ,
-            {
-                m: 'A', f: 0.80
-            }
-
-                ,
-            {
-                m: 'S', f: 1.00
-            }
-
-                ,
-            {
-                m: 'O', f: 1.15
-            }
-
-                ,
-            {
-                m: 'N', f: 1.25
-            }
-
-                ,
-            {
-                m: 'D', f: 1.35
-            }
-
-            ];
-
-            const maxFactor = 1.35;
-
-            factors.forEach((item, index) => {
-                const col = document.createElement('div');
-                col.className = 'chart-col';
-
-                col.innerHTML = ` <div class="bar" style="height: 0%" ></div> <div class="bar-label" >${item.m}</div> `;
-                chartContainer.appendChild(col);
-
-                setTimeout(() => {
-                    const bar = col.querySelector('.bar');
-                    const heightPercent = (item.f / maxFactor) * 100;
-                    bar.style.height = heightPercent + '%';
-                }
-
-                    , 200 + (index * 60));
-            });
-        }
-
-        function formatCurrency(val) {
-            return new Intl.NumberFormat('es-CL', {
-                style: 'currency', currency: 'CLP', maximumFractionDigits: 0
-            }).format(val);
-        }
-
-        function validateEmail(email) {
-            return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-        }
-
-        // --- FORM SUBMIT HANDLER ---
-        async function handleDownload(e) {
-            if (e && e.preventDefault) e.preventDefault();
-            console.log('handleDownload called');
-
-            try {
-                const email = (ELEMENTS.userEmail && ELEMENTS.userEmail.value) || document.getElementById('userEmail')?.value || '';
-                const name = (ELEMENTS.userName && ELEMENTS.userName.value) || document.getElementById('userName')?.value || '';
-                const phone = (ELEMENTS.userPhone && ELEMENTS.userPhone.value) || document.getElementById('userPhone')?.value || '';
-
-                if (!validateEmail(email)) {
-                    document.getElementById('emailError').classList.add('show');
-                    return;
-                }
-
-                // UI Feedback
-                const subBtn = ELEMENTS.submitBtn || document.getElementById('submitEmail');
-                const originalText = subBtn.innerText;
-                subBtn.innerText = 'Generando...';
-                subBtn.disabled = true;
-
-                try {
-                    document.getElementById('emailError').classList.remove('show');
-
-                    // 1. Generar PDF, Descargar y obtener Base64
-                    const generatedPdfBase64 = await generatePDF(email, name, phone, true);
-
-                    if (ELEMENTS.successMsg) ELEMENTS.successMsg.classList.add('show');
-
-                    // 2. Send Data to Supabase
-                    await processLeadData(email, name, phone, generatedPdfBase64);
-
-                    setTimeout(() => {
-                        if (ELEMENTS.emailModal) ELEMENTS.emailModal.classList.remove('active');
-                        subBtn.innerText = originalText;
-                        subBtn.disabled = false;
-                        if (ELEMENTS.successMsg) ELEMENTS.successMsg.classList.remove('show');
-                    }
-
-                        , 3000);
-
-                }
-
-                catch (innerError) {
-                    console.error('PDF/Save error:', innerError);
-                    subBtn.innerText = originalText;
-                    subBtn.disabled = false;
-                    alert('Error generando PDF: ' + innerError.message);
-                }
-            }
-
-            catch (outerError) {
-                console.error('handleDownload crashed:', outerError);
-                alert('Error: ' + outerError.message);
-            }
-        }
-
-
-        // --- CONSTANTS & CONFIG ---
-        // --- PDF GENERATION ---
-        async function generatePDF(email, name, phone, shouldSave = true) {
-            try {
-                const {
-                    jsPDF
-                }
-
-                    = window.jspdf;
-                if (!jsPDF) throw new Error('jsPDF no disponible');
-
-                const data = window.analysisData || {}
-
-                    ;
-
-                // Helper: safe element setter
-                const setEl = (id, val) => {
-                    const el = document.getElementById(id);
-                    if (el) el.innerText = val;
-                }
-
-                    ;
-
-                // Helper: Format Money
-                const fmt = (n) => '$' + (n || 0).toLocaleString('es-CL');
-
-                // 1. Populate Hidden HTML Template
-                setEl('pdf-date', new Date().toLocaleDateString());
-                setEl('pdf-project-id', Math.floor(Math.random() * 9000 + 1000));
-                setEl('pdf-footer-date', new Date().toLocaleString());
-
-                // Client Info
-                setEl('pdf-client-name', name || data.name || 'Cliente');
-                setEl('pdf-client-address', data.location || 'Región Metropolitana, Chile');
-
-                // Section 1: Diagnosis
-                setEl('pdf-val-bill', fmt(data.currentCost));
-                setEl('pdf-loss-25y', fmt(data.savings5y || (data.currentCost * 12 * 25 * 1.5))); // Estimación si falta data
-
-                // Section 2: Technical
-                setEl('pdf-val-power', (data.systemSizekW || 0) + ' kWp');
-                setEl('pdf-val-panels', (data.panels || 0) + ' u.');
-                setEl('pdf-val-gen', (data.annualEnergy || 0).toLocaleString('es-CL') + ' kWh');
-
-                // Section 3: Financial
-                setEl('pdf-savings-25y', '+' + fmt(data.estimatedSystemCost * 4)); // Proyección aprox basada en inversión si falta
-
-                // Better calc if available:
-                if (data.savings5y) {
-                    // 5y savings is "cost of inaction", roughly equal to potential savings
-                    // Let's use a multiplier for 25y
-                    setEl('pdf-savings-25y', '+' + fmt(data.annualSavings * 25 * 1.5));
-                }
-
-                setEl('pdf-savings-1y', fmt(data.annualSavings));
-
-                // Image Injection
-                try {
-                    const heroImg = document.getElementById('pdf-hero-img-element');
-                    const heroContainer = document.getElementById('pdf-hero-container');
-
-                    if (heroContainer) {
-
-                        // Use uploaded image if available, else standard placeholder
-                        // For now we use the one in file system if defined, or hide key
-                        // In production this would be a real image data URL
-                        if (typeof SOLAR_PANEL_IMAGE !== 'undefined' && SOLAR_PANEL_IMAGE.length > 100) {
-                            heroImg.src = 'data:image/jpeg;base64,' + SOLAR_PANEL_IMAGE;
-                            heroContainer.style.display = 'block';
-                        }
-
-                        else {
-                            // Try to load local placeholder if running locally, else hide
-                            heroImg.src = 'solar-panel-report.jpg';
-                            heroContainer.style.display = 'block';
-
-                            heroImg.onerror = () => {
-                                heroContainer.style.display = 'none';
-                            }
-                        }
-                    }
-                }
-
-                catch (imgErr) {
-                    console.warn("Image injection skipped:", imgErr);
-                }
-
-                // Chart Injection: Accumulated Flow (Simple Bar visual)
-                const chartContainer = document.getElementById('pdf-chart-container');
-
-                if (chartContainer) {
-                    chartContainer.innerHTML = '';
-                    // Generate 6 bars growing
-                    const growth = [0.2,
-                        0.35,
-                        0.5,
-                        0.7,
-                        0.85,
-                        1.0];
-                    const years = [1,
-                        5,
-                        10,
-                        15,
-                        20,
-                        25];
-
-                    growth.forEach((h, i) => {
-                        const barGroup = document.createElement('div');
-                        barGroup.style.cssText = 'display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;width:12%';
-
-                        const val = document.createElement('div');
-                        // Fake progressive value
-                        const valNum = (data.annualSavings * years[i] * (1 + (i * 0.1)));
-                        val.innerText = '$' + (valNum / 1000000).toFixed(1) + 'M';
-                        val.style.cssText = 'font-size:10px;font-weight:700;color:#059669;margin-bottom:4px';
-
-                        const bar = document.createElement('div');
-
-                        bar.style.cssText = `width:100%; height:${h * 100}%; background:#10b981; border-top-left-radius:6px; border-top-right-radius:6px; opacity:${0.5 + (h / 2)}`;
-
-                        const lbl = document.createElement('div');
-                        lbl.innerText = 'Año ' + years[i];
-                        lbl.style.cssText = 'font-size:10px;color:#64748b;margin-top:4px';
-
-                        barGroup.appendChild(val);
-                        barGroup.appendChild(bar);
-                        barGroup.appendChild(lbl);
-                        chartContainer.appendChild(barGroup);
-                    });
-                }
-
-                // 2. Generate Canvas via html2canvas
-                const element = document.getElementById('pdf-report-visual');
-                if (!element) throw new Error('Plantilla PDF no encontrada');
-
-                // Ensure fonts load
-                if (document.fonts && document.fonts.ready) {
-                    await document.fonts.ready;
-                }
-
-                // Mobile: use lower scale to avoid memory issues
-                const isMobile = window.innerWidth < 768;
-
-                const canvas = await html2canvas(element, {
-                    scale: isMobile ? 1 : 2,
-                    useCORS: true,
-                    backgroundColor: '#ffffff', // White bg for Green theme
-                    logging: false
-                });
-
-                const imgData = canvas.toDataURL('image/png');
-
-                // 3. Create PDF (A4: 210 x 297 mm)
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const pageWidth = pdf.internal.pageSize.getWidth();
-                const pageHeight = pdf.internal.pageSize.getHeight();
-
-                pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
-
-                // 4. Output
-                const pdfBase64 = pdf.output('datauristring');
-
-                if (shouldSave) {
-                    pdf.save(`SolarOracle_Reporte_${name || 'Cliente'}.pdf`);
-                }
-
-                return pdfBase64;
-
-            }
-
-            catch (error) {
-                console.error('PDF Generation Error:', error);
-                logTerminal('Error generando PDF: ' + error.message, 'error');
-                alert('Error al generar el PDF: ' + error.message + '. Intenta nuevamente.');
-                throw error;
-            }
-        }
-
-        // --- STORIES LOGIC ---
-        let storiesInterval = null;
-
-        const STORY_STEPS = [
-            { icon: "📡", text: "Subiendo documento seguro...", sub: "Encriptación bancaria activa" },
-            { icon: "🧠", text: "Inteligencia Artificial leyendo...", sub: "Detectando consumo y cliente" },
-            { icon: "🔍", text: "Identificando distribuidora...", sub: "Consultando tarifas CNE 2025" },
-            { icon: "☀️", text: "Calculando potencial solar...", sub: "Proyectando ahorro a 25 años" },
-            { icon: "✨", text: "Finalizando análisis...", sub: "Preparando tablero de resultados" }
-        ];
-
-        function startStoriesAnimation() {
-            let stepIndex = 0;
-            const iconEl = document.getElementById('storyIcon');
-            const textEl = document.getElementById('storyText');
-            // const subEl = document.getElementById('storySubtext'); // defined in updateStoryUI
-
-            if (storiesInterval) clearInterval(storiesInterval);
-
-            // Initial state
-            updateStoryUI(0);
-
-            storiesInterval = setInterval(() => {
-                stepIndex++;
-                if (stepIndex >= STORY_STEPS.length) stepIndex = STORY_STEPS.length - 1; // Hold on last step
-                updateStoryUI(stepIndex);
-            }
-
-                , 2500);
-        }
-
-        function updateStoryUI(index) {
-            const step = STORY_STEPS[index];
-            const iconEl = document.getElementById('storyIcon');
-            const textEl = document.getElementById('storyText');
-            const subEl = document.getElementById('storySubtext');
-
-            if (!iconEl || !textEl || !subEl) return;
-
-            // Fade out
-            textEl.style.opacity = 0;
-            subEl.style.opacity = 0;
-
-            setTimeout(() => {
-                iconEl.innerText = step.icon;
-                textEl.innerText = step.text;
-                subEl.innerText = step.sub;
-                textEl.style.opacity = 1;
-                subEl.style.opacity = 1;
-            }
-
-                , 300);
-        }
-
-        function stopStoriesAnimation() {
-            if (storiesInterval) clearInterval(storiesInterval);
-        }
-
-        // Colors
-
-
-        // --- HELPERS (Global Scope) ---
-
-
-
-
-        // --- OFFLINE SYNC SYSTEM ---
-        const OFFLINE_STORAGE_KEY = 'so_offline_leads';
-
-        function saveToOfflineStorage(payload) {
-            try {
-                const existing = JSON.parse(localStorage.getItem(OFFLINE_STORAGE_KEY) || '[]');
-                payload.offline_id = 'OFFLINE-' + Date.now() + '-' + Math.floor(Math.random() * 1000);
-                payload.timestamp = new Date().toISOString();
-                existing.push(payload);
-                localStorage.setItem(OFFLINE_STORAGE_KEY, JSON.stringify(existing));
-                console.log("💾 Backup local creado:", payload.offline_id);
-                return payload.offline_id;
-            } catch (e) {
-                console.error("Local Bio Error:", e);
-                return null;
-            }
-        }
-
-        async function syncOfflineLeads() {
-            const leads = JSON.parse(localStorage.getItem(OFFLINE_STORAGE_KEY) || '[]');
-            if (leads.length === 0) return;
-
-            logTerminal(`🔄 Sincronizando ${leads.length} registros pendientes...`, 'warning');
-
-            let successCount = 0;
-            const remaining = [];
-
-            for (const lead of leads) {
-                try {
-                    const resp = await fetch(PROXY_URL, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action: 'save-lead', payload: lead })
-                    });
-                    const result = await resp.json();
-                    if (result.success) successCount++;
-                    else remaining.push(lead);
-                } catch (err) {
-                    remaining.push(lead);
-                }
-            }
-
-            localStorage.setItem(OFFLINE_STORAGE_KEY, JSON.stringify(remaining));
-            if (successCount > 0) {
-                logTerminal(`✅ ${successCount} registros sincronizados con éxito.`, 'success');
-            }
-        }
-
-        // Auto-sync on load
-        window.addEventListener('load', () => {
-            setTimeout(syncOfflineLeads, 4000);
-        });
-
-        async function processLeadData(email, name, phone, generatedPdfBase64, isGhost = false) {
-
-            // 1. SAFETY CHECKS
-            if (!window.analysisData) {
-                console.warn("No analysis data to save.");
-                return;
-            }
-
-            // Format Helpers
-            const fmt = (n) => '$' + (n || 0).toLocaleString('es-CL');
-            const data = window.analysisData;
-
-            // 2. PREPARE PAYLOAD
-            const dbPayload = {
-                tipo: isGhost ? 'GHOST' : 'LEAD',
-                nombre: name || (isGhost ? 'Visitante Anónimo' : 'Sin Nombre'),
-                email: email || (isGhost ? 'pendiente@ghost.lead' : null),
-                telefono: phone || null,
-
-                // Technical Data
-                client_number: data.clientNumber,
-                distribuidora: data.distributorName || window.detectedDistributor || 'General',
-                ubicacion: data.location || 'No detectada',
-                kwh_mensual: data.consumption,
-                ahorro_anual: fmt(data.savings1y),
-                costo_inaccion: fmt(data.savings5y),
-
-                // Metadata
-                user_agent: navigator.userAgent,
-                source_url: window.location.href,
-                project_id: 'SO-' + Math.floor(Math.random() * 100000),
-
-                // File Upload
-                pdf_base64: generatedPdfBase64 || null,
-
-                // Analysis Result Blob
-                analysis_data: JSON.stringify(window.analysisData)
-            };
-
-            // 3. RESPALDO LOCAL INMEDIATO (Cero pérdida)
-            const offlineId = saveToOfflineStorage(dbPayload);
-
-            try {
-                // 4. INTENTO DE SUBIDA NUBE
-                const actionType = (window.currentLeadId && !isGhost) ? 'update-lead' : 'save-lead';
-                const resp = await fetch(PROXY_URL, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        action: actionType,
-                        payload: { ...dbPayload, id: window.currentLeadId }
-                    })
-                });
-
-                const result = await resp.json();
-
-                if (result.success) {
-                    // Limpiar del backup local
-                    const leads = JSON.parse(localStorage.getItem(OFFLINE_STORAGE_KEY) || '[]');
-                    localStorage.setItem(OFFLINE_STORAGE_KEY, JSON.stringify(leads.filter(l => l.offline_id !== offlineId)));
-
-                    // Avisar si era un duplicado
-                    if (result.is_duplicate) {
-                        logTerminal(`🔄 Boleta ya registrada (N° cliente: ${dbPayload.client_number}). Datos actualizados en el sistema.`, 'warning');
-                        // Mostrar toast visual si existe la función
-                        if (typeof showToast === 'function') {
-                            showToast('Boleta ya registrada — datos actualizados ✓', 'info');
-                        }
-                    }
-
-                    return result;
-                } else {
-                    throw new Error(result.error);
-                }
-
-            } catch (err) {
-                console.error("Proxy Error:", err);
-                logTerminal('🛡️ Modo Offline Activo: Registro respaldado localmente.', 'warning');
-            }
-
-            return;
-        }
-
-        function logGhostLead() {
-            const ghostId = Math.floor(Math.random() * 10000);
-            processLeadData('pendiente@ghost.lead', `Visitante [${ghostId}]`, null, null, true)
-                .then(res => {
-                    if (res && res.id) {
-                        window.currentLeadId = res.id;
-                        console.log("Ghost session ID established:", res.id);
-                    }
-                });
-        }
-
-    </script>
-    <!-- PDF TEMPLATE (NEW GREEN DESIGN) -->
-    <div id="pdf-hidden-container">
-        <div class="pdf-page" id="pdf-report-visual"
-            style="width: 794px; height: 1123px; padding: 0; background: white; font-family: 'Outfit', sans-serif;">
-            <!-- Header Background -->
-            <div
-                style="position: absolute; top: 0; left: 0; width: 100%; height: 280px; background: linear-gradient(135deg, #10b981 0%, #047857 100%); border-bottom-right-radius: 50% 40px; border-bottom-left-radius: 50% 40px; z-index: 0;">
-            </div>
-            <!-- Header Content -->
-            <div
-                style="position: relative; z-index: 10; padding: 48px 48px 32px 48px; display: flex; justify-content: space-between; color: white;">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <img src="isotipo_solaroracle_v3.png" alt="S" style="width: 48px; height: 48px; object-fit: contain;">
-                    <div>
-                        <img src="logo-sin-isotipo_solaroracle_3.png" alt="SolarOracle" style="height: 24px; width: auto; filter: brightness(0) invert(1);">
-                        <div style="font-size: 10px; color: #a7f3d0; letter-spacing: 2px; text-transform: uppercase;">
-                            Intelligence System</div>
-                    </div>
-                </div>
-                <div style="text-align: right;">
-                    <div
-                        style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); padding: 8px 16px; border-radius: 8px;">
-                        <div style="font-weight: 700; font-size: 14px;">Estudio de Factibilidad</div>
-                        <div style="font-size: 10px; color: #d1fae5;">ID: #<span id="pdf-project-id">--</span></div>
-                    </div>
-                </div>
-            </div>
-            <!-- Client Info -->
-            <div
-                style="position: relative; z-index: 10; padding: 0 48px 40px 48px; display: flex; justify-content: space-between; align-items: flex-end; color: white;">
                 <div>
-                    <div
-                        style="font-size: 10px; font-weight: 700; color: #a7f3d0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
-                        CLIENTE</div>
-                    <div style="font-size: 32px; font-weight: 700; line-height: 1.1;" id="pdf-client-name">Cliente</div>
-                    <div style="font-size: 12px; color: #ecfdf5; opacity: 0.9;" id="pdf-client-address">Ubicación
-                        detectada</div>
+                    <h2 class="text-4xl font-bold text-slate-900 mb-6">¿Sabías que la luz subirá un <span
+                            class="text-emerald-600">60%</span> este año?</h2>
+                    <p class="text-lg text-slate-600 mb-6">
+                        Las tarifas eléctricas en Chile están en alza histórica. Cada mes que pasas sin paneles solares
+                        es dinero que pierdes para siempre.
+                    </p>
+                    <ul class="space-y-4 mb-8">
+                        <li class="flex items-start gap-3">
+                            <span class="text-emerald-500 text-xl">❌</span>
+                            <span class="text-slate-700">Pagas sobreprecios en horario punta.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-emerald-500 text-xl">❌</span>
+                            <span class="text-slate-700">No tienes respaldo ante cortes de luz.</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="text-emerald-500 text-xl">✅</span>
+                            <span class="text-slate-900 font-bold">La solución: Energía Solar Inteligente.</span>
+                        </li>
+                    </ul>
+                    <a href="https://app.solaroracle.cl"
+                        class="text-emerald-600 font-bold hover:text-emerald-700 flex items-center gap-2">
+                        Calcular mi ahorro potencial &rarr;
+                    </a>
                 </div>
-                <div style="text-align: right;">
-                    <div
-                        style="font-size: 10px; font-weight: 700; color: #a7f3d0; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px;">
-                        FECHA EMISIÓN</div>
-                    <div style="font-weight: 500; font-size: 14px;" id="pdf-date">--</div>
-                </div>
-            </div>
-            <!-- Content Grid -->
-            <div style="padding: 0 48px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px;">
-                <!-- LEFT COLUMN -->
-                <div style="display: flex; flex-direction: column; gap: 32px;">
-                    <!-- 1. DIAG -->
-                    <div>
-                        <h3
-                            style="font-size: 14px; font-weight: 700; color: #1e293b; border-left: 4px solid #10b981; padding-left: 10px; margin-bottom: 15px; text-transform: uppercase;">
-                            1. Diagnóstico Actual</h3>
-                        <div
-                            style="background: #f8fafc; border: 1px solid #f1f5f9; border-radius: 16px; padding: 20px;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                                <span style="font-size: 12px; color: #64748b;">Gasto
-                                    Mensual</span><span style="font-size: 16px; font-weight: 700; color: #1e293b;"
-                                    id="pdf-val-bill">$0</span>
-                            </div>
-                            <div style="border-top: 1px solid #e2e8f0; padding-top: 12px; margin-top: 12px;">
-                                <div
-                                    style="font-size: 10px; font-weight: 700; color: #e11d48; text-transform: uppercase; margin-bottom: 4px;">
-                                    Proyección 25 Años (Sin Solar)</div>
-                                <div style="font-size: 24px; font-weight: 700; color: #e11d48;" id="pdf-loss-25y">$0
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 2. TECH -->
-                    <div>
-                        <h3
-                            style="font-size: 14px; font-weight: 700; color: #1e293b; border-left: 4px solid #10b981; padding-left: 10px; margin-bottom: 15px; text-transform: uppercase;">
-                            2. Solución Técnica</h3>
-                        <div
-                            style="background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 16px; padding: 15px; position: relative; overflow: hidden;">
-                            <!-- Hero Image (Injected) -->
-                            <div id="pdf-hero-container"
-                                style="width: 100%; height: 120px; border-radius: 12px; overflow: hidden; margin-bottom: 15px; position: relative; display:none;">
-                                <img id="pdf-hero-img-element" style="width: 100%; height: 100%; object-fit: cover;">
-                                <div
-                                    style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 8px; background: linear-gradient(to top, rgba(6, 78, 59, 0.8), transparent); color: white; font-size: 10px; font-weight: 700;">
-                                    VISUALIZACIÓN</div>
-                            </div>
-                            <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 15px;">
-                                <div style="font-size: 24px;">☀️</div>
-                                <div>
-                                    <div style="font-size: 20px; font-weight: 700; color: #065f46;" id="pdf-val-power">0
-                                        kWp</div>
-                                    <div style="font-size: 10px; font-weight: 700; color: #059669; text-transform: uppercase;">
-                                        Potencia Instalada</div>
-                                </div>
-                            </div>
-                            <div
-                                style="font-size: 12px; color: #064e3b; display: flex; justify-content: space-between; border-bottom: 1px solid rgba(167, 243, 208, 0.5); padding: 6px 0;">
-                                <span>Paneles (550W)</span><strong id="pdf-val-panels">0</strong>
-                            </div>
-                            <div
-                                style="font-size: 12px; color: #064e3b; display: flex; justify-content: space-between; padding: 6px 0;">
-                                <span>Generación Anual</span><strong id="pdf-val-gen">0 kWh</strong>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <!-- RIGHT COLUMN -->
-                <div style="display: flex; flex-direction: column; gap: 32px;">
-                    <!-- 4. FINANCE -->
-                    <div>
-                        <h3
-                            style="font-size: 14px; font-weight: 700; color: #1e293b; border-left: 4px solid #10b981; padding-left: 10px; margin-bottom: 15px; text-transform: uppercase;">
-                            3. Análisis Financiero</h3>
-                        <div
-                            style="background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
-                            <div style="margin-bottom: 20px;">
-                                <div style="font-size: 12px; color: #64748b; font-weight: 500;">
-                                    Ahorro Estimado (25 Años)</div>
-                                <div style="font-size: 32px; font-weight: 800; color: #059669; letter-spacing: -1px;"
-                                    id="pdf-savings-25y">$0</div>
-                            </div>
-                            <div style="font-size: 12px;">
-                                <div
-                                    style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="color: #475569;">Ahorro 1er
-                                        Año</span><span style="font-weight: 700; color: #059669;"
-                                        id="pdf-savings-1y">$0</span>
-                                </div>
-                                <div style="display: flex; gap: 10px; flex-direction: column; margin-bottom: 40px;">
-                                    <button id="downloadPdfButton" class="cta-button">📥 Descargar PDF</button>
-                                    <button class="reset-button" onclick="resetApp()">🔄 Analizar otra
-                                        boleta</button>
-
-                                    <!-- 6. Contextual WhatsApp -->
-                                    <a href="#" id="whatsappHelpBtn" target="_blank" class="whatsapp-result-btn">
-                                        <span>💬</span> ¿Dudas con este cálculo? Hablar con un Ingeniero
-                                    </a>
-                                </div>
-                                <div
-                                    style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9;">
-                                    <span style="color: #475569;">Retorno
-                                        (Payback)</span><span style="font-weight: 700; color: #1e293b;">3.2
-                                        Años</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <!-- 5. CHART -->
-                    <div>
-                        <h3
-                            style="font-size: 14px; font-weight: 700; color: #1e293b; border-left: 4px solid #10b981; padding-left: 10px; margin-bottom: 15px; text-transform: uppercase;">
-                            4. Flujo Acumulado</h3>
-                        <div id="pdf-chart-container"
-                            style="height: 150px; background: #f8fafc; border-radius: 12px; padding: 15px; display: flex; align-items: flex-end; justify-content: space-between;">
-                            <!-- Bars injected by JS -->
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- Footer -->
-            <div
-                style="position: absolute; bottom: 0; left: 0; width: 100%; padding: 20px 48px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center; font-size: 10px; color: #94a3b8;">
-                <div>Generado automáticamante por SolarOracle.cl</div>
-                <div style="color: #059669; font-weight: 700;">www.solaroracle.cl</div>
             </div>
         </div>
+    </section>
+
+    <!-- Features "How it works" -->
+    <section class="py-24 bg-slate-50" id="features">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h2 class="text-3xl font-bold text-slate-900 mb-16">Análisis Profesional en 3 Pasos</h2>
+
+            <div class="grid md:grid-cols-3 gap-8">
+                <!-- Step 1 -->
+                <div
+                    class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 relative group hover:-translate-y-2 transition duration-300">
+                    <div
+                        class="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto group-hover:scale-110 transition">
+                        📸
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">1. Sube tu Boleta</h3>
+                    <p class="text-slate-600">Toma una foto o sube el PDF de tu cuenta de luz (CGE, Enel, Saesa, etc.).
+                    </p>
+                </div>
+
+                <!-- Step 2 -->
+                <div
+                    class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 relative group hover:-translate-y-2 transition duration-300">
+                    <div
+                        class="w-16 h-16 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto group-hover:scale-110 transition">
+                        🤖
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">2. IA Analiza</h3>
+                    <p class="text-slate-600">Nuestra IA extrae tu consumo, tarifa y ubicación para simular un proyecto
+                        solar real.</p>
+                </div>
+
+                <!-- Step 3 -->
+                <div
+                    class="bg-white p-8 rounded-3xl shadow-lg border border-slate-100 relative group hover:-translate-y-2 transition duration-300">
+                    <div
+                        class="w-16 h-16 bg-amber-100 text-amber-600 rounded-2xl flex items-center justify-center text-3xl mb-6 mx-auto group-hover:scale-110 transition">
+                        💰
+                    </div>
+                    <h3 class="text-xl font-bold text-slate-900 mb-4">3. Descubre tu Ahorro</h3>
+                    <p class="text-slate-600">Recibe un informe PDF detallado con tu ahorro mensual y retorno de
+                        inversión.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Final -->
+    <section class="py-20 bg-emerald-900 relative overflow-hidden text-center mx-4 md:mx-8 rounded-[3rem] mb-12">
+        <div class="absolute inset-0 opacity-20 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')]">
+        </div>
+        <div class="relative z-10 max-w-3xl mx-auto px-4">
+            <h2 class="text-4xl font-bold text-white mb-6">¿Listo para dejar de pagar de más?</h2>
+            <p class="text-emerald-100 mb-10 text-lg">
+                El sol es gratis. La tecnología para aprovecharlo la ponemos nosotros.
+            </p>
+            <a href="https://app.solaroracle.cl"
+                class="inline-block bg-white text-emerald-900 font-bold text-xl px-10 py-5 rounded-full shadow-2xl hover:bg-emerald-50 transition transform hover:scale-105">
+                Comenzar Análisis Gratuito
+            </a>
+            <p class="mt-6 text-emerald-400/60 text-sm">Sin compromisos • No requiere tarjeta de crédito</p>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-12 border-t border-slate-800">
+        <div
+            class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+            <div class="flex items-center gap-2">
+                <img src="logo_solaroracle_v3.png" alt="SolarOracle" class="h-8 w-auto object-contain">
+            </div>
+            <div class="text-sm">
+                &copy; 2025 SolarOracle Intelligence. Todos los derechos reservados.
+            </div>
+            <div class="flex gap-6">
+                <a href="https://app.solaroracle.cl/admin.html"
+                    class="hover:text-white transition font-bold text-emerald-400">Ir a la App
+                    (Login)</a>
+                <a href="#" class="hover:text-white transition">Privacidad</a>
+                <a href="#" class="hover:text-white transition">Términos</a>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Chatbot SDR Widget (P9) -->
+    <div id="sdr-widget-container" class="fixed bottom-6 right-6 z-[100]">
+        <!-- Tooltip -->
+        <div class="absolute -top-12 right-0 bg-slate-900 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xl whitespace-nowrap opacity-0 transition-opacity duration-300 pointer-events-none" id="sdr-tooltip">
+            Cotización B2B rápida 👋
+            <div class="absolute -bottom-1 right-5 w-2 h-2 bg-slate-900 rotate-45"></div>
+        </div>
+        
+        <button id="sdr-widget-btn" onclick="toggleSdrWidget()" onmouseenter="document.getElementById('sdr-tooltip').classList.remove('opacity-0')" onmouseleave="document.getElementById('sdr-tooltip').classList.add('opacity-0')" class="bg-violet-600 hover:bg-violet-700 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-[0_0_20px_rgba(139,92,246,0.6)] hover:scale-110 transition-transform duration-300 relative">
+            <span class="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white rounded-full animate-pulse"></span>
+            <svg id="sdr-icon-chat" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"/></svg>
+            <svg id="sdr-icon-close" class="w-6 h-6 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+        </button>
+
+        <div id="sdr-widget-frame" class="hidden absolute bottom-20 right-0 w-[360px] h-[520px] bg-transparent rounded-3xl shadow-2xl overflow-hidden origin-bottom-right transition-all duration-300 transform scale-95 opacity-0">
+            <iframe src="sdr_chat.html" class="w-full h-full border-none bg-transparent"></iframe>
+        </div>
     </div>
+
+    <script>
+        function toggleSdrWidget() {
+            const frame = document.getElementById('sdr-widget-frame');
+            const iconChat = document.getElementById('sdr-icon-chat');
+            const iconClose = document.getElementById('sdr-icon-close');
+            const tooltip = document.getElementById('sdr-tooltip');
+            
+            tooltip.style.display = 'none'; // Hide tooltip forever after first click
+            
+            if (frame.classList.contains('hidden')) {
+                frame.classList.remove('hidden');
+                iconChat.classList.add('hidden');
+                iconClose.classList.remove('hidden');
+                setTimeout(() => {
+                    frame.classList.remove('scale-95', 'opacity-0');
+                    frame.classList.add('scale-100', 'opacity-100');
+                }, 10);
+            } else {
+                frame.classList.remove('scale-100', 'opacity-100');
+                frame.classList.add('scale-95', 'opacity-0');
+                iconClose.classList.add('hidden');
+                iconChat.classList.remove('hidden');
+                setTimeout(() => {
+                    frame.classList.add('hidden');
+                }, 300);
+            }
+        }
+    </script>
+
 </body>
 
 </html>
