@@ -23,24 +23,24 @@
       "destination": "/dashboard_demo.html"
     },
     {
-      "source": "/(index.html)?",
+      "source": "/",
       "has": [
         {
           "type": "host",
           "value": "app.solaroracle.cl"
         }
       ],
-      "destination": "/index.html?view=app"
+      "destination": "/app.html"
     },
     {
-      "source": "/admin",
+      "source": "/(.*)",
       "has": [
         {
           "type": "host",
           "value": "app.solaroracle.cl"
         }
       ],
-      "destination": "https://www.solaroracle.cl/admin"
+      "destination": "/app.html"
     }
   ]
 }
