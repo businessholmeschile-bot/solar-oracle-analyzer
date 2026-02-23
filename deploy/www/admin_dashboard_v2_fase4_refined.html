@@ -787,7 +787,12 @@
 
                 <!-- Scan Log -->
                 <div class="glass-card p-6">
-                    <h3 class="font-black text-slate-700 mb-4 flex items-center gap-2">📋 Historial de Escaneos</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-black text-slate-700 flex items-center gap-2">📋 Historial de Escaneos</h3>
+                        <button onclick="clearOracleLogs()" class="text-[10px] font-black text-slate-400 hover:text-red-500 uppercase tracking-widest transition flex items-center gap-1">
+                            🗑️ Limpiar Historial
+                        </button>
+                    </div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-sm">
                             <thead>
@@ -1752,11 +1757,11 @@
                 const name = (lead.nombre_empresa || 'Empresa').substring(0, 22);
 
                 return `
-                <div class="flex items-center gap-2 group">
+                <div onclick="openLeadCard('${lead.id}')" class="flex items-center gap-2 group cursor-pointer hover:bg-slate-50 p-1.5 rounded-xl transition-all">
                     <span class="text-base w-6 flex-shrink-0 text-center">${medal}</span>
                     <div class="flex-1 min-w-0">
                         <div class="flex items-center justify-between mb-0.5">
-                            <span class="text-xs font-bold text-slate-700 truncate">${name}</span>
+                            <span class="text-xs font-bold text-slate-700 truncate group-hover:text-violet-600">${name}</span>
                             <div class="flex items-center gap-1 flex-shrink-0">
                                 ${isHot ? '<span class="text-[9px]">🔥</span>' : ''}
                                 <span class="text-[10px] font-black" style="color:${barColor}">${score}</span>
@@ -2087,7 +2092,7 @@
                 </button>`;
                 const hora = new Date(lead.detectado_en).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' });
                 return `
-                <tr class="border-b border-slate-50 hover:bg-slate-50 transition lead-row">
+                <tr onclick="openLeadCard('${lead.id}')" class="border-b border-slate-50 hover:bg-violet-50/30 transition lead-row cursor-pointer group">
                     <td class="py-3 px-2">${webLink}</td>
                     <td class="py-3 px-2 font-black ${scoreColor}">${lead.score || 0}</td>
                     <td class="py-3 px-2 text-slate-500 text-xs">${lead.ciudad || '—'}</td>
@@ -2176,8 +2181,15 @@
             }
 
             const statusColors = { 'COMPLETED': 'text-emerald-600', 'RUNNING': 'text-blue-500 animate-pulse', 'ERROR': 'text-red-500' };
-            // User requested to see only the latest scan for cleanup
-            tbody.innerHTML = logs.slice(0, 1).map(log => {
+            // Only show COMPLETED or RUNNING to keep it clean
+            const filteredLogs = logs.filter(l => l.status === 'COMPLETED' || l.status === 'RUNNING');
+            
+            if (!filteredLogs.length) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center py-6 text-slate-300 text-xs italic">No hay escaneos exitosos registrados.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filteredLogs.slice(0, 15).map(log => {
                 const dur = log.duration_ms ? `${(log.duration_ms / 1000).toFixed(1)}s` : '—';
                 const color = statusColors[log.status] || 'text-slate-500';
                 return `
@@ -2960,6 +2972,22 @@
                     </div>`).join('') : ''}
                 </div>
             </div>` : ''}`;
+        }
+        async function clearOracleLogs() {
+            if (!confirm('¿Seguro que quieres borrar el historial de escaneos?')) return;
+            try {
+                const pass = AUTH_TOKEN || 'solar2026';
+                const resp = await fetch(PROXY_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'clear-scan-logs', payload: { password: pass } })
+                });
+                const res = await resp.json();
+                if (res.success) {
+                    renderScanLog([]);
+                    alert('Historial limpiado.');
+                }
+            } catch (e) { console.error(e); }
         }
     </script>
 </body>
