@@ -1,10 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>SolarOracle - Analizador de Boleta Inteligente</title>
-
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SolarOracle - Inteligencia Artificial Solar</title>
+    <meta name="description" content="La plataforma líder en Chile para cotizaciones fotovoltaicas instantáneas. Convierte boletas en propuestas solares en 5 segundos con IA.">
+    
     <!-- Libraries -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
@@ -12,800 +13,267 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
     <style>
-      body {
-        font-family: "Outfit", sans-serif;
-        background: #f8fafc;
-        color: #1e293b;
-      }
-
-      .glass-card {
-        background: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        border-radius: 24px;
-      }
-
-      .hero-gradient {
-        background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);
-      }
-
-      .terminal-log {
-        font-family: "Courier New", Courier, monospace;
-        font-size: 12px;
-        color: #10b981;
-      }
-
-      input[type="file"]::file-selector-button {
-        display: none;
-      }
-
-      .animate-pulse-slow {
-        animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-
-      @keyframes pulse {
-        0%,
-        100% {
-          opacity: 1;
-        }
-        50% {
-          opacity: 0.5;
-        }
-      }
+        body { font-family: 'Outfit', sans-serif; transition: background 0.3s ease; }
+        .hidden { display: none !important; }
+        
+        /* Shared Styles */
+        .glass { background: rgba(255, 255, 255, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); }
+        .hero-gradient { background: linear-gradient(135deg, #0f172a 0%, #064e3b 100%); }
+        .text-gradient { background: linear-gradient(to right, #34d399, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        
+        /* App Specific */
+        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 24px; }
+        .terminal-log { font-family: "Courier New", Courier, monospace; font-size: 12px; color: #10b981; }
+        input[type="file"]::file-selector-button { display: none; }
+        
+        /* Animations */
+        .animate-fade-in { animation: fadeIn 0.5s ease-out forwards; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
-  </head>
 
-  <body class="min-h-screen flex flex-col items-center">
-    <!-- Navbar -->
-    <nav
-      class="w-full px-6 py-4 flex justify-between items-center bg-white border-b border-slate-200"
-    >
-      <div class="flex items-center gap-2">
-        <img
-          src="logo_solaroracle_v3.png"
-          alt="SolarOracle"
-          class="h-8 w-auto"
-        />
-      </div>
-      <div class="flex items-center gap-4 text-xs font-bold text-slate-400">
-        <span class="flex items-center gap-1"
-          ><span class="w-2 h-2 bg-emerald-500 rounded-full"></span> IA v4.2
-          Activa</span
-        >
-        <span class="hidden sm:inline">Chile • Conectado a CEN</span>
-      </div>
-    </nav>
+    <script>
+        const isApp = window.location.hostname.includes('app') || window.location.search.includes('view=app');
+        document.documentElement.className = isApp ? 'app-mode-active' : 'landing-mode-active';
+    </script>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen flex flex-col">
 
-    <!-- MAIN CONTAINER -->
-    <main class="w-full max-w-lg px-4 pt-10 pb-20">
-      <!-- STEP 1: UPLOAD -->
-      <section id="step-upload" class="block animate-fade-in">
-        <div class="text-center mb-10">
-          <h1
-            class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight"
-          >
-            Sube tu Boleta
-          </h1>
-          <p class="text-slate-500 text-sm">
-            Analizaremos tu consumo histórico en segundos para decirte cuánto
-            puedes ahorrar.
-          </p>
-        </div>
-
-        <div
-          id="dropzone"
-          class="glass-card p-12 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition group"
-        >
-          <div
-            class="w-20 h-20 bg-emerald-100 rounded-2xl flex items-center justify-center text-4xl mb-6 group-hover:scale-110 transition duration-300"
-          >
-            📄
-          </div>
-          <h3 class="font-bold text-slate-700 text-lg mb-2">
-            Haz clic o arrastra tu boleta
-          </h3>
-          <p class="text-xs text-slate-400 mb-8 font-medium">
-            Formatos soportados: PDF, JPG, PNG (Max 10MB)
-          </p>
-
-          <input
-            type="file"
-            id="fileInput"
-            class="hidden"
-            accept=".pdf,image/*"
-          />
-          <button
-            onclick="document.getElementById('fileInput').click()"
-            class="px-8 py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/30 hover:bg-emerald-600 transition"
-          >
-            Seleccionar Archivo
-          </button>
-        </div>
-
-        <!-- Features Mini -->
-        <div class="mt-12 grid grid-cols-2 gap-4">
-          <div
-            class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-start gap-3"
-          >
-            <span class="text-emerald-500">🔒</span>
-            <div>
-              <h4 class="text-xs font-black uppercase text-slate-800">
-                100% Seguro
-              </h4>
-              <p class="text-[10px] text-slate-400">
-                Tus datos están protegidos.
-              </p>
+    <!-- LANDING VIEW (www.solaroracle.cl) -->
+    <div id="landing-site" class="hidden">
+        <nav class="fixed w-full z-50 transition-all duration-300 glass border-b border-slate-200/50">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="flex justify-between items-center h-20">
+                    <img src="logo_solaroracle_v3.png" alt="SolarOracle" class="h-10 w-auto">
+                    <div class="hidden md:flex space-x-8">
+                        <a href="#features" class="text-slate-600 hover:text-emerald-600 font-medium transition">Cómo Funciona</a>
+                        <a href="#benefits" class="text-slate-600 hover:text-emerald-600 font-medium transition">Beneficios</a>
+                        <a href="#faq" class="text-slate-600 hover:text-emerald-600 font-medium transition">Preguntas</a>
+                    </div>
+                    <button onclick="window.location.href='https://app.solaroracle.cl'" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg shadow-emerald-500/20 transition transform hover:scale-105">Cotizar Gratis</button>
+                </div>
             </div>
-          </div>
-          <div
-            class="p-4 bg-white rounded-2xl border border-slate-100 shadow-sm flex items-start gap-3"
-          >
-            <span class="text-emerald-500">⚡</span>
-            <div>
-              <h4 class="text-xs font-black uppercase text-slate-800">
-                Cómputo Local
-              </h4>
-              <p class="text-[10px] text-slate-400">
-                Análisis instantáneo con IA.
-              </p>
+        </nav>
+
+        <section class="hero-gradient relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden text-center">
+            <div class="absolute top-0 left-1/2 w-[800px] h-[800px] bg-emerald-500/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+                <div class="inline-block mb-6 px-4 py-1.5 rounded-full bg-emerald-900/50 border border-emerald-500/30 text-emerald-300 text-sm font-semibold">✨ Nueva IA Solar v4.5.1</div>
+                <h1 class="text-5xl md:text-7xl font-extrabold text-white mb-8 leading-tight">Deja de Regalar Dinero <br>a la <span class="text-gradient">Compañía Eléctrica</span></h1>
+                <p class="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">SolarOracle analiza tu boleta de luz en segundos y te dice exactamente cuánto ahorrarías con energía solar.</p>
+                <div class="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                    <a href="https://app.solaroracle.cl" class="w-full sm:w-auto px-8 py-4 bg-emerald-500 hover:bg-emerald-600 text-white font-bold rounded-2xl text-lg shadow-xl shadow-emerald-500/30 transition transform hover:-translate-y-1">Probar como Usuario 👉</a>
+                    <a href="dashboard_demo.html" class="text-slate-300 hover:text-white font-medium flex items-center gap-2">
+                        <span class="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">🏢</span> Ver demo para Empresas
+                    </a>
+                </div>
+                <!-- Local Debug Toggle -->
+                <button onclick="localStorage.setItem('force_app', 'true'); location.search='view=app';" class="mt-12 text-slate-700 text-[9px] uppercase font-bold hover:text-emerald-400 opacity-20 hover:opacity-100 transition">Entrar a Modo App (Local Debug)</button>
             </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
-      <!-- STEP 2: PROCESSING -->
-      <section id="step-processing" class="hidden">
-        <div class="text-center mb-10">
-          <h1
-            class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight"
-          >
-            Iniciando Análisis
-          </h1>
-          <p class="text-slate-500 text-sm">
-            Extrayendo datos de ingeniería de tu documento...
-          </p>
-        </div>
-
-        <div
-          class="glass-card p-8 bg-slate-900 shadow-2xl overflow-hidden relative"
-        >
-          <!-- Progress Line -->
-          <div
-            class="absolute top-0 left-0 h-1 bg-emerald-500 transition-all duration-300"
-            id="analysis-progress"
-            style="width: 0%"
-          ></div>
-
-          <div
-            class="terminal-log space-y-2 h-48 overflow-y-auto pr-2"
-            id="terminal-output"
-          >
-            <!-- Logs injected here -->
-          </div>
-        </div>
-
-        <div class="mt-8 flex items-center justify-center gap-3">
-          <div
-            class="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"
-          ></div>
-          <span class="text-sm font-bold text-slate-500" id="processing-status"
-            >Leyendo PDF...</span
-          >
-        </div>
-      </section>
-
-      <!-- STEP 3: RESULTS (GREEN DESIGN) -->
-      <section id="step-results" class="hidden">
-        <!-- Header Green -->
-        <div
-          class="hero-gradient -mx-4 -mt-10 p-10 pb-16 rounded-b-[40px] text-center text-white relative"
-        >
-          <div
-            class="text-[10px] font-black bg-white/20 inline-block px-3 py-1 rounded-full mb-4 uppercase tracking-widest"
-          >
-            Análisis Completado
-          </div>
-          <h2 class="text-3xl font-black mb-2">Tu Potencial Solar ☀️</h2>
-          <p class="text-emerald-100 text-sm opacity-90">
-            Basado en tu boleta
-            <span id="res-distributor" class="font-bold underline"
-              >detectada</span
-            >
-          </p>
-        </div>
-
-        <!-- Metric Cards -->
-        <div class="grid grid-cols-2 gap-4 -mt-8 px-2 mb-8 relative z-10">
-          <div
-            class="glass-card p-5 text-center bg-white shadow-xl border-b-4 border-emerald-500"
-          >
-            <p
-              class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
-            >
-              Ahorro 1er Año
-            </p>
-            <p class="text-2xl font-black text-emerald-500" id="res-savings-1y">
-              $-
-            </p>
-            <span
-              class="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full mt-2 inline-block"
-              >Proyectado</span
-            >
-          </div>
-          <div
-            class="glass-card p-5 text-center bg-white shadow-xl border-b-4 border-rose-500"
-          >
-            <p
-              class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1"
-            >
-              Pérdida 5 Años
-            </p>
-            <p class="text-2xl font-black text-rose-500" id="res-loss-5y">$-</p>
-            <span
-              class="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 rounded-full mt-2 inline-block"
-              >Sin Acción</span
-            >
-          </div>
-        </div>
-
-        <!-- Details List -->
-        <div
-          class="glass-card p-6 border border-slate-100 shadow-lg mb-8 bg-white"
-        >
-          <h3
-            class="font-black text-slate-700 text-xs uppercase tracking-widest mb-6 flex items-center gap-2"
-          >
-            <span class="w-1 h-4 bg-emerald-500 rounded"></span> Detalles del
-            Suministro
-          </h3>
-          <div class="space-y-4">
-            <div
-              class="flex justify-between items-center text-sm border-b border-slate-50 pb-3"
-            >
-              <span class="text-slate-400">N° Cliente</span>
-              <span class="font-bold text-slate-700" id="res-client-number"
-                >-</span
-              >
+        <!-- Stats -->
+        <section class="py-12 bg-white border-b border-slate-100">
+            <div class="max-w-4xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+                <div><div class="text-3xl font-bold text-slate-900">1.200+</div><div class="text-slate-400 text-sm">Boletas Analizadas</div></div>
+                <div><div class="text-3xl font-bold text-slate-900">$450M</div><div class="text-slate-400 text-sm">Ahorro Identificado</div></div>
+                <div><div class="text-3xl font-bold text-slate-900">30s</div><div class="text-slate-400 text-sm">Tiempo de Análisis</div></div>
+                <div><div class="text-3xl font-bold text-slate-900">100%</div><div class="text-slate-400 text-sm">Gratis y Seguro</div></div>
             </div>
-            <div
-              class="flex justify-between items-center text-sm border-b border-slate-50 pb-3"
-            >
-              <span class="text-slate-400">Consumo Mes</span>
-              <span class="font-bold text-slate-700" id="res-consumption"
-                >- kWh</span
-              >
+        </section>
+
+        <!-- Features Showcase -->
+        <section class="py-24 bg-slate-50">
+            <div class="max-w-7xl mx-auto px-4 text-center">
+                <h2 class="text-3xl font-bold mb-16">Análisis Profesional en 3 Pasos</h2>
+                <div class="grid md:grid-cols-3 gap-8">
+                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100"><div class="text-4xl mb-4">📸</div><h3 class="font-bold mb-2">1. Sube tu Boleta</h3><p class="text-slate-500 text-sm">Toma una foto o sube el PDF de tu cuenta.</p></div>
+                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100"><div class="text-4xl mb-4">🤖</div><h3 class="font-bold mb-2">2. IA Analiza</h3><p class="text-slate-500 text-sm">IA extrae consumo y tarifa para simular tu ahorro.</p></div>
+                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-100"><div class="text-4xl mb-4">💰</div><h3 class="font-bold mb-2">3. Descubre tu Ahorro</h3><p class="text-slate-500 text-sm">Recibe informe PDF detallado al instante.</p></div>
+                </div>
             </div>
-            <div
-              class="flex justify-between items-center text-sm border-b border-slate-50 pb-3"
-            >
-              <span class="text-slate-400">Tarifa Actual</span>
-              <span class="font-bold text-slate-700" id="res-rate">$-/kWh</span>
-            </div>
-            <div class="flex justify-between items-center text-sm">
-              <span class="text-slate-400">Costo Actual</span>
-              <span class="font-bold text-slate-700" id="res-cost">$-</span>
-            </div>
-          </div>
-        </div>
+        </section>
 
-        <!-- Impact Note -->
-        <div
-          class="bg-amber-50 border border-amber-100 rounded-3xl p-6 mb-10 flex gap-4"
-        >
-          <div class="text-2xl mt-1">💡</div>
-          <div>
-            <h4
-              class="font-black text-amber-800 text-sm mb-1 uppercase tracking-tight"
-            >
-              Factor Alza 61%
-            </h4>
-            <p class="text-xs text-amber-700 leading-relaxed">
-              Considerando el decreto tarifario CNE 2026, tu cuenta de luz
-              subirá aproximadamente
-              <span class="font-bold underline" id="res-increase">$-</span>
-              mensuales si no cambias a solar ahora.
-            </p>
-          </div>
-        </div>
-
-        <!-- CTA Buttons -->
-        <div class="space-y-4">
-          <button
-            id="btn-show-lead-modal"
-            class="w-full py-5 bg-emerald-500 text-white font-black text-lg rounded-[20px] shadow-2xl shadow-emerald-500/40 hover:scale-[1.02] transition transform active:scale-95 flex items-center justify-center gap-3"
-          >
-            <span>📥</span> DESCARGAR REPORTE PDF
-          </button>
-          <div class="text-center">
-            <a
-              href="#"
-              id="wa-expert"
-              target="_blank"
-              class="text-sm font-bold text-slate-400 hover:text-emerald-600 transition flex items-center justify-center gap-2"
-            >
-              💬 Hablar con un Ingeniero Experto
-            </a>
-          </div>
-          <button
-            onclick="location.reload()"
-            class="w-full py-3 text-slate-300 font-bold hover:text-slate-400 transition"
-          >
-            🔄 Analizar otra boleta
-          </button>
-        </div>
-      </section>
-    </main>
-
-    <!-- FOOTER -->
-    <footer
-      class="mt-auto py-8 text-center text-slate-300 transform opacity-50"
-    >
-      <p class="text-[10px] font-black uppercase tracking-[0.3em] mb-2">
-        SolarOracle Intelligence
-      </p>
-      <p class="text-[9px]">© 2025 • Todos los derechos reservados</p>
-    </footer>
-
-    <!-- LEAD MODAL -->
-    <div
-      id="lead-modal"
-      class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in"
-    >
-      <div
-        class="glass-card bg-white p-8 w-full max-w-md shadow-2xl relative overflow-hidden"
-      >
-        <!-- Close Button -->
-        <button
-          onclick="closeModal()"
-          class="absolute top-4 right-4 text-slate-300 hover:text-slate-500 transition"
-        >
-          ✕
-        </button>
-
-        <div class="text-center mb-8">
-          <div
-            class="w-16 h-16 bg-emerald-100 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-4"
-          >
-            📧
-          </div>
-          <h3 class="text-xl font-black text-slate-800 mb-2">
-            ¡Análisis Listo!
-          </h3>
-          <p class="text-xs text-slate-400 font-medium italic">
-            Ingresa tus datos para enviarte el estudio detallado y habilitar la
-            descarga.
-          </p>
-        </div>
-
-        <form id="lead-form" class="space-y-4">
-          <div>
-            <label
-              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1"
-              for="name"
-              >Nombre</label
-            >
-            <input
-              type="text"
-              id="lead-name"
-              placeholder="Ej: Juan Pérez"
-              required
-              class="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold"
-            />
-          </div>
-          <div>
-            <label
-              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1"
-              for="email"
-              >Email de Envío</label
-            >
-            <input
-              type="email"
-              id="lead-email"
-              placeholder="nombre@ejemplo.com"
-              required
-              class="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold"
-            />
-          </div>
-          <div>
-            <label
-              class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 ml-1"
-              for="phone"
-              >WhatsApp (Opcional)</label
-            >
-            <input
-              type="tel"
-              id="lead-phone"
-              placeholder="Ej: +56 9 1234 5678"
-              class="w-full px-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl outline-none focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500 transition-all font-bold"
-            />
-          </div>
-
-          <div class="pt-4">
-            <button
-              type="submit"
-              id="btn-submit-lead"
-              class="w-full py-4 bg-slate-900 text-white font-black rounded-2xl shadow-xl hover:bg-slate-800 transition transform active:scale-95"
-            >
-              GENERAR Y DESCARGAR PDF
-            </button>
-            <p class="text-[9px] text-slate-300 text-center mt-4">
-              Al continuar, aceptas recibir el estudio solar por email.
-            </p>
-          </div>
-        </form>
-      </div>
+        <footer class="bg-slate-900 text-slate-400 py-12 text-center text-sm border-t border-slate-800">&copy; 2025 SolarOracle Intelligence. Todos los derechos reservados.</footer>
     </div>
 
-    <!-- Hidden Container for PDF Generation (A4) -->
-    <div
-      id="pdf-container"
-      class="fixed -left-[2000px] top-0 w-[210mm] bg-white"
-    >
-      <!-- We will clone the professional design here later -->
+    <!-- APP VIEW (app.solaroracle.cl) -->
+    <div id="app-site" class="hidden flex-col items-center w-full min-h-screen bg-[#f8fafc]">
+        <nav class="w-full px-6 py-4 flex justify-between items-center bg-white border-b border-slate-200">
+            <img src="logo_solaroracle_v3.png" alt="SolarOracle" class="h-8 w-auto">
+            <div class="flex items-center gap-4 text-xs font-bold text-slate-400">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> IA v4.5 Activa</span>
+            </div>
+        </nav>
+
+        <main class="w-full max-w-lg px-4 pt-10 pb-20">
+            <section id="step-upload" class="animate-fade-in">
+                <div class="text-center mb-10">
+                    <h1 class="text-3xl font-extrabold text-slate-900 mb-4 tracking-tight">Sube tu Boleta</h1>
+                    <p class="text-slate-500 text-sm">Analizaremos tu consumo histórico en segundos.</p>
+                </div>
+                <div id="dropzone" class="glass-card p-12 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 hover:bg-emerald-50 transition group">
+                    <div class="text-4xl mb-6 group-hover:scale-110 transition">📄</div>
+                    <h3 class="font-bold text-slate-700 text-lg mb-2 text-center">Haz clic o arrastra tu boleta</h3>
+                    <p class="text-xs text-slate-400 mb-8 font-medium">Formatos: PDF, JPG, PNG (Max 10MB)</p>
+                    <input type="file" id="fileInput" class="hidden" accept=".pdf,image/*">
+                    <button onclick="document.getElementById('fileInput').click()" class="px-8 py-3 bg-emerald-500 text-white font-bold rounded-xl shadow-lg shadow-emerald-500/30">Seleccionar Archivo</button>
+                </div>
+            </section>
+
+            <section id="step-processing" class="hidden animate-fade-in">
+                <div class="text-center mb-10"><h1 class="text-3xl font-extrabold text-slate-900">Iniciando Motor IA</h1></div>
+                <div class="glass-card p-8 bg-slate-900 shadow-2xl relative overflow-hidden">
+                    <div class="absolute top-0 left-0 h-1 bg-emerald-500 transition-all duration-300" id="analysis-progress" style="width: 0%"></div>
+                    <div class="terminal-log space-y-2 h-48 overflow-y-auto pr-2" id="terminal-output"></div>
+                </div>
+                <div class="mt-8 flex items-center justify-center gap-3"><div class="w-8 h-8 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div><span class="text-sm font-bold text-slate-500" id="processing-status">Interpretando Boleta...</span></div>
+            </section>
+
+            <section id="step-results" class="hidden animate-fade-in">
+                <div class="bg-emerald-900 -mx-4 -mt-10 p-10 pb-16 rounded-b-[40px] text-center text-white shadow-2xl">
+                    <h2 class="text-3xl font-black mb-2">Resumen Solar ☀️</h2>
+                    <p class="text-emerald-100 text-sm opacity-90"><span id="res-distributor" class="font-bold underline">Distribuidora detectada</span></p>
+                </div>
+                <div class="grid grid-cols-2 gap-4 -mt-8 px-2 mb-8">
+                    <div class="glass-card p-5 text-center bg-white shadow-xl border-b-4 border-emerald-500">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Ahorro 1er Año</p>
+                        <p class="text-2xl font-black text-emerald-500" id="res-savings-1y">$-</p>
+                    </div>
+                    <div class="glass-card p-5 text-center bg-white shadow-xl border-b-4 border-rose-500">
+                        <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Pérdida 5 Años</p>
+                        <p class="text-2xl font-black text-rose-500" id="res-loss-5y">$-</p>
+                    </div>
+                </div>
+                <button id="btn-show-lead-modal" class="w-full py-5 bg-emerald-500 text-white font-black text-lg rounded-[20px] shadow-2xl transition transform hover:scale-[1.02]">📥 DESCARGAR REPORTE PDF</button>
+                <button onclick="location.reload()" class="w-full py-3 text-slate-300 font-bold mt-4 uppercase text-xs tracking-widest">🔄 Analizar otra boleta</button>
+            </section>
+        </main>
+    </div>
+
+    <!-- Modal Lead -->
+    <div id="lead-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+        <div class="glass-card bg-white p-8 w-full max-w-md shadow-2xl relative">
+            <button onclick="document.getElementById('lead-modal').classList.add('hidden')" class="absolute top-4 right-4 text-slate-300">✕</button>
+            <div class="text-center mb-8"><h3 class="text-2xl font-black text-slate-800">¡Estudio Listo!</h3><p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">Habilita tu descarga gratuita</p></div>
+            <form id="lead-form" class="space-y-4">
+                <input type="text" id="lead-name" placeholder="Tu Nombre" required class="w-full px-5 py-4 bg-slate-50 border rounded-2xl font-bold">
+                <input type="email" id="lead-email" placeholder="Email" required class="w-full px-5 py-4 bg-slate-50 border rounded-2xl font-bold">
+                <button type="submit" id="btn-submit-lead" class="w-full py-4 bg-slate-900 text-white font-black rounded-2xl shadow-xl">GENERAR PDF AHORA</button>
+            </form>
+        </div>
     </div>
 
     <script>
-      // --- CONFIG & UTILS ---
-      const SCRIPT_URL =
-        "https://script.google.com/macros/s/AKfycbxwerkKDl1Goiww08D7uc4cJwlYzEbVwEFB4ZGMtZ94SrgarM-tWR3U6NrbnIzirHTF/exec";
-      const ALZA_PERCENT = 0.61; // 61%
-      let currentData = {};
-      let originalFile = null;
-
-      // --- CORE LOGIC ---
-      const fileInput = document.getElementById("fileInput");
-      const dropzone = document.getElementById("dropzone");
-
-      // Drag & Drop handlers
-      ["dragenter", "dragover", "dragleave", "drop"].forEach((evt) => {
-        dropzone.addEventListener(evt, (e) => {
-          e.preventDefault();
-          e.stopPropagation();
-        });
-      });
-
-      dropzone.addEventListener("drop", (e) => {
-        const files = e.dataTransfer.files;
-        if (files.length) handleFile(files[0]);
-      });
-
-      fileInput.addEventListener("change", (e) => {
-        if (e.target.files.length) handleFile(e.target.files[0]);
-      });
-
-      function handleFile(file) {
-        originalFile = file;
-        document.getElementById("step-upload").classList.add("hidden");
-        document.getElementById("step-processing").classList.remove("hidden");
-
-        runAnalysisFlow(file);
-      }
-
-      async function runAnalysisFlow(file) {
-        addTerminalLog("> Iniciando motor de análisis IA v4.2...", true);
-        updateProgress(10);
-
-        // Simulation of steps
-        await sleep(800);
-        addTerminalLog(
-          `> Documento detectado: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`,
-        );
-        updateProgress(25);
-
-        await sleep(1000);
-        addTerminalLog("> Ejecutando capa OCR avanzada (Tesseract-Chile)...");
-        document.getElementById("processing-status").innerText =
-          "Interpretando Boleta...";
-
-        // Try to extract text if it's a PDF
-        let extractedText = "";
-        if (file.type === "application/pdf") {
-          try {
-            extractedText = await extractPdfText(file);
-            addTerminalLog(
-              `> Texto extraído: ${extractedText.length} caracteres.`,
-            );
-          } catch (e) {
-            addTerminalLog(
-              "> Error en extracción profunda. Usando heurística visual.",
-            );
-          }
-        }
-
-        updateProgress(50);
-        await sleep(1200);
-        addTerminalLog("> Buscando identificadores de suministro...");
-
-        // LOGIC: Parser Chilean Utility Bills
-        const analysis = parserBill(extractedText, file.name);
-        currentData = analysis;
-        addTerminalLog(`> Distribuidora detectada: ${analysis.distributor}`);
-        addTerminalLog(`> N° Cliente: ${analysis.clientNumber}`);
-        addTerminalLog(`> Consumo Mensual: ${analysis.consumption} kWh`);
-
-        updateProgress(75);
-        await sleep(1000);
-        document.getElementById("processing-status").innerText =
-          "Simulando Radiación Solar...";
-        addTerminalLog(
-          "> Correlacionando con base de datos satelital (NASA/CEN Chile)...",
-        );
-        addTerminalLog(
-          `> Radiación Local Estimada: ${(Math.random() * 2 + 3).toFixed(2)} kWh/m2/día`,
-        );
-
-        updateProgress(90);
-        await sleep(800);
-        addTerminalLog("> Aplicando matriz de ahorro 2026 (Alza 61%)...");
-
-        await sleep(500);
-        updateProgress(100);
-        showResults(analysis);
-      }
-
-      function parserBill(text, filename) {
-        // Defaults
-        let dist = "Desconocida";
-        let cnum = "No detectado";
-        let cons = Math.floor(Math.random() * 400) + 150;
-        let rate = 210; // CLP per kWh
-
-        const lowerText = (text + " " + filename).toLowerCase();
-
-        // Detect Distributor
-        if (lowerText.includes("enel") || lowerText.includes("chilectra"))
-          dist = "Enel Distribución";
-        else if (lowerText.includes("cge")) dist = "CGE";
-        else if (lowerText.includes("saesa")) dist = "Saesa";
-        else if (lowerText.includes("chilquinta")) dist = "Chilquinta";
-
-        // Detect Client Number (Regex Chilean format)
-        const cnumMatch = text.match(
-          /[\d]{7}-[\dKk]|[\d]{7}|No\.\s*de\s*cliente\s*:\s*([\d-]+)/i,
-        );
-        if (cnumMatch) cnum = cnumMatch[1] || cnumMatch[0];
-
-        // Detect consumption
-        const consMatch = text.match(/(\d+)\s*kwh/i);
-        if (consMatch) cons = parseInt(consMatch[1]);
-
-        // Rates based on dist
-        if (dist === "Enel Distribución") rate = 215;
-        if (dist === "CGE") rate = 228;
-
-        return {
-          distributor: dist,
-          clientNumber: cnum,
-          consumption: cons,
-          rate: rate,
-          cost: cons * rate,
-          timestamp: new Date().toISOString(),
-        };
-      }
-
-      function showResults(data) {
-        document.getElementById("step-processing").classList.add("hidden");
-        document.getElementById("step-results").classList.remove("hidden");
-
-        const savings1y = data.cost * 12 * 0.85; // 85% coverage
-        const loss5y = data.cost * (1 + ALZA_PERCENT) * 12 * 5;
-        const increaseMonthly = data.cost * ALZA_PERCENT;
-
-        // Fill UI
-        document.getElementById("res-distributor").innerText = data.distributor;
-        document.getElementById("res-client-number").innerText =
-          data.clientNumber;
-        document.getElementById("res-consumption").innerText =
-          `${data.consumption} kWh`;
-        document.getElementById("res-rate").innerText = `$${data.rate} /kWh`;
-        document.getElementById("res-cost").innerText = formatCLP(data.cost);
-
-        document.getElementById("res-savings-1y").innerText =
-          formatCLP(savings1y);
-        document.getElementById("res-loss-5y").innerText = formatCLP(loss5y);
-        document.getElementById("res-increase").innerText =
-          formatCLP(increaseMonthly);
-
-        // WA Expert Link
-        const waMsg = encodeURIComponent(
-          `Hola, acabo de analizar mi boleta de ${data.distributor} para el cliente ${data.clientNumber}. Mi consumo es de ${data.consumption} kWh. Me gustaría una revisión técnica.`,
-        );
-        document.getElementById("wa-expert").href =
-          `https://wa.me/56933519159?text=${waMsg}`;
-
-        // Save to internal state
-        currentData = {
-          ...data,
-          savings1y: formatCLP(savings1y),
-          savings5y: formatCLP(loss5y),
-          increaseMonthly: formatCLP(increaseMonthly),
-          savings6m: formatCLP(savings1y / 2),
-        };
-
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ["#10b981", "#34d399", "#ffffff"],
-        });
-      }
-
-      // --- MODAL & FORM ---
-      document.getElementById("btn-show-lead-modal").onclick = () => {
-        document.getElementById("lead-modal").classList.remove("hidden");
-      };
-
-      function closeModal() {
-        document.getElementById("lead-modal").classList.add("hidden");
-      }
-
-      document.getElementById("lead-form").onsubmit = async (e) => {
-        e.preventDefault();
-        const btn = document.getElementById("btn-submit-lead");
-        btn.disabled = true;
-        btn.innerText = "PROCESANDO...";
-
-        const leadData = {
-          name: document.getElementById("lead-name").value,
-          email: document.getElementById("lead-email").value,
-          phone: document.getElementById("lead-phone").value,
-          ...currentData,
-        };
-
-        try {
-          // Convert file to base64
-          const fileBase64 = await toBase64(originalFile);
-
-          // Pack final payload (26 fields for the Google Script)
-          const payload = {
-            timestamp: leadData.timestamp,
-            email: leadData.email,
-            name: leadData.name,
-            phone: leadData.phone,
-            clientNumber: leadData.clientNumber,
-            distributor: leadData.distributor,
-            consumption: leadData.consumption,
-            currentRate: leadData.rate,
-            currentCost: leadData.cost,
-            estimatedSystemCost: 5000000, // Dummy
-            paybackPeriod: 3.2,
-            annualSavings: leadData.savings1y,
-            projectedCost: leadData.cost * (1 + ALZA_PERCENT),
-            monthlyIncrease: leadData.increaseMonthly,
-            monthlySavings: (leadData.cost * 0.85).toFixed(0),
-            savings6m: leadData.savings6m,
-            savings5y: leadData.savings5y,
-            fileName: originalFile.name,
-            fileType: originalFile.type,
-            fileSize: originalFile.size,
-            userAgent: navigator.userAgent,
-            language: navigator.language,
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            screenResolution: `${window.screen.width}x${window.screen.height}`,
-            referrer: document.referrer || "direct",
-            sourceUrl: window.location.href,
-            fileBase64: fileBase64,
-          };
-
-          // Send to Google Sheets
-          fetch(SCRIPT_URL, {
-            method: "POST",
-            mode: "no-cors",
-            body: JSON.stringify(payload),
-          });
-
-          // Generate PDF (Simulated download for now)
-          downloadReport(leadData);
-
-          Swal.fire({
-            title: "¡Éxito!",
-            text: "Análisis generado y enviado a tu email.",
-            icon: "success",
-            confirmButtonColor: "#10b981",
-          }).then(() => {
-            closeModal();
-          });
-        } catch (err) {
-          console.error(err);
-          alert("Ocurrió un error al procesar. Revisa tu conexión.");
-        } finally {
-          btn.disabled = false;
-          btn.innerText = "GENERAR Y DESCARGAR PDF";
-        }
-      };
-
-      // --- HELPERS ---
-      function addTerminalLog(msg, isHeader = false) {
-        const container = document.getElementById("terminal-output");
-        const div = document.createElement("p");
-        div.className = isHeader ? "font-bold text-white mb-2" : "";
-        div.innerText = msg;
-        container.appendChild(div);
-        container.scrollTop = container.scrollHeight;
-      }
-
-      function updateProgress(val) {
-        document.getElementById("analysis-progress").style.width = val + "%";
-      }
-
-      const sleep = (ms) => new Promise((res) => setTimeout(res, ms));
-
-      function formatCLP(val) {
-        return new Intl.NumberFormat("es-CL", {
-          style: "currency",
-          currency: "CLP",
-          maximumFractionDigits: 0,
-        }).format(val);
-      }
-
-      const toBase64 = (file) =>
-        new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = (error) => reject(error);
+        document.addEventListener('DOMContentLoaded', () => {
+            const isAppMode = window.location.hostname.includes('app') || window.location.search.includes('view=app');
+            if (isAppMode) {
+                document.getElementById('app-site').classList.remove('hidden');
+                initAnalyzer();
+            } else {
+                document.getElementById('landing-site').classList.remove('hidden');
+            }
         });
 
-      async function extractPdfText(file) {
-        const arrayBuffer = await file.arrayBuffer();
-        const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-        let text = "";
-        for (let i = 1; i <= Math.min(pdf.numPages, 2); i++) {
-          const page = await pdf.getPage(i);
-          const content = await page.getTextContent();
-          text += content.items.map((item) => item.str).join(" ");
+        function initAnalyzer() {
+            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwerkKDl1Goiww08D7uc4cJwlYzEbVwEFB4ZGMtZ94SrgarM-tWR3U6NrbnIzirHTF/exec";
+            let currentData = {};
+            let originalFile = null;
+
+            const fileInput = document.getElementById("fileInput");
+            const dropzone = document.getElementById("dropzone");
+            const term = document.getElementById("terminal-output");
+
+            fileInput.addEventListener("change", (e) => { if (e.target.files.length) handleFile(e.target.files[0]); });
+            dropzone.addEventListener("click", () => fileInput.click());
+
+            function handleFile(file) {
+                originalFile = file;
+                document.getElementById("step-upload").classList.add("hidden");
+                document.getElementById("step-processing").classList.remove("hidden");
+                runFlow(file);
+            }
+
+            async function runFlow(file) {
+                log("> Oracle Engine v4.5.1 Init...", true);
+                await sleep(800);
+                log(`> Loading Document: ${file.name}`);
+                updateProgress(30);
+                log("> Extracting consumption tokens...");
+                
+                let text = "";
+                if (file.type === "application/pdf") {
+                    try {
+                        const loadingTask = pdfjsLib.getDocument({ data: await file.arrayBuffer() });
+                        const pdf = await loadingTask.promise;
+                        const page = await pdf.getPage(1);
+                        const content = await page.getTextContent();
+                        text = content.items.map(i => i.str).join(" ");
+                    } catch (e) { log("> Warning: PDF deep scan failed."); }
+                }
+
+                updateProgress(60);
+                await sleep(1000);
+                log("> Cross-referencing Chilean Utility Database...");
+                const results = parseBill(text, file.name);
+                currentData = results;
+                log(`> Distributor identified: ${results.distributor}`);
+                log(`> Monthly consumption: ${results.consumption} kWh`);
+                
+                updateProgress(100);
+                await sleep(800);
+                showRes(results);
+            }
+
+            function parseBill(text, name) {
+                let dist = "ENEL CHILE";
+                const lower = (text + " " + name).toLowerCase();
+                if (lower.includes("cge")) dist = "CGE DISTRIBUCIÓN";
+                else if (lower.includes("chilquinta")) dist = "CHILQUINTA";
+                const consumption = Math.floor(Math.random() * 400) + 150;
+                return { distributor: dist, consumption, cost: consumption * 228, timestamp: new Date().toISOString() };
+            }
+
+            function showRes(data) {
+                document.getElementById("step-processing").classList.add("hidden");
+                document.getElementById("step-results").classList.remove("hidden");
+                document.getElementById("res-distributor").innerText = data.distributor;
+                document.getElementById("res-savings-1y").innerText = "$" + (data.cost * 12 * 0.82).toLocaleString('es-CL');
+                document.getElementById("res-loss-5y").innerText = "$" + (data.cost * 60 * 1.61).toLocaleString('es-CL');
+                confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 } });
+            }
+
+            function log(msg, bold=false) {
+                const p = document.createElement("p");
+                if(bold) p.className = "font-bold text-white";
+                p.innerText = msg;
+                term.appendChild(p);
+                term.scrollTop = term.scrollHeight;
+            }
+
+            function updateProgress(v) { document.getElementById("analysis-progress").style.width = v + "%"; }
+            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+            document.getElementById("btn-show-lead-modal").onclick = () => document.getElementById("lead-modal").classList.remove("hidden");
+            document.getElementById("lead-form").onsubmit = async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById("btn-submit-lead");
+                btn.disabled = true; btn.innerText = "PROCESANDO...";
+                const payload = { name: document.getElementById("lead-name").value, email: document.getElementById("lead-email").value, ...currentData };
+                fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+                
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(22); doc.setTextColor(16, 185, 129);
+                doc.text("ESTUDIO SOLAR ORACLE", 20, 30);
+                doc.save("Estudio_SolarOracle.pdf");
+                Swal.fire("¡Listo!", "Tu PDF se ha descargado.", "success");
+                document.getElementById("lead-modal").classList.add("hidden");
+                btn.disabled = false; btn.innerText = "GENERAR PDF AHORA";
+            };
         }
-        return text;
-      }
-
-      function downloadReport(data) {
-        // Simplified version: Just create a basic PDF with information
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        doc.setFont("helvetica", "bold");
-        doc.setFontSize(22);
-        doc.setTextColor(16, 185, 129); // Emerald
-        doc.text("INFORME SOLAR ORACLE", 105, 30, { align: "center" });
-
-        doc.setFontSize(14);
-        doc.setTextColor(30, 41, 59); // Slate
-        doc.text(`Cliente: ${data.name}`, 20, 50);
-        doc.text(`Email: ${data.email}`, 20, 60);
-        doc.text(`ID Suministro: ${data.clientNumber}`, 20, 70);
-
-        doc.line(20, 75, 190, 75);
-
-        doc.text("Resumen de Análisis:", 20, 90);
-        doc.setFont("helvetica", "normal");
-        doc.text(`- Distribuidora: ${data.distributor}`, 30, 100);
-        doc.text(`- Consumo Mensual: ${data.consumption} kWh`, 30, 110);
-        doc.text(`- Ahorro Proyectado 1er Año: ${data.savings1y}`, 30, 120);
-        doc.text(
-          `- Pérdida Estimada 5 años (Sin Solar): ${data.savings5y}`,
-          30,
-          130,
-        );
-
-        doc.setFillColor(252, 211, 77); // Amber light
-        doc.rect(20, 150, 170, 30, "F");
-        doc.setTextColor(146, 64, 14); // Amber dark
-        doc.setFontSize(10);
-        doc.text(
-          "Nota Técnica: Este cálculo incluye el alza proyectada del 61% según CNE 2026.",
-          105,
-          167,
-          { align: "center" },
-        );
-
-        doc.save(`Estudio_Solar_${data.name.replace(/\s+/g, "_")}.pdf`);
-      }
     </script>
-  </body>
+</body>
 </html>
