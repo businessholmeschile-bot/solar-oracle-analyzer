@@ -35,11 +35,10 @@
 </head>
 <body class="bg-slate-900 text-white antialiased overflow-x-hidden">
 
-    <!-- THE ROUTER: DECIDES WHAT TO SHOW -->
+    <!-- THE ROUTER: FORCED TO APP MODE -->
     <script>
         (function() {
-            const searchParams = new URL(window.location.href).searchParams;
-            const isApp = window.location.hostname.includes('app') || searchParams.get('view') === 'app';
+            const isApp = true; // Forced for this file
 
             window.addEventListener('DOMContentLoaded', () => {
                 const landing = document.getElementById('landing-site');
@@ -54,9 +53,6 @@
                         app.classList.remove('hidden');
                         initAnalyzer();
                     }
-                } else {
-                    if (app) app.remove();
-                    if (landing) landing.classList.remove('hidden');
                 }
             });
         })();
