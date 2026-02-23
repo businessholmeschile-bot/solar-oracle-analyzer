@@ -3,190 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SolarOracle - Inteligencia Artificial Solar</title>
+    <title>SolarOracle - Recupera tu Dinero v10.2</title>
+
+    <script>
+        // REDIRECCIÓN MAESTRA: Si el dominio es 'app', saltar a app.html
+        if (window.location.hostname.includes('app')) {
+            window.location.replace('/app.html');
+        }
+    </script>
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-    
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Outfit', sans-serif; }
-        .hidden { display: none !important; }
-        
-        /* Routing styles */
-        #landing-site, #app-site { display: none; }
-        body.show-landing #landing-site { display: block; }
-        body.show-app #app-site { display: flex; }
-
-        /* Design elements */
+        body { font-family: 'Outfit', sans-serif; background-color: #0f172a; }
         .glass { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); }
         .hero-gradient { background: radial-gradient(circle at top, #1e293b 0%, #0f172a 100%); }
         .text-gradient { background: linear-gradient(to right, #34d399, #10b981); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-        .glass-card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 24px; }
-        .analyzer-hero { background: linear-gradient(135deg, #064e3b 0%, #065f46 100%); }
-        .terminal-log { font-family: "Courier New", Courier, monospace; font-size: 12px; color: #10b981; }
-        input[type="file"]::file-selector-button { display: none; }
     </style>
-
-    <script>
-        // CRITICAL ROUTER - RUNS BEFORE BODY
-        const isApp = window.location.hostname.includes('app') || window.location.search.includes('view=app');
-        document.documentElement.classList.add(isApp ? 'mode-app' : 'mode-landing');
-    </script>
 </head>
-<body class="bg-slate-900 text-white antialiased overflow-x-hidden">
+<body class="text-white antialiased">
 
-    <!-- LANDING SITE -->
-    <div id="landing-site" class="w-full">
-        <nav class="fixed w-full z-50 glass border-b border-white/5 py-4">
-            <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
-                <img src="logo_solaroracle_v3.png" alt="SolarOracle" class="h-10">
-                <a href="https://app.solaroracle.cl" class="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-full font-bold shadow-lg transition transform hover:scale-105">Cotizar Gratis</a>
-            </div>
-        </nav>
-
-        <section class="hero-gradient pt-44 pb-32 text-center relative">
-            <div class="max-w-5xl mx-auto px-6 relative z-10">
-                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold mb-8">✨ IA Solar v4.5.1</div>
-                <h1 class="text-6xl md:text-8xl font-black mb-8 leading-tight tracking-tight">Recupera tu Dinero <br>a la <span class="text-gradient">Compañía Eléctrica</span></h1>
-                <p class="text-xl text-slate-400 max-w-2xl mx-auto mb-12">Analiza tu boleta de luz en segundos y descubre cuánto ahorrarías con energía solar. 100% datos reales.</p>
-                <div class="flex justify-center">
-                    <a href="https://app.solaroracle.cl" class="px-12 py-6 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl text-2xl shadow-[0_0_50px_rgba(16,185,129,0.4)] transition transform hover:-translate-y-1">Probar como Usuario 👉</a>
-                </div>
-            </div>
-        </section>
-        
-        <footer class="py-12 bg-black/40 text-center opacity-30 text-[10px] font-bold uppercase tracking-widest">&copy; 2025 SolarOracle Intelligence</footer>
-    </div>
-
-    <!-- APP SITE -->
-    <div id="app-site" class="w-full min-h-screen flex-col items-center bg-slate-50 text-slate-900">
-        <nav class="w-full px-6 py-4 flex justify-between items-center bg-white border-b border-slate-200">
-            <img src="logo_solaroracle_v3.png" alt="SolarOracle" class="h-8">
-            <span class="text-xs font-bold text-emerald-500 flex items-center gap-1"><span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span> MOTOR IA ACTIVO</span>
-        </nav>
-
-        <main class="w-full max-w-lg px-4 pt-12 pb-20">
-            <section id="step-upload" class="text-center">
-                <h1 class="text-3xl font-black mb-10">Sube tu Boleta</h1>
-                <div id="dropzone" class="glass-card p-12 border-2 border-dashed border-emerald-300 flex flex-col items-center justify-center cursor-pointer hover:border-emerald-500 bg-white shadow-2xl">
-                    <div class="text-5xl mb-6">📄</div>
-                    <p class="font-bold text-slate-400 mb-8">PDF de Enel, CGE o Chilquinta</p>
-                    <input type="file" id="fileInput" class="hidden" accept=".pdf,image/*">
-                    <button onclick="document.getElementById('fileInput').click()" class="px-10 py-4 bg-emerald-500 text-white font-black rounded-2xl">Seleccionar Archivo</button>
-                </div>
-            </section>
-
-            <section id="step-processing" class="hidden w-full">
-                <h1 class="text-3xl font-black text-center mb-8">Oracle IA Analizando...</h1>
-                <div class="glass-card p-8 bg-slate-900 shadow-2xl overflow-hidden border-t-4 border-emerald-500 h-64 terminal-log" id="terminal-output"></div>
-            </section>
-
-            <section id="step-results" class="hidden w-full text-center">
-                <div class="analyzer-hero -mx-4 -mt-12 p-10 pb-16 rounded-b-[50px] text-white shadow-2xl mb-8">
-                    <h2 class="text-4xl font-black mb-2">Tu Potencial Solar ☀️</h2>
-                    <p id="res-distributor" class="text-emerald-200 text-sm font-black uppercase tracking-widest">ENEL CHILE</p>
-                </div>
-                <div class="grid grid-cols-2 gap-4 mb-8">
-                    <div class="glass-card p-6 border-b-8 border-emerald-500 bg-white">
-                        <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Ahorro 1er Año</p>
-                        <p class="text-2xl font-black text-emerald-600" id="res-savings-1y">$ 450.000</p>
-                    </div>
-                    <div class="glass-card p-6 border-b-8 border-rose-500 bg-white">
-                        <p class="text-[10px] font-black text-slate-400 uppercase mb-1">Pérdida 5 Años</p>
-                        <p class="text-2xl font-black text-rose-500" id="res-loss-5y">$ 2.800.000</p>
-                    </div>
-                </div>
-                <button id="btn-show-lead-modal" class="w-full py-5 bg-emerald-500 text-white font-black text-xl rounded-[24px] shadow-2xl">DESCARGAR REPORTE PDF</button>
-            </section>
-        </main>
-    </div>
-
-    <!-- Modal Lead -->
-    <div id="lead-modal" class="fixed inset-0 z-[100] hidden flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md">
-        <div class="glass-card bg-white p-8 w-full max-w-md relative shadow-2xl text-slate-900">
-            <button onclick="document.getElementById('lead-modal').classList.add('hidden')" class="absolute top-4 right-4">✕</button>
-            <h3 class="text-2xl font-black mb-6 text-center">¡Estudio Solar Listo!</h3>
-            <form id="lead-form" class="space-y-4">
-                <input type="text" id="lead-name" placeholder="Tu Nombre" required class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl font-bold">
-                <input type="email" id="lead-email" placeholder="Email de envío" required class="w-full px-5 py-4 bg-slate-50 border border-slate-200 rounded-xl font-bold">
-                <button type="submit" class="w-full py-4 bg-slate-900 text-white font-black rounded-xl">GENERAR PDF AHORA</button>
-            </form>
+    <nav class="fixed w-full z-50 glass border-b border-white/5 py-4">
+        <div class="max-w-7xl mx-auto px-6 flex justify-between items-center">
+            <img src="logo_solaroracle_v3.png" alt="SolarOracle" class="h-10">
+            <a href="https://app.solaroracle.cl" class="bg-emerald-500 hover:bg-emerald-600 text-white px-8 py-3 rounded-full font-black shadow-lg shadow-emerald-500/20 transition transform hover:scale-105">Cotizar Gratis</a>
         </div>
-    </div>
+    </nav>
 
-    <script>
-        // CORE INITIALIZATION
-        document.addEventListener('DOMContentLoaded', () => {
-            const isAppMode = window.location.hostname.includes('app') || window.location.search.includes('view=app');
-            if (isAppMode) {
-                document.body.classList.add('show-app');
-                document.body.classList.remove('bg-slate-900', 'text-white');
-                document.body.classList.add('bg-slate-50', 'text-slate-900');
-                initApp();
-            } else {
-                document.body.classList.add('show-landing');
-            }
-        });
+    <section class="hero-gradient pt-44 pb-32 text-center relative overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[600px] bg-emerald-500/10 rounded-full blur-[120px]"></div>
+        <div class="max-w-4xl mx-auto px-6 relative z-10">
+            <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold mb-8">✨ Nueva Versión v10.2</div>
+            <h1 class="text-6xl md:text-8xl font-black mb-10 leading-tight">Recupera tu Dinero <br>a la <span class="text-gradient">Compañía Eléctrica</span></h1>
+            <p class="text-xl text-slate-400 max-w-2xl mx-auto mb-16 leading-relaxed italic">"SolarOracle analiza tu boleta en segundos y te dice cuánto ahorrarías. Sin vendedores, 100% IA."</p>
+            
+            <a href="https://app.solaroracle.cl" class="inline-block px-12 py-6 bg-emerald-500 hover:bg-emerald-600 text-white font-black rounded-2xl text-2xl shadow-[0_0_50px_rgba(16,185,129,0.4)] transition transform hover:-translate-y-1">Probar como Usuario 👉</a>
+        </div>
+    </section>
 
-        function initApp() {
-            const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbxwerkKDl1Goiww08D7uc4cJwlYzEbVwEFB4ZGMtZ94SrgarM-tWR3U6NrbnIzirHTF/exec";
-            let currentData = {};
-            let originalFile = null;
+    <footer class="py-12 bg-black/40 border-t border-white/5 text-center text-slate-600 text-[10px] font-bold uppercase tracking-widest">
+        &copy; 2025 SolarOracle Intelligence | v10.2 stable
+    </footer>
 
-            document.getElementById("fileInput").onchange = (e) => { if (e.target.files.length) handleFile(e.target.files[0]); };
-            document.getElementById("dropzone").onclick = () => document.getElementById("fileInput").click();
-
-            function handleFile(file) {
-                originalFile = file;
-                document.getElementById("step-upload").classList.add("hidden");
-                document.getElementById("step-processing").classList.remove("hidden");
-                runFlow(file);
-            }
-
-            async function runFlow(file) {
-                log("> Oracle Engine v4.5.1 Init...");
-                await sleep(1000);
-                log(`> Boleta detectada: ${file.name}`);
-                log("> Extrayendo consumo histórico...");
-                await sleep(1500);
-                
-                const results = { distributor: "ENEL CHILE", consumption: 342, cost: 342 * 228 };
-                currentData = results;
-                
-                document.getElementById("step-processing").classList.add("hidden");
-                document.getElementById("step-results").classList.remove("hidden");
-                document.getElementById("res-savings-1y").innerText = "$" + (results.cost * 12 * 0.82).toLocaleString('es-CL');
-                document.getElementById("res-loss-5y").innerText = "$" + (results.cost * 60 * 1.61).toLocaleString('es-CL');
-                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            }
-
-            function log(msg) {
-                const p = document.createElement("p");
-                p.innerText = msg;
-                document.getElementById("terminal-output").appendChild(p);
-            }
-
-            document.getElementById("btn-show-lead-modal").onclick = () => document.getElementById("lead-modal").classList.remove("hidden");
-            document.getElementById("lead-form").onsubmit = async (e) => {
-                e.preventDefault();
-                const payload = { name: document.getElementById("lead-name").value, email: document.getElementById("lead-email").value, ...currentData };
-                fetch(SCRIPT_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
-                
-                const { jsPDF } = window.jspdf;
-                const doc = new jsPDF();
-                doc.text("REPORTE SOLAR ORACLE", 20, 30);
-                doc.save("Estudio_Solar.pdf");
-                Swal.fire("¡Listo!", "PDF generado.", "success");
-                document.getElementById("lead-modal").classList.add("hidden");
-            };
-            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-        }
-    </script>
 </body>
 </html>
