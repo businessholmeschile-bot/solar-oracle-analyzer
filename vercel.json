@@ -3,7 +3,23 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/admin",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.solaroracle.cl"
+        }
+      ],
+      "destination": "/admin.html"
+    },
+    {
       "source": "/demo",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.solaroracle.cl"
+        }
+      ],
       "destination": "/dashboard_demo.html"
     },
     {
@@ -17,12 +33,14 @@
       "destination": "/index.html?view=app"
     },
     {
-      "source": "/app",
-      "destination": "/index.html?view=app"
-    },
-    {
       "source": "/admin",
-      "destination": "/admin.html"
+      "has": [
+        {
+          "type": "host",
+          "value": "app.solaroracle.cl"
+        }
+      ],
+      "destination": "https://www.solaroracle.cl/admin"
     }
   ]
 }
