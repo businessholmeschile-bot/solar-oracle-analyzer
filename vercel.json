@@ -1,0 +1,24 @@
+{
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    {
+      "source": "/(index.html)?",
+      "has": [
+        {
+          "type": "host",
+          "value": "app.solaroracle.cl"
+        }
+      ],
+      "destination": "/index.html?view=app"
+    },
+    {
+      "source": "/app",
+      "destination": "/index.html?view=app"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin.html"
+    }
+  ]
+}
